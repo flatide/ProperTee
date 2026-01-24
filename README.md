@@ -50,7 +50,7 @@ end
 
 ## 온라인 플레이그라운드
 
-🌐 **[https://yawnfish.github.io/ProperTee/](https://yawnfish.github.io/ProperTee/)**
+🌐 **[https://flatide.github.io/ProperTee/](https://flatide.github.io/ProperTee/)**
 
 브라우저에서 바로 ProperTee 코드를 실행해볼 수 있는 대화형 웹페이지입니다.
 
