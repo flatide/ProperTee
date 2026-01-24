@@ -10,6 +10,10 @@
 4. [프로퍼티 접근](#4-프로퍼티-접근)
 5. [제어 구조](#5-제어-구조)
 6. [함수](#6-함수)
+   - 6.1 [함수 호출 구문](#61-함수-호출-구문)
+   - 6.2 [표준 라이브러리](#62-표준-라이브러리)
+   - 6.3 [커스텀 함수](#63-커스텀-함수)
+   - 6.4 [함수 사용 패턴](#64-함수-사용-패턴)
 7. [실전 패턴](#7-실전-패턴)
 
 ---
@@ -398,30 +402,291 @@ end
 
 ## 6. 함수
 
+ProperTee는 함수 호출 구문을 제공하며, 표준 라이브러리로 여러 내장 함수를 제공합니다.
+
+### 6.1 함수 호출 구문
+
 함수는 `이름(인자1, 인자2, ...)` 형식으로 호출합니다.
 
 ```propertee
 // 인자 없음
-result = now()
+result = getCurrentTime()
 
 // 단일 인자
-length = strlen("hello")
+length = LEN("hello")
 
 // 여러 인자
-sum = add(1, 2, 3)
+maximum = MAX(10, 20, 30)
 
 // 표현식 인자
-output = format("Value: {}", x * 2)
+output = PRINT("Value:", x * 2)
 
 // 객체 인자
-response = request({
-    method: "POST",
-    url: "/api/data",
-    body: {name: "test"}
+result = processData({
+    type: "user",
+    data: {name: "Alice"}
 })
 
 // 체인 호출
-result = parse(fetch(url)).data.items.0
+result = parseResponse(fetchData(url)).data.items.0
+```
+
+### 6.2 표준 라이브러리
+
+ProperTee 구현체는 다음 표준 함수들을 제공합니다.
+
+#### 6.2.1 입출력 함수
+
+**`PRINT(...args)`**
+- 값들을 출력합니다 (stdout으로 전송)
+- 여러 인자를 받아 공백으로 구분하여 출력
+
+```propertee
+PRINT("Hello, World!")           // Hello, World!
+PRINT("Score:", 100)              // Score: 100
+PRINT("User:", user.name, user.age)  // User: Alice 30
+```
+
+#### 6.2.2 수학 함수
+
+**`SUM(...numbers)`**
+- 숫자들의 합계를 반환합니다
+
+```propertee
+total = SUM(1, 2, 3, 4, 5)        // 15
+sum = SUM(prices.0, prices.1)     // 가격 합계
+```
+
+**`MAX(...numbers)`**
+- 인자 중 최댓값을 반환합니다
+
+```propertee
+highest = MAX(10, 25, 15, 30)     // 30
+max_score = MAX(scores.0, scores.1, scores.2)
+```
+
+**`MIN(...numbers)`**
+- 인자 중 최솟값을 반환합니다
+
+```propertee
+lowest = MIN(10, 25, 15, 30)      // 10
+min_temp = MIN(temps.0, temps.1, temps.2)
+```
+
+**`ABS(n)`**
+- 숫자의 절댓값을 반환합니다
+
+```propertee
+positive = ABS(-10)               // 10
+distance = ABS(x - y)
+```
+
+**`FLOOR(n)`**
+- 숫자를 내림합니다
+
+```propertee
+down = FLOOR(3.7)                 // 3
+rounded_down = FLOOR(price)
+```
+
+**`CEIL(n)`**
+- 숫자를 올림합니다
+
+```propertee
+up = CEIL(3.2)                    // 4
+rounded_up = CEIL(price)
+```
+
+**`ROUND(n)`**
+- 숫자를 반올림합니다
+
+```propertee
+rounded = ROUND(3.5)              // 4
+rounded2 = ROUND(3.4)             // 3
+```
+
+#### 6.2.3 유틸리티 함수
+
+**`LEN(arr|string)`**
+- 배열이나 문자열의 길이를 반환합니다
+
+```propertee
+str_len = LEN("hello")            // 5
+arr_len = LEN([1, 2, 3])          // 3
+count = LEN(users)                // users 배열의 길이
+```
+
+#### 6.2.4 정규표현식 함수
+
+**`REGEX(pattern, text, mode)`**
+- 정규표현식을 사용하여 텍스트를 처리합니다
+- `mode`: "test" (매치 여부), "match" (매칭된 값), "replace" (치환)
+
+```propertee
+// 패턴 매칭 테스트
+is_email = REGEX("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email, "test")
+
+// 값 추출
+phone = "연락처: 010-1234-5678"
+number = REGEX("\\d{3}-\\d{4}-\\d{4}", phone, "match")  // "010-1234-5678"
+
+// 문자열 치환
+text = "Hello World"
+result = REGEX("World", text, "replace", "ProperTee")   // "Hello ProperTee"
+
+// 실전 예제: 이메일 검증
+email = "user@example.com"
+if REGEX("@", email, "test") then
+    PRINT("Valid email format")
+end
+
+// URL에서 도메인 추출
+url = "https://www.example.com/path"
+domain = REGEX("https?://([^/]+)", url, "match")
+```
+
+#### 6.2.5 시스템 함수
+
+**`RUN(command, ...args)`**
+- 외부 명령이나 스크립트를 실행합니다
+- 보안상의 이유로 샌드박스 환경에서는 제한될 수 있습니다
+
+```propertee
+// 쉘 명령 실행
+result = RUN("ls", "-la")
+files = RUN("find", ".", "-name", "*.txt")
+
+// 스크립트 실행
+output = RUN("python", "script.py", "--input", data_file)
+status = RUN("./deploy.sh", env)
+
+// 조건부 실행
+if env == "production" then
+    RUN("npm", "run", "build")
+    RUN("./deploy.sh", "prod")
+end
+
+// 결과 확인
+backup_result = RUN("tar", "-czf", "backup.tar.gz", "data/")
+if backup_result == 0 then
+    PRINT("Backup successful")
+else
+    PRINT("Backup failed")
+end
+```
+
+**⚠️ 주의사항:**
+- `RUN()` 함수는 호스트 환경의 보안 정책에 따라 제한될 수 있습니다
+- 브라우저 환경에서는 사용할 수 없습니다
+- 사용자 입력을 직접 전달하지 마세요 (보안 위험)
+
+### 6.3 커스텀 함수
+
+호스트 애플리케이션은 추가 함수를 주입할 수 있습니다:
+
+```javascript
+// JavaScript에서 ProperTee 실행 시
+const visitor = new ProperTeeCustomVisitor(
+    properties,
+    {
+        // 커스텀 함수 추가
+        fetchData: (url) => fetch(url).then(r => r.json()),
+        notify: (msg) => alert(msg),
+        timestamp: () => Date.now(),
+        customFunc: (x, y) => x * y + 10
+    },
+    ioStreams
+);
+```
+
+ProperTee 코드에서 사용:
+
+```propertee
+// 주입된 커스텀 함수 사용
+data = fetchData("https://api.example.com/users")
+notify("Data loaded successfully!")
+now = timestamp()
+result = customFunc(5, 3)  // 25
+```
+
+### 6.4 함수 사용 패턴
+
+#### 데이터 검증
+
+```propertee
+// 길이 검증
+password = "secret123"
+if LEN(password) < 8 then
+    PRINT("Password too short")
+end
+
+// 정규식 검증
+email = user.email
+if not REGEX("@", email, "test") then
+    PRINT("Invalid email")
+end
+```
+
+#### 수학 계산
+
+```propertee
+// 통계 계산
+numbers = [10, 20, 15, 25, 30]
+total = SUM(numbers.0, numbers.1, numbers.2, numbers.3, numbers.4)
+max_val = MAX(numbers.0, numbers.1, numbers.2, numbers.3, numbers.4)
+min_val = MIN(numbers.0, numbers.1, numbers.2, numbers.3, numbers.4)
+average = total / LEN(numbers)
+
+PRINT("Total:", total)
+PRINT("Average:", average)
+PRINT("Max:", max_val)
+PRINT("Min:", min_val)
+```
+
+#### 텍스트 처리
+
+```propertee
+// 전화번호 정규화
+raw_phone = "010 1234 5678"
+clean_phone = REGEX("\\s+", raw_phone, "replace", "-")  // "010-1234-5678"
+
+// URL 파싱
+url = "https://example.com:8080/api/users?id=123"
+has_port = REGEX(":\\d+", url, "test")
+if has_port then
+    PRINT("Port specified in URL")
+end
+```
+
+#### 자동화 작업
+
+```propertee
+// 배포 파이프라인
+env = "production"
+
+PRINT("Starting deployment to", env)
+
+// 빌드
+build_result = RUN("npm", "run", "build")
+if build_result != 0 then
+    PRINT("Build failed")
+    break
+end
+
+// 테스트
+test_result = RUN("npm", "test")
+if test_result != 0 then
+    PRINT("Tests failed")
+    break
+end
+
+// 배포
+deploy_result = RUN("./deploy.sh", env)
+if deploy_result == 0 then
+    PRINT("Deployment successful!")
+else
+    PRINT("Deployment failed!")
+end
 ```
 
 ---
