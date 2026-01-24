@@ -198,7 +198,7 @@
     </style>
 </head>
 <body>
-    <a href="https://github.com/yawnfish/ProperTee" class="github-link" target="_blank">⭐ GitHub</a>
+    <a href="https://github.com/flatide/ProperTee" class="github-link" target="_blank">⭐ GitHub</a>
     
     <div class="container">
         <header>
@@ -281,21 +281,21 @@ user.score`
                 properties: '{"config": {"debug": true, "ports": [8080, 8443], "api-key": "secret123"}}',
                 script: `// 객체 프로퍼티 접근
 PRINT("Debug mode:", config.debug)
-PRINT("API Key:", config.("api-key"))
+PRINT("API Key:", config."api-key")
 
 // 배열 접근
-PRINT("First port:", config.ports[0])
-PRINT("Second port:", config.ports[1])
+PRINT("First port:", config.ports.0)
+PRINT("Second port:", config.ports.1)
 
 config.ports`
             },
             control: {
                 properties: '{"users": [{"name": "Alice", "age": 25}, {"name": "Bob", "age": 30}]}',
                 script: `// 조건문
-if users[0].age > 20 then
-    PRINT(users[0].name, "is adult")
+if users.0.age > 20 then
+    PRINT(users.0.name, "is adult")
 else
-    PRINT(users[0].name, "is minor")
+    PRINT(users.0.name, "is minor")
 end
 
 // 반복문
