@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProperTee Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+        
+        .github-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .github-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .playground {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .panel-content {
+            padding: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        #properties {
+            min-height: 120px;
+        }
+        
+        #script {
+            min-height: 300px;
+        }
+        
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .output-panel {
+            grid-column: 1 / -1;
+        }
+        
+        #output {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            color: #2d3748;
+        }
+        
+        .examples {
+            margin-top: 20px;
+        }
+        
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .example-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            font-size: 0.9em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: #e0e0e0;
+            border-color: #667eea;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        @media (max-width: 768px) {
+            .playground {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+            
+            .github-link {
+                position: static;
+                display: inline-block;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="https://github.com/yawnfish/ProperTee" class="github-link" target="_blank">⭐ GitHub</a>
+    
+    <div class="container">
+        <header>
+            <h1>🎯 ProperTee Playground</h1>
+            <p>프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어</p>
+        </header>
+        
+        <div class="playground">
+            <div class="panel">
+                <div class="panel-header">📋 Properties (JSON)</div>
+                <div class="panel-content">
+                    <textarea id="properties" placeholder='{"key": "value"}'>{"user": {"name": "Test", "score": 100}}</textarea>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">📝 ProperTee Script</div>
+                <div class="panel-content">
+                    <textarea id="script" placeholder="// ProperTee 코드를 입력하세요...">PRINT("Hello, ProperTee!")
+PRINT("User:", user.name)
+PRINT("Score:", user.score)
+
+user.score = user.score + 10
+PRINT("New Score:", user.score)
+
+user.score</textarea>
+                    <div class="examples">
+                        <div class="example-buttons">
+                            <button class="example-btn" onclick="loadExample('basic')">기본 예제</button>
+                            <button class="example-btn" onclick="loadExample('property')">프로퍼티 접근</button>
+                            <button class="example-btn" onclick="loadExample('control')">제어 구조</button>
+                            <button class="example-btn" onclick="loadExample('dynamic')">동적 접근</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel output-panel">
+                <div class="panel-header">💻 Output</div>
+                <div class="panel-content">
+                    <pre id="output">실행 결과가 여기에 표시됩니다...</pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <button onclick="run()">▶ Run</button>
+        </div>
+    </div>
+    
+    <!-- ProperTee 번들 로드 -->
+    <script src="./propertee-bundle.js"></script>
+    
+    <script>
+        // 에러 리스너
+        class ErrorListener extends antlr4.error.ErrorListener {
+            constructor() {
+                super();
+                this.errors = [];
+            }
+            syntaxError(recognizer, offendingSymbol, line, column, msg, err) {
+                this.errors.push(`Line ${line}:${column} - ${msg}`);
+            }
+        }
+        
+        // 예제 로드
+        const examples = {
+            basic: {
+                properties: '{"user": {"name": "Test", "score": 100}}',
+                script: `PRINT("Hello, ProperTee!")
+PRINT("User:", user.name)
+PRINT("Score:", user.score)
+
+user.score = user.score + 10
+PRINT("New Score:", user.score)
+
+user.score`
+            },
+            property: {
+                properties: '{"config": {"debug": true, "ports": [8080, 8443], "api-key": "secret123"}}',
+                script: `// 객체 프로퍼티 접근
+PRINT("Debug mode:", config.debug)
+PRINT("API Key:", config.("api-key"))
+
+// 배열 접근
+PRINT("First port:", config.ports[0])
+PRINT("Second port:", config.ports[1])
+
+config.ports`
+            },
+            control: {
+                properties: '{"users": [{"name": "Alice", "age": 25}, {"name": "Bob", "age": 30}]}',
+                script: `// 조건문
+if users[0].age > 20 then
+    PRINT(users[0].name, "is adult")
+else
+    PRINT(users[0].name, "is minor")
+end
+
+// 반복문
+for user in users do
+    PRINT("Name:", user.name, "Age:", user.age)
+end
+
+users`
+            },
+            dynamic: {
+                properties: '{"data": {"username": "admin", "email": "admin@example.com"}}',
+                script: `// 동적 프로퍼티 접근
+key = "username"
+PRINT("Dynamic access:", data.$key)
+
+// 표현식을 통한 접근
+field = "email"
+PRINT("Email:", data.$(field))
+
+data`
+            }
+        };
+        
+        function loadExample(name) {
+            const example = examples[name];
+            if (example) {
+                document.getElementById('properties').value = example.properties;
+                document.getElementById('script').value = example.script;
+            }
+        }
+        
+        // 실행 함수
+        function run() {
+            const output = document.getElementById('output');
+            const propertiesText = document.getElementById('properties').value;
+            const scriptText = document.getElementById('script').value;
+            
+            output.textContent = '실행 중...';
+            
+            try {
+                // 1. Properties 파싱
+                const properties = JSON.parse(propertiesText);
+                
+                // 2. Lexer & Parser
+                const chars = new antlr4.InputStream(scriptText);
+                const lexer = new ProperTeeLexer(chars);
+                const lexerErrors = new ErrorListener();
+                lexer.removeErrorListeners();
+                lexer.addErrorListener(lexerErrors);
+                
+                const tokens = new antlr4.CommonTokenStream(lexer);
+                const parser = new ProperTeeParser(tokens);
+                const parserErrors = new ErrorListener();
+                parser.removeErrorListeners();
+                parser.addErrorListener(parserErrors);
+                
+                const tree = parser.root();
+                
+                // 에러 체크
+                if (lexerErrors.errors.length > 0) {
+                    output.textContent = '❌ Lexer Error:\n' + lexerErrors.errors.join('\n');
+                    return;
+                }
+                if (parserErrors.errors.length > 0) {
+                    output.textContent = '❌ Parser Error:\n' + parserErrors.errors.join('\n');
+                    return;
+                }
+                
+                // 3. 출력 캡처
+                const outputLines = [];
+                const ioStreams = {
+                    stdout: (...args) => outputLines.push(args.join(' ')),
+                    stderr: (...args) => outputLines.push('[ERROR] ' + args.join(' '))
+                };
+                
+                // 4. 실행
+                const visitor = new ProperTeeCustomVisitor(properties, {}, ioStreams);
+                const result = visitor.visit(tree);
+                
+                // 5. 결과 표시
+                let resultText = '✅ 실행 성공!\n\n';
+                
+                if (outputLines.length > 0) {
+                    resultText += '📤 Output:\n' + outputLines.join('\n') + '\n\n';
+                }
+                
+                resultText += '📊 Return Value:\n' + JSON.stringify(result, null, 2) + '\n\n';
+                resultText += '📋 Properties:\n' + JSON.stringify(properties, null, 2) + '\n\n';
+                resultText += '🔧 Variables:\n' + JSON.stringify(visitor.variables, null, 2);
+                
+                output.textContent = resultText;
+                
+            } catch (e) {
+                output.textContent = '❌ Error:\n' + e.message + '\n\n' + e.stack;
+            }
+        }
+        
+        // 페이지 로드시 첫 예제 자동 실행
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                run();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
