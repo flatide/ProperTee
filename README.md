@@ -42,8 +42,8 @@ end
 
 ## 문서
 
-- [문법 명세 (EBNF)](docs/grammar.md)
-- [언어 가이드](docs/guide.md)
+- [문법 명세 (EBNF)](grammar.md)
+- [언어 가이드](guide.md)
 - [예제 모음](examples/)
 
 ## 라이선스
