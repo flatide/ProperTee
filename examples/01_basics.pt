@@ -1,0 +1,141 @@
+// ==================================================
+// ProperTee 기본 예제
+// 변수, 타입, 기본 연산을 보여줍니다
+// ==================================================
+
+// --------------------------
+// 1. 변수와 기본 타입
+// --------------------------
+
+// 숫자
+integer_num = 42
+float_num = 3.14159
+
+// 문자열
+greeting = "Hello, ProperTee!"
+empty_str = ""
+
+// 불리언
+is_active = true
+is_deleted = false
+
+// null
+nothing = null
+
+
+// --------------------------
+// 2. 산술 연산
+// --------------------------
+
+a = 10
+b = 3
+
+sum = a + b           // 13
+difference = a - b    // 7
+product = a * b       // 30
+quotient = a / b      // 3.333...
+negation = -a         // -10
+
+// 복합 수식
+result = (a + b) * 2 - 5    // 21
+
+
+// --------------------------
+// 3. 비교 연산
+// --------------------------
+
+x = 5
+y = 10
+
+is_equal = x == y       // false
+is_not_equal = x != y   // true
+is_less = x < y         // true
+is_less_eq = x <= y     // true
+is_greater = x > y      // false
+is_greater_eq = x >= y  // false
+
+
+// --------------------------
+// 4. 논리 연산
+// --------------------------
+
+p = true
+q = false
+
+and_result = p and q    // false
+or_result = p or q      // true
+not_result = not p      // false
+
+// 복합 논리식
+in_range = x >= 0 and x <= 100
+
+
+// --------------------------
+// 5. 객체 리터럴
+// --------------------------
+
+// 단순 객체
+point = {x: 10, y: 20}
+
+// 다양한 키 타입
+mixed_keys = {
+    normal_key: "일반 식별자",
+    "special-key": "하이픈 포함 키",
+    123: "숫자 키"
+}
+
+// 중첩 객체
+person = {
+    name: "Alice",
+    age: 30,
+    address: {
+        city: "Seoul",
+        zip: "12345"
+    },
+    hobbies: ["reading", "gaming"]
+}
+
+
+// --------------------------
+// 6. 배열 리터럴
+// --------------------------
+
+// 숫자 배열
+numbers = [1, 2, 3, 4, 5]
+
+// 문자열 배열
+fruits = ["apple", "banana", "cherry"]
+
+// 혼합 타입 배열
+mixed = [42, "hello", true, null, {x: 1}]
+
+// 2차원 배열
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+
+// 빈 컬렉션
+empty_obj = {}
+empty_arr = []
+
+
+// --------------------------
+// 7. 함수 호출
+// --------------------------
+
+// 인자 없는 함수
+current_time = now()
+
+// 단일 인자
+len = strlen("hello")
+
+// 여러 인자
+formatted = format("Name: {}, Age: {}", "Alice", 30)
+
+// 객체를 인자로
+response = send({
+    url: "/api/users",
+    method: "GET"
+})

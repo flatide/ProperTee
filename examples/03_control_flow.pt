@@ -1,0 +1,319 @@
+// ==================================================
+// ProperTee 제어 구조 예제
+// 조건문, 반복문, 흐름 제어
+// ==================================================
+
+// --------------------------
+// 1. 조건문 (if-then-end)
+// --------------------------
+
+// 단순 조건문
+x = 15
+
+if x > 10 then
+    result = "x is greater than 10"
+end
+
+
+// if-else
+age = 20
+
+if age >= 18 then
+    status = "adult"
+else
+    status = "minor"
+end
+
+
+// 중첩 조건문 (else-if 패턴)
+score = 85
+
+if score >= 90 then
+    grade = "A"
+else
+    if score >= 80 then
+        grade = "B"
+    else
+        if score >= 70 then
+            grade = "C"
+        else
+            if score >= 60 then
+                grade = "D"
+            else
+                grade = "F"
+            end
+        end
+    end
+end
+
+
+// 복합 조건
+user = {age: 25, verified: true, country: "KR"}
+
+if user.age >= 18 and user.verified == true then
+    access = "granted"
+end
+
+if user.country == "KR" or user.country == "US" then
+    region = "supported"
+else
+    region = "unsupported"
+end
+
+
+// --------------------------
+// 2. While 루프
+// --------------------------
+
+// 기본 while 루프
+counter = 0
+while counter < 5 do
+    print("Counter: " + counter)
+    counter = counter + 1
+end
+
+
+// 합계 계산
+sum = 0
+n = 1
+while n <= 100 do
+    sum = sum + n
+    n = n + 1
+end
+// sum = 5050
+
+
+// 조건 기반 탈출
+attempts = 0
+success = false
+
+while not success do
+    attempts = attempts + 1
+    result = tryConnect()
+    
+    if result == "ok" then
+        success = true
+    end
+    
+    if attempts >= 3 then
+        break
+    end
+end
+
+
+// --------------------------
+// 3. For 루프 (단일 변수)
+// --------------------------
+
+// 배열 순회
+fruits = ["apple", "banana", "cherry"]
+
+for fruit in fruits do
+    print("Fruit: " + fruit)
+end
+
+
+// 객체 배열 처리
+users = [
+    {name: "Alice", score: 95},
+    {name: "Bob", score: 82},
+    {name: "Charlie", score: 78}
+]
+
+total_score = 0
+for user in users do
+    total_score = total_score + user.score
+    print(user.name + ": " + user.score)
+end
+
+
+// 중첩 for 루프
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+
+for row in matrix do
+    row_sum = 0
+    for cell in row do
+        row_sum = row_sum + cell
+    end
+    print("Row sum: " + row_sum)
+end
+
+
+// --------------------------
+// 4. For 루프 (키-값 쌍)
+// --------------------------
+
+// 객체의 키-값 순회
+person = {
+    name: "Alice",
+    age: 30,
+    city: "Seoul",
+    job: "Developer"
+}
+
+for key, value in person do
+    print(key + " = " + value)
+end
+
+
+// 설정 덤프
+config = {
+    debug: true,
+    timeout: 30,
+    maxRetries: 3
+}
+
+for setting, val in config do
+    print("Config: " + setting + " -> " + val)
+end
+
+
+// --------------------------
+// 5. 흐름 제어: break
+// --------------------------
+
+// 첫 번째 일치 항목 찾기
+items = ["red", "green", "blue", "yellow", "green"]
+target = "blue"
+found_index = -1
+idx = 0
+
+for item in items do
+    if item == target then
+        found_index = idx
+        break
+    end
+    idx = idx + 1
+end
+
+
+// 조건 충족 시 즉시 종료
+numbers = [2, 4, 6, 7, 8, 10]
+has_odd = false
+
+for num in numbers do
+    if num / 2 * 2 != num then
+        has_odd = true
+        break
+    end
+end
+
+
+// --------------------------
+// 6. 흐름 제어: continue
+// --------------------------
+
+// 특정 항목 건너뛰기
+data = [1, -2, 3, -4, 5, -6]
+positive_sum = 0
+
+for val in data do
+    if val < 0 then
+        continue
+    end
+    positive_sum = positive_sum + val
+end
+// positive_sum = 9
+
+
+// 유효한 항목만 처리
+records = [
+    {valid: true, value: 10},
+    {valid: false, value: 20},
+    {valid: true, value: 30},
+    {valid: false, value: 40}
+]
+
+valid_total = 0
+for record in records do
+    if not record.valid then
+        continue
+    end
+    valid_total = valid_total + record.value
+end
+// valid_total = 40
+
+
+// --------------------------
+// 7. 복합 예제
+// --------------------------
+
+// 사용자 필터링 및 집계
+all_users = [
+    {name: "Alice", active: true, score: 95},
+    {name: "Bob", active: false, score: 60},
+    {name: "Charlie", active: true, score: 82},
+    {name: "Diana", active: true, score: 45},
+    {name: "Eve", active: false, score: 78}
+]
+
+// 활성 사용자 중 점수 70 이상만 수집
+qualified = []
+for user in all_users do
+    // 비활성 사용자 건너뛰기
+    if not user.active then
+        continue
+    end
+    
+    // 점수 미달 건너뛰기
+    if user.score < 70 then
+        continue
+    end
+    
+    push(qualified, user)
+end
+
+
+// 페이지네이션 시뮬레이션
+all_items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+page_size = 5
+current_page = 2
+
+start_idx = (current_page - 1) * page_size
+end_idx = start_idx + page_size
+page_items = []
+
+idx = 0
+for item in all_items do
+    if idx < start_idx then
+        idx = idx + 1
+        continue
+    end
+    
+    if idx >= end_idx then
+        break
+    end
+    
+    push(page_items, item)
+    idx = idx + 1
+end
+// page_items = [6, 7, 8, 9, 10]
+
+
+// 검색 기능
+products = [
+    {id: 1, name: "Laptop", price: 1200},
+    {id: 2, name: "Mouse", price: 25},
+    {id: 3, name: "Keyboard", price: 75},
+    {id: 4, name: "Monitor", price: 350}
+]
+
+search_term = "Mouse"
+found_product = null
+
+for product in products do
+    if product.name == search_term then
+        found_product = product
+        break
+    end
+end
+
+if found_product != null then
+    print("Found: " + found_product.name + " ($" + found_product.price + ")")
+else
+    print("Product not found")
+end

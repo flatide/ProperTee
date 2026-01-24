@@ -1,0 +1,215 @@
+// ==================================================
+// ProperTee 프로퍼티 접근 예제
+// ProperTee의 핵심 기능인 다양한 프로퍼티 접근 방식
+// ==================================================
+
+// --------------------------
+// 1. 정적 접근 (Static Access)
+// --------------------------
+
+user = {
+    name: "Alice",
+    email: "alice@example.com",
+    age: 30
+}
+
+// 점 표기법으로 고정 키 접근
+user_name = user.name         // "Alice"
+user_email = user.email       // "alice@example.com"
+
+
+// --------------------------
+// 2. 배열 인덱스 접근 (Array Access)
+// --------------------------
+
+colors = ["red", "green", "blue", "yellow"]
+
+first = colors.0              // "red"
+second = colors.1             // "green"
+third = colors.2              // "blue"
+
+
+// --------------------------
+// 3. 문자열 키 접근 (String Key Access)
+// --------------------------
+
+// 특수 문자가 포함된 키
+http_headers = {
+    "Content-Type": "application/json",
+    "X-Api-Key": "secret123",
+    "Accept-Language": "ko-KR"
+}
+
+content_type = http_headers."Content-Type"    // "application/json"
+api_key = http_headers."X-Api-Key"            // "secret123"
+
+
+// --------------------------
+// 4. 변수 평가 접근 (Variable Eval Access)
+// --------------------------
+
+data = {
+    name: "Alice",
+    age: 30,
+    city: "Seoul"
+}
+
+// .$변수명 - 변수 값을 키로 사용
+field = "name"
+value1 = data.$field          // "Alice" (data.name과 동일)
+
+field = "age"
+value2 = data.$field          // 30 (data.age와 동일)
+
+field = "city"
+value3 = data.$field          // "Seoul"
+
+
+// --------------------------
+// 5. 표현식 평가 접근 (Expression Eval Access)
+// --------------------------
+
+// .$(표현식) - 임의의 표현식을 키로 평가
+
+// 문자열 연결
+users = {
+    user_001: "Alice",
+    user_002: "Bob",
+    user_003: "Charlie"
+}
+
+id = "002"
+found_user = users.$("user_" + id)    // "Bob"
+
+
+// 계산된 인덱스
+items = ["zero", "one", "two", "three", "four"]
+base = 1
+offset = 2
+item = items.$(base + offset)         // "three" (items.3)
+
+
+// 조건 기반 키 구성
+env = "prod"
+endpoints = {
+    dev_api: "http://localhost:3000",
+    prod_api: "https://api.example.com"
+}
+api_url = endpoints.$(env + "_api")   // "https://api.example.com"
+
+
+// --------------------------
+// 6. 체인 접근 (Chained Access)
+// --------------------------
+
+// 여러 레벨의 접근을 연결
+
+app = {
+    config: {
+        database: {
+            host: "localhost",
+            port: 5432
+        },
+        cache: {
+            enabled: true,
+            ttl: 3600
+        }
+    },
+    users: [
+        {
+            name: "Alice",
+            roles: ["admin", "editor"]
+        },
+        {
+            name: "Bob",
+            roles: ["viewer"]
+        }
+    ]
+}
+
+// 정적 체인
+db_host = app.config.database.host        // "localhost"
+cache_enabled = app.config.cache.enabled  // true
+first_user = app.users.0.name             // "Alice"
+first_role = app.users.0.roles.0          // "admin"
+
+// 동적 체인 혼합
+section = "database"
+db_port = app.config.$section.port        // 5432
+
+user_idx = 1
+role_idx = 0
+role = app.users.$user_idx.roles.$role_idx  // "viewer"
+
+
+// --------------------------
+// 7. 프로퍼티 할당 (Property Assignment)
+// --------------------------
+
+obj = {x: 1, y: 2}
+
+// 정적 할당
+obj.z = 3                     // obj = {x: 1, y: 2, z: 3}
+
+// 변수 평가 할당
+key = "w"
+obj.$key = 4                  // obj = {x: 1, y: 2, z: 3, w: 4}
+
+// 표현식 평가 할당
+prefix = "val_"
+obj.$(prefix + "a") = 100     // obj.val_a = 100
+
+
+// 중첩 할당
+config = {
+    settings: {}
+}
+config.settings.theme = "dark"
+config.settings.lang = "ko"
+
+setting_name = "fontSize"
+config.settings.$setting_name = 14
+
+
+// --------------------------
+// 8. 실전 예제: 동적 데이터 접근
+// --------------------------
+
+// API 응답 처리
+api_response = {
+    status: "success",
+    data: {
+        results: [
+            {id: 1, type: "post", title: "Hello World"},
+            {id: 2, type: "image", url: "photo.jpg"},
+            {id: 3, type: "post", title: "Second Post"}
+        ]
+    }
+}
+
+// 특정 타입의 항목 찾기
+target_type = "image"
+for item in api_response.data.results do
+    if item.type == target_type then
+        image_url = item.url
+        break
+    end
+end
+
+
+// 동적 필드 매핑
+field_mapping = {
+    n: "name",
+    e: "email",
+    a: "age"
+}
+
+source = {
+    name: "Alice",
+    email: "alice@example.com",
+    age: 30
+}
+
+short_key = "e"
+full_key = field_mapping.$short_key
+value = source.$full_key              // "alice@example.com"
