@@ -58,8 +58,8 @@
         }
         
         .playground {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 20px;
             margin-bottom: 20px;
         }
@@ -85,19 +85,37 @@
         
         textarea {
             width: 100%;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #3e4451;
             border-radius: 5px;
             padding: 15px;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
             font-size: 14px;
             line-height: 1.6;
             resize: vertical;
-            transition: border-color 0.3s;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            
+            /* 코드 에디터 스타일 */
+            background-color: #282c34;
+            color: #abb2bf;
+            tab-size: 4;
+            -moz-tab-size: 4;
+            white-space: pre;
+            word-wrap: normal;
+            overflow-wrap: normal;
         }
         
         textarea:focus {
             outline: none;
             border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea::placeholder {
+            color: #5c6370;
+        }
+        
+        textarea::selection {
+            background-color: #3e4451;
         }
         
         #properties {
@@ -106,37 +124,11 @@
         
         #script {
             min-height: 300px;
-        }
-        
-        .button-container {
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 50px;
-            font-size: 1.1em;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .output-panel {
-            grid-column: 1 / -1;
+            /* 라인 가이드 배경 */
+            background-image: 
+                linear-gradient(transparent 0%, transparent calc(1.6em - 1px), #21252b calc(1.6em - 1px), #21252b 1.6em);
+            background-size: 100% 1.6em;
+            background-position: 0 15px;
         }
         
         #output {
@@ -160,6 +152,7 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            margin-bottom: 15px;
         }
         
         .example-btn {
@@ -180,11 +173,94 @@
             box-shadow: none;
         }
         
+        .reference-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        
+        .reference-box h4 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+            font-size: 1em;
+        }
+        
+        .reference-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 5px 0;
+        }
+        
+        .reference-item {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85em;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .reference-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .reference-item.keyword {
+            background: #e3f2fd;
+            border-color: #90caf9;
+            color: #1976d2;
+        }
+        
+        .reference-item.keyword:hover {
+            background: #bbdefb;
+        }
+        
+        .reference-item.function {
+            background: #f3e5f5;
+            border-color: #ce93d8;
+            color: #7b1fa2;
+        }
+        
+        .reference-item.function:hover {
+            background: #e1bee7;
+        }
+        
+        .script-footer {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        .run-btn-small {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .run-btn-small:hover {
+            background: #5568d3;
+        }
+        
+        .run-btn-small:active {
+            background: #4456b8;
+        }
+        
         @media (max-width: 768px) {
-            .playground {
-                grid-template-columns: 1fr;
-            }
-            
             header h1 {
                 font-size: 2em;
             }
@@ -217,14 +293,45 @@
             <div class="panel">
                 <div class="panel-header">📝 ProperTee Script</div>
                 <div class="panel-content">
-                    <textarea id="script" placeholder="// ProperTee 코드를 입력하세요...">PRINT("Hello, ProperTee!")
-PRINT("User:", user.name)
-PRINT("Score:", user.score)
-
-user.score = user.score + 10
-PRINT("New Score:", user.score)
-
-user.score</textarea>
+                    <!-- 키워드 및 함수 참고 -->
+                    <div class="reference-box">
+                        <h4>🔤 키워드</h4>
+                        <div class="reference-list">
+                            <span class="reference-item keyword" onclick="insertText('if')">if</span>
+                            <span class="reference-item keyword" onclick="insertText('then')">then</span>
+                            <span class="reference-item keyword" onclick="insertText('else')">else</span>
+                            <span class="reference-item keyword" onclick="insertText('end')">end</span>
+                            <span class="reference-item keyword" onclick="insertText('while')">while</span>
+                            <span class="reference-item keyword" onclick="insertText('for')">for</span>
+                            <span class="reference-item keyword" onclick="insertText('in')">in</span>
+                            <span class="reference-item keyword" onclick="insertText('do')">do</span>
+                            <span class="reference-item keyword" onclick="insertText('break')">break</span>
+                            <span class="reference-item keyword" onclick="insertText('continue')">continue</span>
+                            <span class="reference-item keyword" onclick="insertText('and')">and</span>
+                            <span class="reference-item keyword" onclick="insertText('or')">or</span>
+                            <span class="reference-item keyword" onclick="insertText('not')">not</span>
+                            <span class="reference-item keyword" onclick="insertText('true')">true</span>
+                            <span class="reference-item keyword" onclick="insertText('false')">false</span>
+                            <span class="reference-item keyword" onclick="insertText('null')">null</span>
+                        </div>
+                        
+                        <h4 style="margin-top: 15px;">⚡ 내장 함수</h4>
+                        <div class="reference-list">
+                            <span class="reference-item function" onclick="insertText('PRINT()')">PRINT()</span>
+                            <span class="reference-item function" onclick="insertText('SUM()')">SUM()</span>
+                            <span class="reference-item function" onclick="insertText('MAX()')">MAX()</span>
+                            <span class="reference-item function" onclick="insertText('MIN()')">MIN()</span>
+                            <span class="reference-item function" onclick="insertText('ABS()')">ABS()</span>
+                            <span class="reference-item function" onclick="insertText('FLOOR()')">FLOOR()</span>
+                            <span class="reference-item function" onclick="insertText('CEIL()')">CEIL()</span>
+                            <span class="reference-item function" onclick="insertText('ROUND()')">ROUND()</span>
+                            <span class="reference-item function" onclick="insertText('LEN()')">LEN()</span>
+                            <span class="reference-item function" onclick="insertText('REGEX()')">REGEX()</span>
+                            <span class="reference-item function" onclick="insertText('RUN()')">RUN()</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 예제 버튼 -->
                     <div class="examples">
                         <div class="example-buttons">
                             <button class="example-btn" onclick="loadExample('basic')">기본 예제</button>
@@ -233,14 +340,24 @@ user.score</textarea>
                             <button class="example-btn" onclick="loadExample('dynamic')">동적 접근</button>
                         </div>
                     </div>
+                    
+                    <textarea id="script" placeholder="// ProperTee 코드를 입력하세요...">PRINT("Hello, ProperTee!")
+PRINT("User:", user.name)
+PRINT("Score:", user.score)
+
+user.score = user.score + 10
+PRINT("New Score:", user.score)
+
+user.score</textarea>
+                    
+                    <!-- Script 영역 하단에 Run 버튼 -->
+                    <div class="script-footer">
+                        <button class="run-btn-small" onclick="run()">▶ Run</button>
+                    </div>
                 </div>
             </div>
             
-            <div class="button-container">
-                <button onclick="run()">▶ Run</button>
-            </div>
-            
-            <div class="panel output-panel">
+            <div class="panel">
                 <div class="panel-header">💻 Output</div>
                 <div class="panel-content">
                     <pre id="output">실행 결과가 여기에 표시됩니다...</pre>
@@ -262,6 +379,27 @@ user.score</textarea>
             syntaxError(recognizer, offendingSymbol, line, column, msg, err) {
                 this.errors.push(`Line ${line}:${column} - ${msg}`);
             }
+        }
+        
+        // 텍스트 삽입 함수 (커서 위치에 키워드/함수 삽입)
+        function insertText(text) {
+            const scriptArea = document.getElementById('script');
+            const start = scriptArea.selectionStart;
+            const end = scriptArea.selectionEnd;
+            const value = scriptArea.value;
+            
+            // 커서 위치에 텍스트 삽입
+            scriptArea.value = value.substring(0, start) + text + value.substring(end);
+            
+            // 함수인 경우 괄호 안에 커서 위치
+            if (text.includes('()')) {
+                scriptArea.selectionStart = scriptArea.selectionEnd = start + text.length - 1;
+            } else {
+                scriptArea.selectionStart = scriptArea.selectionEnd = start + text.length;
+            }
+            
+            // 포커스 유지
+            scriptArea.focus();
         }
         
         // 예제 로드
@@ -395,10 +533,118 @@ data`
         
         // 페이지 로드시 첫 예제 자동 실행
         window.addEventListener('load', () => {
+            // 코드 에디터 기능 초기화
+            initCodeEditor();
+            
             setTimeout(() => {
                 run();
             }, 500);
         });
+        
+        // 코드 에디터 기능 (탭 키, 자동 들여쓰기)
+        function initCodeEditor() {
+            const textareas = document.querySelectorAll('textarea');
+            
+            textareas.forEach(textarea => {
+                textarea.addEventListener('keydown', function(e) {
+                    // Tab 키 처리
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        const value = this.value;
+                        
+                        if (e.shiftKey) {
+                            // Shift+Tab: 들여쓰기 제거
+                            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                            const line = value.substring(lineStart, end);
+                            if (line.startsWith('    ')) {
+                                this.value = value.substring(0, lineStart) + 
+                                           line.substring(4) + 
+                                           value.substring(end);
+                                this.selectionStart = Math.max(lineStart, start - 4);
+                                this.selectionEnd = end - 4;
+                            }
+                        } else {
+                            // Tab: 4칸 스페이스 삽입
+                            this.value = value.substring(0, start) + '    ' + value.substring(end);
+                            this.selectionStart = this.selectionEnd = start + 4;
+                        }
+                    }
+                    
+                    // Enter 키: 자동 들여쓰기
+                    if (e.key === 'Enter') {
+                        const start = this.selectionStart;
+                        const value = this.value;
+                        const currentLine = value.substring(0, start).split('\n').pop();
+                        const indent = currentLine.match(/^\s*/)[0];
+                        const trimmedLine = currentLine.trim();
+                        
+                        // 들여쓰기가 필요한 키워드 체크
+                        const indentKeywords = ['then', 'do', 'else'];
+                        const shouldIndent = indentKeywords.some(keyword => 
+                            trimmedLine.endsWith(keyword)
+                        );
+                        
+                        if (shouldIndent || indent.length > 0) {
+                            e.preventDefault();
+                            const newIndent = shouldIndent ? indent + '    ' : indent;
+                            const insertText = '\n' + newIndent;
+                            
+                            this.value = value.substring(0, start) + 
+                                       insertText + 
+                                       value.substring(start);
+                            this.selectionStart = this.selectionEnd = start + insertText.length;
+                        }
+                    }
+                    
+                    // 자동으로 'end' 들여쓰기 감소
+                    if (e.key === 'd' && this.value.substring(this.selectionStart - 2, this.selectionStart) === 'en') {
+                        setTimeout(() => {
+                            const start = this.selectionStart;
+                            const value = this.value;
+                            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                            const line = value.substring(lineStart, start);
+                            
+                            if (line.trim() === 'end' && line.startsWith('    ')) {
+                                // 들여쓰기 제거
+                                this.value = value.substring(0, lineStart) + 
+                                           line.substring(4) + 
+                                           value.substring(start);
+                                this.selectionStart = this.selectionEnd = start - 4;
+                            }
+                        }, 0);
+                    }
+                    
+                    // Ctrl/Cmd + / : 주석 토글
+                    if (e.key === '/' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        const value = this.value;
+                        
+                        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                        const lineEnd = value.indexOf('\n', end);
+                        const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
+                        
+                        if (line.trim().startsWith('//')) {
+                            // 주석 제거
+                            const newLine = line.replace(/^(\s*)\/\/\s?/, '$1');
+                            this.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                            this.selectionStart = start;
+                            this.selectionEnd = end - (line.length - newLine.length);
+                        } else {
+                            // 주석 추가
+                            const indent = line.match(/^\s*/)[0];
+                            const newLine = indent + '// ' + line.substring(indent.length);
+                            this.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                            this.selectionStart = start + 3;
+                            this.selectionEnd = end + 3;
+                        }
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>

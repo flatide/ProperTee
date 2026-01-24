@@ -3,6 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <title>ProperTee Scratch</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        textarea {
+            width: 100%;
+            border: 1px solid #3e4451;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            
+            /* 코드 에디터 스타일 */
+            background-color: #282c34;
+            color: #abb2bf;
+            tab-size: 4;
+            -moz-tab-size: 4;
+            white-space: pre;
+            word-wrap: normal;
+            overflow-wrap: normal;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea::placeholder {
+            color: #5c6370;
+        }
+        
+        textarea::selection {
+            background-color: #3e4451;
+        }
+        
+        #properties {
+            min-height: 120px;
+        }
+        
+        #script {
+            min-height: 300px;
+            /* 라인 가이드 배경 */
+            background-image: 
+                linear-gradient(transparent 0%, transparent calc(1.6em - 1px), #21252b calc(1.6em - 1px), #21252b 1.6em);
+            background-size: 100% 1.6em;
+            background-position: 0 15px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1em;
+            font-weight: 600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 20px 0;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            color: #2d3748;
+        }
+    </style>
 </head>
 <body>
     <h1>ProperTee Scratch</h1>
@@ -39,6 +141,116 @@ user.score</textarea>
             syntaxError(recognizer, offendingSymbol, line, column, msg, err) {
                 this.errors.push(`Line ${line}:${column} - ${msg}`);
             }
+        }
+        
+        // 코드 에디터 초기화
+        window.addEventListener('load', () => {
+            initCodeEditor();
+        });
+        
+        // 코드 에디터 기능 (탭 키, 자동 들여쓰기)
+        function initCodeEditor() {
+            const textareas = document.querySelectorAll('textarea');
+            
+            textareas.forEach(textarea => {
+                textarea.addEventListener('keydown', function(e) {
+                    // Tab 키 처리
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        const value = this.value;
+                        
+                        if (e.shiftKey) {
+                            // Shift+Tab: 들여쓰기 제거
+                            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                            const line = value.substring(lineStart, end);
+                            if (line.startsWith('    ')) {
+                                this.value = value.substring(0, lineStart) + 
+                                           line.substring(4) + 
+                                           value.substring(end);
+                                this.selectionStart = Math.max(lineStart, start - 4);
+                                this.selectionEnd = end - 4;
+                            }
+                        } else {
+                            // Tab: 4칸 스페이스 삽입
+                            this.value = value.substring(0, start) + '    ' + value.substring(end);
+                            this.selectionStart = this.selectionEnd = start + 4;
+                        }
+                    }
+                    
+                    // Enter 키: 자동 들여쓰기
+                    if (e.key === 'Enter') {
+                        const start = this.selectionStart;
+                        const value = this.value;
+                        const currentLine = value.substring(0, start).split('\n').pop();
+                        const indent = currentLine.match(/^\s*/)[0];
+                        const trimmedLine = currentLine.trim();
+                        
+                        // 들여쓰기가 필요한 키워드 체크
+                        const indentKeywords = ['then', 'do', 'else'];
+                        const shouldIndent = indentKeywords.some(keyword => 
+                            trimmedLine.endsWith(keyword)
+                        );
+                        
+                        if (shouldIndent || indent.length > 0) {
+                            e.preventDefault();
+                            const newIndent = shouldIndent ? indent + '    ' : indent;
+                            const insertText = '\n' + newIndent;
+                            
+                            this.value = value.substring(0, start) + 
+                                       insertText + 
+                                       value.substring(start);
+                            this.selectionStart = this.selectionEnd = start + insertText.length;
+                        }
+                    }
+                    
+                    // 자동으로 'end' 들여쓰기 감소
+                    if (e.key === 'd' && this.value.substring(this.selectionStart - 2, this.selectionStart) === 'en') {
+                        setTimeout(() => {
+                            const start = this.selectionStart;
+                            const value = this.value;
+                            const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                            const line = value.substring(lineStart, start);
+                            
+                            if (line.trim() === 'end' && line.startsWith('    ')) {
+                                // 들여쓰기 제거
+                                this.value = value.substring(0, lineStart) + 
+                                           line.substring(4) + 
+                                           value.substring(start);
+                                this.selectionStart = this.selectionEnd = start - 4;
+                            }
+                        }, 0);
+                    }
+                    
+                    // Ctrl/Cmd + / : 주석 토글
+                    if (e.key === '/' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        const value = this.value;
+                        
+                        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+                        const lineEnd = value.indexOf('\n', end);
+                        const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
+                        
+                        if (line.trim().startsWith('//')) {
+                            // 주석 제거
+                            const newLine = line.replace(/^(\s*)\/\/\s?/, '$1');
+                            this.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                            this.selectionStart = start;
+                            this.selectionEnd = end - (line.length - newLine.length);
+                        } else {
+                            // 주석 추가
+                            const indent = line.match(/^\s*/)[0];
+                            const newLine = indent + '// ' + line.substring(indent.length);
+                            this.value = value.substring(0, lineStart) + newLine + value.substring(lineEnd === -1 ? value.length : lineEnd);
+                            this.selectionStart = start + 3;
+                            this.selectionEnd = end + 3;
+                        }
+                    }
+                });
+            });
         }
         
         // 실행 함수
