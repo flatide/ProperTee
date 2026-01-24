@@ -2,6 +2,8 @@
 
 **ProperTee**는 프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어입니다. 직관적인 문법과 강력한 동적 접근 기능을 제공하며, 설정 파일, 데이터 변환, 템플릿 처리 등 다양한 용도로 활용할 수 있습니다.
 
+🎯 **[온라인 플레이그라운드에서 바로 체험하기](https://yawnfish.github.io/ProperTee/)**
+
 ## 특징
 
 - **간결한 문법**: Pascal/Lua 스타일의 `if-then-end`, `for-do-end` 블록 구조
@@ -48,16 +50,27 @@ end
 
 ## 온라인 플레이그라운드
 
-`playground/` 폴더에는 브라우저에서 바로 ProperTee 코드를 실행해볼 수 있는 대화형 웹페이지가 포함되어 있습니다.
+🌐 **[https://yawnfish.github.io/ProperTee/](https://yawnfish.github.io/ProperTee/)**
 
-### 사용 방법
+브라우저에서 바로 ProperTee 코드를 실행해볼 수 있는 대화형 웹페이지입니다.
 
-1. `playground/scratch.html` 파일을 브라우저로 엽니다
-2. **Properties** 영역에 JSON 형식으로 초기 프로퍼티를 입력합니다
-3. **Script** 영역에 ProperTee 코드를 작성합니다
-4. **Run** 버튼을 클릭하여 실행합니다
+### 기능
 
-플레이그라운드는 ANTLR4로 생성된 JavaScript 파서(`propertee-bundle.js`)를 사용하여 실시간으로 코드를 파싱하고 실행합니다. 실행 결과, 반환값, 프로퍼티 상태, 변수 상태를 모두 확인할 수 있습니다.
+- 📋 JSON 형식으로 Properties 입력
+- 📝 ProperTee 스크립트 작성 및 실행
+- 💻 실시간 파싱 및 실행 결과 확인
+- 🎨 예제 코드 제공 (기본, 프로퍼티 접근, 제어 구조, 동적 접근)
+
+### 로컬 실행
+
+```bash
+# 로컬에서 테스트하려면
+cd web
+python3 -m http.server 8000
+# 브라우저에서 http://localhost:8000 접속
+```
+
+플레이그라운드는 ANTLR4로 생성된 JavaScript 파서를 사용하여 브라우저에서 직접 코드를 파싱하고 실행합니다.
 
 ## 구현
 
