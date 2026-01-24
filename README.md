@@ -46,6 +46,23 @@ end
 - [언어 가이드](guide.md)
 - [예제 모음](examples/)
 
+## 온라인 플레이그라운드
+
+`playground/` 폴더에는 브라우저에서 바로 ProperTee 코드를 실행해볼 수 있는 대화형 웹페이지가 포함되어 있습니다.
+
+### 사용 방법
+
+1. `playground/scratch.html` 파일을 브라우저로 엽니다
+2. **Properties** 영역에 JSON 형식으로 초기 프로퍼티를 입력합니다
+3. **Script** 영역에 ProperTee 코드를 작성합니다
+4. **Run** 버튼을 클릭하여 실행합니다
+
+플레이그라운드는 ANTLR4로 생성된 JavaScript 파서(`propertee-bundle.js`)를 사용하여 실시간으로 코드를 파싱하고 실행합니다. 실행 결과, 반환값, 프로퍼티 상태, 변수 상태를 모두 확인할 수 있습니다.
+
+## 구현
+
+ProperTee는 [ANTLR4](https://www.antlr.org/)를 사용하여 구현되었습니다. 문법 파일(`grammar/ProperTee.g4`)에서 렉서와 파서를 생성하고, 커스텀 비지터 패턴으로 인터프리터를 구현합니다.
+
 ## 라이선스
 
 BSD License

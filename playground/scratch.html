@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ProperTee Scratch</title>
+</head>
+<body>
+    <h1>ProperTee Scratch</h1>
+    
+    <h3>Properties (JSON):</h3>
+    <textarea id="properties" rows="5" cols="50">{"user": {"name": "Test", "score": 100}}</textarea>
+    
+    <h3>Script:</h3>
+    <textarea id="script" rows="10" cols="50">PRINT("Hello, ProperTee!")
+PRINT("User:", user.name)
+PRINT("Score:", user.score)
+
+user.score = user.score + 10
+PRINT("New Score:", user.score)
+
+user.score</textarea>
+    
+    <br><br>
+    <button onclick="run()">Run</button>
+    
+    <h3>Output:</h3>
+    <pre id="output"></pre>
+    
+    <!-- ProperTee 번들 로드 -->
+    <script src="./propertee-bundle.js"></script>
+    
+    <script>
+        // 에러 리스너
+        class ErrorListener extends antlr4.error.ErrorListener {
+            constructor() {
+                super();
+                this.errors = [];
+            }
+            syntaxError(recognizer, offendingSymbol, line, column, msg, err) {
+                this.errors.push(`Line ${line}:${column} - ${msg}`);
+            }
+        }
+        
+        // 실행 함수
+        function run() {
+            const output = document.getElementById('output');
+            const propertiesText = document.getElementById('properties').value;
+            const scriptText = document.getElementById('script').value;
+            
+            try {
+                // 1. Properties 파싱
+                const properties = JSON.parse(propertiesText);
+                
+                // 2. Lexer & Parser
+                const chars = new antlr4.InputStream(scriptText);
+                const lexer = new ProperTeeLexer(chars);
+                const lexerErrors = new ErrorListener();
+                lexer.removeErrorListeners();
+                lexer.addErrorListener(lexerErrors);
+                
+                const tokens = new antlr4.CommonTokenStream(lexer);
+                const parser = new ProperTeeParser(tokens);
+                const parserErrors = new ErrorListener();
+                parser.removeErrorListeners();
+                parser.addErrorListener(parserErrors);
+                
+                const tree = parser.root();
+                
+                // 에러 체크
+                if (lexerErrors.errors.length > 0) {
+                    output.textContent = 'Lexer Error:\n' + lexerErrors.errors.join('\n');
+                    return;
+                }
+                if (parserErrors.errors.length > 0) {
+                    output.textContent = 'Parser Error:\n' + parserErrors.errors.join('\n');
+                    return;
+                }
+                
+                // 3. 출력 캡처
+                const outputLines = [];
+                const ioStreams = {
+                    stdout: (...args) => outputLines.push(args.join(' ')),
+                    stderr: (...args) => outputLines.push('[ERROR] ' + args.join(' '))
+                };
+                
+                // 4. 실행
+                const visitor = new ProperTeeCustomVisitor(properties, {}, ioStreams);
+                const result = visitor.visit(tree);
+                
+                // 5. 결과 표시
+                let resultText = outputLines.join('\n');
+                resultText += '\n\n--- Return Value ---\n' + JSON.stringify(result, null, 2);
+                resultText += '\n\n--- Properties ---\n' + JSON.stringify(properties, null, 2);
+                resultText += '\n\n--- Variables ---\n' + JSON.stringify(visitor.variables, null, 2);
+                
+                output.textContent = resultText;
+                
+            } catch (e) {
+                output.textContent = 'Error: ' + e.message + '\n\n' + e.stack;
+            }
+        }
+    </script>
+</body>
+</html>
