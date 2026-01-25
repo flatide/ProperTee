@@ -210,6 +210,7 @@ atom    = function_call
         | NUMBER
         | STRING
         | boolean
+        | "null"
         | object_literal
         | array_literal
         | "(" expression ")" ;
@@ -297,11 +298,11 @@ escape_seq  = '\' <any character> ;
 다음 키워드는 식별자로 사용할 수 없습니다:
 
 ```
-if    then    else    end
-while for     in      do
-break continue
-not   and     or
-true  false   null
+if       then     else      end
+loop     in       do
+break    continue infinite
+not      and      or
+true     false    null
 ```
 
 ### 9.2 주석

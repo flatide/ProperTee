@@ -87,6 +87,7 @@
                       | <number>
                       | <string>
                       | <boolean>
+                      | "null"
                       | <object-literal>
                       | <array-literal>
                       | "(" <expression> ")"

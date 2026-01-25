@@ -80,7 +80,7 @@ if api_response.status == 200 then
     videos = []
     others = []
     
-    for item in items do
+    loop item in items do
         if item.type == "article" then
             push(articles, item)
         else
@@ -117,10 +117,10 @@ field_map = {
 // 변환 수행
 transformed_data = []
 
-for record in raw_data do
+loop record in raw_data do
     new_record = {}
     
-    for old_key, new_key in field_map do
+    loop old_key, new_key in field_map do
         new_record.$new_key = record.$old_key
     end
     
@@ -150,7 +150,7 @@ validation_rules = {
 
 errors = []
 
-for field, rules in validation_rules do
+loop field, rules in validation_rules do
     value = form_data.$field
     
     // 필수 필드 검사
@@ -204,12 +204,12 @@ file_tree = {
 // 모든 파일 크기 합계 (1단계 깊이만)
 total_size = 0
 
-for item in file_tree.children do
+loop item in file_tree.children do
     if item.type == "file" then
         total_size = total_size + item.size
     else
         // 하위 폴더 탐색
-        for child in item.children do
+        loop child in item.children do
             if child.type == "file" then
                 total_size = total_size + child.size
             end
@@ -309,7 +309,7 @@ query_params = {
 // SELECT 절 생성
 select_clause = "SELECT "
 field_idx = 0
-for field in query_params.fields do
+loop field in query_params.fields do
     if field_idx > 0 then
         select_clause = select_clause + ", "
     end
@@ -323,7 +323,7 @@ from_clause = " FROM " + query_params.table
 // WHERE 절 생성
 where_clause = " WHERE "
 condition_idx = 0
-for col, val in query_params.where do
+loop col, val in query_params.where do
     if condition_idx > 0 then
         where_clause = where_clause + " AND "
     end
@@ -369,7 +369,7 @@ requested_state = "shipped"
 state_config = order_states.$current_state
 can_transition = false
 
-for allowed in state_config.next do
+loop allowed in state_config.next do
     if allowed == requested_state then
         can_transition = true
         break
@@ -396,7 +396,7 @@ base_data = {
 }
 
 i = 1
-while i <= 5 do
+loop i <= 5 do
     user = {
         id: i,
         username: "user_" + i,

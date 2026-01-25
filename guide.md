@@ -331,12 +331,12 @@ else
 end
 ```
 
-### 5.2 While 루프
+### 5.2 Loop: 조건 반복 (while-style)
 
 ```propertee
-// 기본 while
+// 기본 조건 루프
 i = 0
-while i < 5 do
+loop i < 5 do
     print(i)
     i = i + 1
 end
@@ -344,33 +344,42 @@ end
 // 조건부 탈출
 sum = 0
 n = 1
-while true do
+loop true do
     sum = sum + n
     n = n + 1
     if sum > 100 then
         break
     end
 end
+
+// 명시적 무한 루프
+counter = 0
+loop true infinite do
+    counter = counter + 1
+    if counter > 10 then
+        break
+    end
+end
 ```
 
-### 5.3 For 루프
+### 5.3 Loop: 값 반복 (for-each style)
 
 ```propertee
 // 배열 순회 (값만)
 colors = ["red", "green", "blue"]
-for color in colors do
+loop color in colors do
     print(color)
 end
 
 // 객체 순회 (키, 값)
 user = {name: "Alice", age: 30, city: "Seoul"}
-for key, value in user do
+loop key, value in user do
     print(key + ": " + value)
 end
 
 // continue 사용
 numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-for n in numbers do
+loop n in numbers do
     if n / 2 * 2 == n then  // 짝수면 건너뛰기
         continue
     end
@@ -382,7 +391,7 @@ end
 
 ```propertee
 // break - 루프 탈출
-for item in items do
+loop item in items do
     if item == target then
         found = true
         break
@@ -390,7 +399,7 @@ for item in items do
 end
 
 // continue - 다음 반복으로
-for item in items do
+loop item in items do
     if not isValid(item) then
         continue
     end
@@ -726,7 +735,7 @@ raw_users = [
 
 // 변환된 데이터 구성
 transformed = []
-for user in raw_users do
+loop user in raw_users do
     new_user = {
         id: user.id,
         full_name: user.first_name + " " + user.last_name
@@ -742,7 +751,7 @@ end
 required_fields = ["name", "email", "age"]
 data = {name: "Alice", email: "alice@example.com"}
 
-for field in required_fields do
+loop field in required_fields do
     if data.$field == null then
         errors = push(errors, "Missing field: " + field)
     end
@@ -764,7 +773,7 @@ response = {
 }
 
 // 관리자 찾기
-for user in response.data.users do
+loop user in response.data.users do
     if user.permissions.admin == true then
         admin_name = user.name
         break
@@ -784,7 +793,7 @@ template_vars = {
 
 // 동적 접근으로 바인딩
 placeholders = ["title", "username", "items_count"]
-for key in placeholders do
+loop key in placeholders do
     value = template_vars.$key
     replace_placeholder(key, value)
 end

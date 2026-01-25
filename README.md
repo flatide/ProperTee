@@ -6,10 +6,11 @@
 
 ## 특징
 
-- **간결한 문법**: Pascal/Lua 스타일의 `if-then-end`, `for-do-end` 블록 구조
+- **간결한 문법**: Pascal/Lua 스타일의 `if-then-end`, `loop-do-end` 블록 구조
 - **동적 프로퍼티 접근**: `.$key`, `.$(expr)` 문법으로 런타임 키 평가 지원
 - **일급 자료구조**: 객체 리터럴 `{}`, 배열 리터럴 `[]` 내장
 - **표현식 중심 설계**: 모든 구문이 표현식으로 평가 가능
+- **통합 반복문**: `loop` 키워드로 조건, 반복, 무한 루프 통합
 
 ## 빠른 예제
 
@@ -37,13 +38,15 @@ else
 end
 
 // 반복문
-for port in config.ports do
+loop port in config.ports do
     listen(port)
 end
 ```
 
 ## 문서
 
+- [언어 명세 (공식)](grammar/LANGUAGE_SPEC.md)
+- [문법 파일 (ANTLR4)](grammar/ProperTee.g4)
 - [문법 명세 (EBNF)](grammar.md)
 - [언어 가이드](guide.md)
 - [예제 모음](examples/)

@@ -189,7 +189,7 @@ api_response = {
 
 // 특정 타입의 항목 찾기
 target_type = "image"
-for item in api_response.data.results do
+loop item in api_response.data.results do
     if item.type == target_type then
         image_url = item.url
         break

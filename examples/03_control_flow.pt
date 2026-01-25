@@ -62,12 +62,12 @@ end
 
 
 // --------------------------
-// 2. While 루프
+// 2. Loop: 조건 반복 (while-style)
 // --------------------------
 
-// 기본 while 루프
+// 기본 조건 루프
 counter = 0
-while counter < 5 do
+loop counter < 5 do
     print("Counter: " + counter)
     counter = counter + 1
 end
@@ -76,7 +76,7 @@ end
 // 합계 계산
 sum = 0
 n = 1
-while n <= 100 do
+loop n <= 100 do
     sum = sum + n
     n = n + 1
 end
@@ -87,7 +87,7 @@ end
 attempts = 0
 success = false
 
-while not success do
+loop not success do
     attempts = attempts + 1
     result = tryConnect()
     
@@ -102,13 +102,13 @@ end
 
 
 // --------------------------
-// 3. For 루프 (단일 변수)
+// 3. Loop: 값 반복 (for-each style)
 // --------------------------
 
 // 배열 순회
 fruits = ["apple", "banana", "cherry"]
 
-for fruit in fruits do
+loop fruit in fruits do
     print("Fruit: " + fruit)
 end
 
@@ -121,22 +121,22 @@ users = [
 ]
 
 total_score = 0
-for user in users do
+loop user in users do
     total_score = total_score + user.score
     print(user.name + ": " + user.score)
 end
 
 
-// 중첩 for 루프
+// 중첩 루프
 matrix = [
     [1, 2, 3],
     [4, 5, 6],
     [7, 8, 9]
 ]
 
-for row in matrix do
+loop row in matrix do
     row_sum = 0
-    for cell in row do
+    loop cell in row do
         row_sum = row_sum + cell
     end
     print("Row sum: " + row_sum)
@@ -144,7 +144,7 @@ end
 
 
 // --------------------------
-// 4. For 루프 (키-값 쌍)
+// 4. Loop: 키-값 반복
 // --------------------------
 
 // 객체의 키-값 순회
@@ -155,7 +155,7 @@ person = {
     job: "Developer"
 }
 
-for key, value in person do
+loop key, value in person do
     print(key + " = " + value)
 end
 
@@ -167,7 +167,7 @@ config = {
     maxRetries: 3
 }
 
-for setting, val in config do
+loop setting, val in config do
     print("Config: " + setting + " -> " + val)
 end
 
@@ -182,7 +182,7 @@ target = "blue"
 found_index = -1
 idx = 0
 
-for item in items do
+loop item in items do
     if item == target then
         found_index = idx
         break
@@ -195,7 +195,7 @@ end
 numbers = [2, 4, 6, 7, 8, 10]
 has_odd = false
 
-for num in numbers do
+loop num in numbers do
     if num / 2 * 2 != num then
         has_odd = true
         break
@@ -211,7 +211,7 @@ end
 data = [1, -2, 3, -4, 5, -6]
 positive_sum = 0
 
-for val in data do
+loop val in data do
     if val < 0 then
         continue
     end
@@ -229,7 +229,7 @@ records = [
 ]
 
 valid_total = 0
-for record in records do
+loop record in records do
     if not record.valid then
         continue
     end
@@ -253,7 +253,7 @@ all_users = [
 
 // 활성 사용자 중 점수 70 이상만 수집
 qualified = []
-for user in all_users do
+loop user in all_users do
     // 비활성 사용자 건너뛰기
     if not user.active then
         continue
@@ -278,7 +278,7 @@ end_idx = start_idx + page_size
 page_items = []
 
 idx = 0
-for item in all_items do
+loop item in all_items do
     if idx < start_idx then
         idx = idx + 1
         continue
@@ -305,7 +305,7 @@ products = [
 search_term = "Mouse"
 found_product = null
 
-for product in products do
+loop product in products do
     if product.name == search_term then
         found_product = product
         break
