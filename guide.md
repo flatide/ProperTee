@@ -27,7 +27,7 @@ ProperTee는 프로퍼티 기반 데이터를 처리하기 위해 설계된 스�
 ```propertee
 // Hello, ProperTee!
 message = "Hello, World!"
-print(message)
+PRINT(message)
 ```
 
 ### 언어 철학
