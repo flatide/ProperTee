@@ -26,8 +26,7 @@ program     = { statement } EOF ;
 
 statement   = assignment
             | if_statement
-            | while_loop
-            | for_loop
+            | loop_statement
             | flow_control
             | expression ;
 ```
@@ -79,30 +78,42 @@ end
 ### 3.2 반복문
 
 ```ebnf
-while_loop   = "while" expression "do" block "end" ;
+loop_statement = "loop" ( loop_condition | loop_iteration ) "do" block "end" ;
 
-for_loop     = "for" ID [ "," ID ] "in" expression "do" block "end" ;
+loop_condition  = expression [ "infinite" ] ;
+loop_iteration  = ID [ "," ID ] "in" expression ;
 ```
 
-`for` 문은 단일 변수 또는 키-값 쌍으로 순회할 수 있습니다.
+`loop` 키워드는 조건 반복과 컬렉션 순회를 모두 지원합니다:
+- **조건 반복**: `loop condition do ... end` (while-style)
+- **값 반복**: `loop value in collection do ... end` (for-each style)
+- **키-값 반복**: `loop key, value in collection do ... end`
+- **무한 루프**: `loop condition infinite do ... end`
 
 **예시:**
 ```propertee
-// while 루프
+// 조건 반복
 i = 0
-while i < 10 do
+loop i < 10 do
     print(i)
     i = i + 1
 end
 
-// for 루프 (값만)
-for item in items do
+// 값 반복
+loop item in items do
     process(item)
 end
 
-// for 루프 (키, 값)
-for key, value in object do
+// 키-값 반복
+loop key, value in object do
     print(key, value)
+end
+
+// 무한 루프
+loop true infinite do
+    if shouldExit() then
+        break
+    end
 end
 ```
 
@@ -127,7 +138,7 @@ comparison_expr = additive_expr [ comparison_op additive_expr ] ;
 
 additive_expr   = multiplicative_expr { ( "+" | "-" ) multiplicative_expr } ;
 
-multiplicative_expr = unary_expr { ( "*" | "/" ) unary_expr } ;
+multiplicative_expr = unary_expr { ( "*" | "/" | "%" ) unary_expr } ;
 
 unary_expr      = [ "-" | "not" ] postfix_expr ;
 
@@ -144,8 +155,9 @@ comparison_op   = ">" | "<" | "==" | ">=" | "<=" | "!=" ;
 | 2 | `and` | 좌 → 우 |
 | 3 | `>` `<` `==` `>=` `<=` `!=` | - |
 | 4 | `+` `-` | 좌 → 우 |
-| 5 | `*` `/` | 좌 → 우 |
-| 6 (최고) | `-` (단항) `not` | 우 → 좌 |
+| 5 | `*` `/` `%` | 좌 → 우 |
+| 6 | `-` (단항) `not` | 우 → 좌 |
+| 7 (최고) | `.` (프로퍼티 접근) | 좌 → 우 |
 
 ---
 
@@ -327,8 +339,7 @@ program         = { statement } EOF ;
 
 statement       = assignment
                 | if_statement
-                | while_loop
-                | for_loop
+                | loop_statement
                 | flow_control
                 | expression ;
 
@@ -336,8 +347,9 @@ assignment      = lvalue "=" expression ;
 lvalue          = ID | lvalue "." access ;
 
 if_statement    = "if" expression "then" block [ "else" block ] "end" ;
-while_loop      = "while" expression "do" block "end" ;
-for_loop        = "for" ID [ "," ID ] "in" expression "do" block "end" ;
+loop_statement  = "loop" ( loop_condition | loop_iteration ) "do" block "end" ;
+loop_condition  = expression [ "infinite" ] ;
+loop_iteration  = ID [ "," ID ] "in" expression ;
 flow_control    = "break" | "continue" ;
 
 block           = { statement } ;
@@ -347,7 +359,7 @@ or_expr         = and_expr { "or" and_expr } ;
 and_expr        = comparison_expr { "and" comparison_expr } ;
 comparison_expr = additive_expr [ comparison_op additive_expr ] ;
 additive_expr   = multiplicative_expr { ( "+" | "-" ) multiplicative_expr } ;
-multiplicative_expr = unary_expr { ( "*" | "/" ) unary_expr } ;
+multiplicative_expr = unary_expr { ( "*" | "/" | "%" ) unary_expr } ;
 unary_expr      = [ "-" | "not" ] postfix_expr ;
 postfix_expr    = atom { "." access } ;
 

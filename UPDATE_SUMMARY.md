@@ -31,6 +31,11 @@
 #### grammar.md
 - atom에 `"null"` 추가
 - 키워드: `loop`, `infinite` 추가, `while`/`for` 제거
+- 반복문 섹션 완전 재작성:
+  - `while_loop`, `for_loop` → `loop_statement`
+  - 조건 반복, 값 반복, 키-값 반복, 무한 루프 모두 포함
+- 모듈로 연산자 `%` 추가 (곱셈 우선순위)
+- 연산자 우선순위 표 업데이트 (5단계: `*` `/` `%`)
 
 #### bnf.md
 - atom에 `"null"` 추가
@@ -54,6 +59,8 @@
 #### docs/index.html
 - JavaScript 예제 객체의 `control` 예제 업데이트
 - `for user in users do` → `loop user in users do`
+- 키워드 리스트 업데이트: `while`, `for` → `loop`, `infinite`
+- 내장 함수 목록 최신화 (REGEX, RUN 포함)
 
 ### 6. 가이드 업데이트
 
@@ -125,6 +132,15 @@ end
 - **비교**: `==`, `!=`, `<`, `>`, `<=`, `>=`
 - **논리**: `and`, `or`, `not`
 - **프로퍼티**: `.`, `.$`, `.$()`
+
+### 연산자 우선순위 (낮음 → 높음)
+1. `or`
+2. `and`
+3. 비교 연산자
+4. `+` `-`
+5. `*` `/` `%`
+6. 단항 `-`, `not`
+7. `.` (프로퍼티 접근)
 
 ### Atom (원자 표현식)
 - Number, String, Boolean, **Null**

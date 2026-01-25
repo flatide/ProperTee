@@ -3940,12 +3940,30 @@ class ProperTeeCustomVisitor extends ProperTeeVisitor {
     // 단항 마이너스 (-expression)
     visitUnaryMinusExpr(ctx) {
         const value = this.visit(ctx.expression());
+        
+        // 타입 체크: 숫자만 허용
+        if (typeof value !== 'number') {
+            throw new Error(
+                `Runtime Error: Unary minus requires numeric operand. ` +
+                `Got -${typeof value}`
+            );
+        }
+        
         return -value;
     }
 
     // 논리 NOT (not expression)
     visitNotExpr(ctx) {
         const value = this.visit(ctx.expression());
+        
+        // 타입 체크: boolean만 허용
+        if (typeof value !== 'boolean') {
+            throw new Error(
+                `Runtime Error: Logical NOT requires boolean operand. ` +
+                `Got not ${typeof value}`
+            );
+        }
+        
         return !value;
     }
 
@@ -3953,6 +3971,14 @@ class ProperTeeCustomVisitor extends ProperTeeVisitor {
         const left = this.visit(ctx.expression(0));
         const right = this.visit(ctx.expression(1));
         const op = ctx.children[1].getText();
+        
+        // 타입 체크: 모두 숫자여야 함
+        if (typeof left !== 'number' || typeof right !== 'number') {
+            throw new Error(
+                `Runtime Error: Arithmetic operator '${op}' requires numeric operands. ` +
+                `Got ${typeof left} ${op} ${typeof right}`
+            );
+        }
         
         if (op === '*') return left * right;
         
@@ -3967,14 +3993,50 @@ class ProperTeeCustomVisitor extends ProperTeeVisitor {
     visitAdditiveExpr(ctx) {
         const left = this.visit(ctx.expression(0));
         const right = this.visit(ctx.expression(1));
-        if (ctx.children[1].getText() === '+') return left + right;
-        return left - right;
+        const op = ctx.children[1].getText();
+        
+        if (op === '+') {
+            // Number + Number
+            if (typeof left === 'number' && typeof right === 'number') {
+                return left + right;
+            }
+            // String + String
+            if (typeof left === 'string' && typeof right === 'string') {
+                return left + right;
+            }
+            // 그 외는 에러
+            throw new Error(
+                `Runtime Error: Addition requires both operands to be numbers or both to be strings. ` +
+                `Got ${typeof left} + ${typeof right}`
+            );
+        }
+        
+        if (op === '-') {
+            // Number - Number only
+            if (typeof left !== 'number' || typeof right !== 'number') {
+                throw new Error(
+                    `Runtime Error: Subtraction requires numeric operands. ` +
+                    `Got ${typeof left} - ${typeof right}`
+                );
+            }
+            return left - right;
+        }
     }
 
     visitComparisonExpr(ctx) {
         const left = this.visit(ctx.expression(0));
         const right = this.visit(ctx.expression(1));
-        const op = ctx.op.getText();  // .text 대신 .getText() 사용
+        const op = ctx.op.getText();
+        
+        // 숫자 비교 연산자는 숫자만 허용
+        if (op === '>' || op === '<' || op === '>=' || op === '<=') {
+            if (typeof left !== 'number' || typeof right !== 'number') {
+                throw new Error(
+                    `Runtime Error: Comparison operator '${op}' requires numeric operands. ` +
+                    `Got ${typeof left} ${op} ${typeof right}`
+                );
+            }
+        }
 
         switch (op) {
             case '>': return left > right;
@@ -3991,6 +4053,15 @@ class ProperTeeCustomVisitor extends ProperTeeVisitor {
     visitAndExpr(ctx) {
         const left = this.visit(ctx.expression(0));
         const right = this.visit(ctx.expression(1));
+        
+        // 타입 체크: boolean만 허용
+        if (typeof left !== 'boolean' || typeof right !== 'boolean') {
+            throw new Error(
+                `Runtime Error: Logical AND requires boolean operands. ` +
+                `Got ${typeof left} and ${typeof right}`
+            );
+        }
+        
         return left && right;
     }
 
@@ -3998,6 +4069,15 @@ class ProperTeeCustomVisitor extends ProperTeeVisitor {
     visitOrExpr(ctx) {
         const left = this.visit(ctx.expression(0));
         const right = this.visit(ctx.expression(1));
+        
+        // 타입 체크: boolean만 허용
+        if (typeof left !== 'boolean' || typeof right !== 'boolean') {
+            throw new Error(
+                `Runtime Error: Logical OR requires boolean operands. ` +
+                `Got ${typeof left} or ${typeof right}`
+            );
+        }
+        
         return left || right;
     }
 
