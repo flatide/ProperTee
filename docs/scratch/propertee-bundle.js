@@ -3306,7 +3306,7 @@ class ProperTeeCustomVisitor extends ProperTeeVisitor {
         
         // 기본 내장 함수 정의
         const defaultFunctions = {
-            'PRINT': (...args) => this.stdout(...args),
+            'PRINT': (...args) => { this.stdout(...args); return null; },
             'SUM': (...args) => args.reduce((a, b) => a + b, 0),
             'MAX': (...args) => Math.max(...args),
             'MIN': (...args) => Math.min(...args),

@@ -85,11 +85,17 @@ user.score</textarea>
                     stderr: (...args) => outputLines.push('[ERROR] ' + args.join(' '))
                 };
                 
-                // 4. 실행
-                const visitor = new ProperTeeCustomVisitor(properties, {}, ioStreams);
+                
+                const options = {
+                    maxIterations: 1000,
+                    iterationLimitBehavior: 'warn'
+                };
+                
+                // 5. Visitor 생성 및 실행
+                const visitor = new ProperTeeCustomVisitor(properties, {}, ioStreams, options);
                 const result = visitor.visit(tree);
                 
-                // 5. 결과 표시
+                // 6. 결과 표시
                 let resultText = outputLines.join('\n');
                 resultText += '\n\n--- Return Value ---\n' + JSON.stringify(result, null, 2);
                 resultText += '\n\n--- Properties ---\n' + JSON.stringify(properties, null, 2);
