@@ -202,10 +202,12 @@ If variable not found in either → Runtime Error
 
 **Syntax:**
 - `object.property` - Static property name
-- `object.0` - Numeric key (array index)
+- `object.1` - Numeric key (array index, **1-based**)
 - `object."key-name"` - String key with special characters
 - `object.$varName` - Dynamic property using variable (shorthand)
 - `object.$(expression)` - Dynamic property using expression
+
+⚠️ **Array Indexing:** ProperTee uses **1-based indexing**. Arrays start at index `1`, not `0`.
 
 ⚠️ **Error cases:**
 - `null.property` → Runtime Error: "Cannot access property of null"
@@ -218,7 +220,9 @@ PRINT(obj.name)        // ✅ "Alice"
 PRINT(obj.city)        // ❌ Runtime Error: Property 'city' does not exist
 
 arr = [1, 2, 3]
-PRINT(arr.0)           // ✅ 1
+PRINT(arr.1)           // ✅ 1 (첫 번째 요소)
+PRINT(arr.2)           // ✅ 2 (두 번째 요소)
+PRINT(arr.3)           // ✅ 3 (세 번째 요소)
 PRINT(arr.10)          // ❌ Runtime Error: Property '10' does not exist
 
 obj2 = null
@@ -362,18 +366,18 @@ end
 
 - First variable = **key/index**
 - Second variable = **value**
-- Arrays: key is numeric index (0, 1, 2, ...)
+- Arrays: key is numeric index (1-based: 1, 2, 3, ...)
 - Objects: key is string property name
 
 **Examples:**
 ```javascript
-// Array with index
+// Array with index (1-based)
 items = ["apple", "banana", "cherry"]
 loop idx, item in items do
     PRINT(idx, ":", item)
-    // 0 : apple
-    // 1 : banana
-    // 2 : cherry
+    // 1 : apple
+    // 2 : banana
+    // 3 : cherry
 end
 
 // Object with keys
@@ -1096,20 +1100,20 @@ PRINT(combined)             // "abc"
 #### `SUBSTRING(string, start, length?)`
 - **Returns**: String (extracted substring)
 - Extracts substring from string
-- `start`: starting index (0-based)
+- `start`: starting index (**1-based**)
 - `length`: number of characters (optional, defaults to rest of string)
 
 **Examples:**
 ```javascript
 text = "ProperTee"
-sub1 = SUBSTRING(text, 0, 6)
+sub1 = SUBSTRING(text, 1, 6)
 PRINT(sub1)                 // "Proper"
 
-sub2 = SUBSTRING(text, 6)
+sub2 = SUBSTRING(text, 7)
 PRINT(sub2)                 // "Tee"
 
 // Extract first character
-first = SUBSTRING(text, 0, 1)
+first = SUBSTRING(text, 1, 1)
 PRINT(first)                // "P"
 ```
 
@@ -1612,9 +1616,9 @@ loop line in lines do
     end
     
     columns = SPLIT(line, ",")
-    name = columns.0
-    age = columns.1
-    city = columns.2
+    name = columns.1
+    age = columns.2
+    city = columns.3
     
     PRINT(name, "is", age, "years old and lives in", city)
 end
@@ -1626,8 +1630,8 @@ end
 ```javascript
 // Capitalize first letter
 name = "alice"
-firstChar = SUBSTRING(name, 0, 1)
-restChars = SUBSTRING(name, 1)
+firstChar = SUBSTRING(name, 1, 1)
+restChars = SUBSTRING(name, 2)
 formatted = UPPERCASE(firstChar) + LOWERCASE(restChars)
 PRINT(formatted)  // "Alice"
 
@@ -1635,7 +1639,7 @@ PRINT(formatted)  // "Alice"
 words = SPLIT("ProperTee Execution Engine", " ")
 acronym = ""
 loop word in words do
-    firstLetter = SUBSTRING(word, 0, 1)
+    firstLetter = SUBSTRING(word, 1, 1)
     acronym = acronym + UPPERCASE(firstLetter)
 end
 PRINT(acronym)  // "PEE"

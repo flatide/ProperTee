@@ -21,12 +21,13 @@ user_email = user.email       // "alice@example.com"
 // --------------------------
 // 2. 배열 인덱스 접근 (Array Access)
 // --------------------------
+// 주의: ProperTee는 1-based 인덱싱을 사용합니다
 
 colors = ["red", "green", "blue", "yellow"]
 
-first = colors.0              // "red"
-second = colors.1             // "green"
-third = colors.2              // "blue"
+first = colors.1              // "red" (첫 번째 요소)
+second = colors.2             // "green" (두 번째 요소)
+third = colors.3              // "blue" (세 번째 요소)
 
 
 // --------------------------
@@ -86,7 +87,7 @@ found_user = users.$("user_" + id)    // "Bob"
 items = ["zero", "one", "two", "three", "four"]
 base = 1
 offset = 2
-item = items.$(base + offset)         // "three" (items.3)
+item = items.$(base + offset)         // "three" (items.3, 1-based)
 
 
 // 조건 기반 키 구성
@@ -130,15 +131,15 @@ app = {
 // 정적 체인
 db_host = app.config.database.host        // "localhost"
 cache_enabled = app.config.cache.enabled  // true
-first_user = app.users.0.name             // "Alice"
-first_role = app.users.0.roles.0          // "admin"
+first_user = app.users.1.name             // "Alice"
+first_role = app.users.1.roles.1          // "admin"
 
 // 동적 체인 혼합
 section = "database"
 db_port = app.config.$section.port        // 5432
 
-user_idx = 1
-role_idx = 0
+user_idx = 2
+role_idx = 1
 role = app.users.$user_idx.roles.$role_idx  // "viewer"
 
 

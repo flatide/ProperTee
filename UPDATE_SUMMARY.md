@@ -1,6 +1,6 @@
 # ProperTee v2.0 업데이트 완료
 
-**최종 업데이트**: 사용자 정의 함수 추가 (2026-01-25)
+**최종 업데이트**: 1-based 인덱싱으로 변경 (2026-01-25)
 
 ## ✅ 완료된 모든 작업
 
@@ -47,6 +47,7 @@
 - 모듈로 연산자 `%` 추가
 - 주석 섹션 추가
 - 전체 EBNF에 function_def, parameter_list 추가 ✅
+- **1-based 인덱싱 명시** ✅
 
 #### bnf.md ✅
 - atom에 `"null"` 추가
@@ -62,20 +63,32 @@
 - JavaScript 예제 업데이트 (loop 문법)
 - 키워드 리스트: **`function`, `return`** 추가 ✅
 - 내장 함수 목록 최신화
+- **배열 인덱스를 1-based로 변경** ✅
 
-### 4. 예제 파일 업데이트 (loop 문법)
+#### guide.md ✅
+- 5.2절: "Loop: 조건 반복"
+- 5.3절: "Loop: 값 반복"
+- 7절: "주석" 섹션 추가
+- 실전 패턴 (8절로 변경)
+- **배열 인덱스 예제를 1-based로 변경** ✅
+
+#### LANGUAGE_SPEC.md ✅
+- 사용자 정의 함수 명세 추가
+- return 문 명세 추가
+- **배열 인덱싱을 1-based로 명시** ✅
+- **프로퍼티 접근 예제를 1-based로 변경** ✅
+
+### 4. 예제 파일 업데이트
+
+#### examples/02_property_access.pt ✅
+- API 응답 처리 예제 업데이트
+- **배열 인덱스를 1-based로 변경** ✅
+- **주석 추가: 1-based 인덱싱 명시** ✅
 
 #### examples/03_control_flow.pt ✅
 - `while` → `loop` (조건 반복)
 - `for` → `loop` (값/키-값 반복)
 - 15개 이상의 반복문 업데이트
-
-#### examples/02_property_access.pt ✅
-- API 응답 처리 예제 업데이트
-
-#### examples/04_real_world.pt ✅
-- 10개 이상의 실전 예제 업데이트
-- 모든 `for`/`while` → `loop` 변환
 
 ### 5. 가이드 업데이트 (guide.md)
 - 5.2절: "Loop: 조건 반복"
@@ -111,6 +124,7 @@
 - **infinite 키워드**: 무한 루프 (loop 전용) ✅
 - **사용자 정의 함수**: `function`, `return` 키워드 ✅
 - **재귀 함수 지원**: 함수 내 자기 호출 가능 ✅
+- **1-based 인덱싱**: 배열 첫 번째 요소는 `.1` ✅
 
 ---
 

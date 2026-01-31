@@ -423,19 +423,19 @@ user.score`
 PRINT("Debug mode:", config.debug)
 PRINT("API Key:", config."api-key")
 
-// 배열 접근
-PRINT("First port:", config.ports.0)
-PRINT("Second port:", config.ports.1)
+// 배열 접근 (1-based 인덱싱)
+PRINT("First port:", config.ports.1)
+PRINT("Second port:", config.ports.2)
 
 config.ports`
             },
             control: {
                 properties: '{"users": [{"name": "Alice", "age": 25}, {"name": "Bob", "age": 30}]}',
                 script: `// 조건문
-if users.0.age > 20 then
-    PRINT(users.0.name, "is adult")
+if users.1.age > 20 then
+    PRINT(users.1.name, "is adult")
 else
-    PRINT(users.0.name, "is minor")
+    PRINT(users.1.name, "is minor")
 end
 
 // 반복문

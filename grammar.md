@@ -49,7 +49,7 @@ lvalue      = ID
 ```propertee
 x = 10
 obj.name = "test"
-data.items.0 = "first"
+data.items.1 = "first"
 config.$key = value
 ```
 
@@ -201,11 +201,13 @@ ProperTee의 핵심 기능인 동적 프로퍼티 접근입니다.
 
 ```ebnf
 access  = ID                        (* 정적 접근: .name *)
-        | NUMBER                    (* 배열 인덱스: .0, .1 *)
+        | NUMBER                    (* 배열 인덱스: .1, .2 (1-based) *)
         | STRING                    (* 문자열 키: ."key-name" *)
         | "$" ID                    (* 변수 평가: .$key *)
         | "$" "(" expression ")"    (* 표현식 평가: .$(expr) *) ;
 ```
+
+**주의**: ProperTee는 **1-based 인덱싱**을 사용합니다. 배열의 첫 번째 요소는 `.1`입니다.
 
 ### 5.1 정적 접근
 
@@ -216,9 +218,12 @@ obj.name        // 고정 키 "name"으로 접근
 ### 5.2 배열 인덱스 접근
 
 ```propertee
-arr.0           // 첫 번째 요소
-arr.1           // 두 번째 요소
+arr.1           // 첫 번째 요소 (1-based)
+arr.2           // 두 번째 요소
+arr.3           // 세 번째 요소
 ```
+
+**주의**: ProperTee는 **1-based 인덱싱**을 사용합니다.
 
 ### 5.3 문자열 키 접근
 

@@ -184,14 +184,14 @@ user.age        // 30
 
 ### 4.2 배열 인덱스 접근
 
-숫자로 배열 요소에 접근합니다.
+숫자로 배열 요소에 접근합니다. **ProperTee는 1-based 인덱싱을 사용합니다.**
 
 ```propertee
 colors = ["red", "green", "blue"]
 
-colors.0        // "red"
-colors.1        // "green"
-colors.2        // "blue"
+colors.1        // "red" (첫 번째 요소)
+colors.2        // "green" (두 번째 요소)
+colors.3        // "blue" (세 번째 요소)
 ```
 
 ### 4.3 문자열 키 접근
@@ -268,13 +268,13 @@ app = {
 }
 
 // 정적 체인
-app.users.0.name            // "Alice"
-app.users.0.roles.0         // "admin"
+app.users.1.name            // "Alice"
+app.users.1.roles.1         // "admin"
 
 // 동적 체인
-idx = 1
+idx = 2
 role = "roles"
-app.users.$idx.$role.0      // "user"
+app.users.$idx.$role.1      // "user"
 ```
 
 ### 4.7 프로퍼티 할당
@@ -437,7 +437,7 @@ result = processData({
 })
 
 // 체인 호출
-result = parseResponse(fetchData(url)).data.items.0
+result = parseResponse(fetchData(url)).data.items.1
 ```
 
 ### 6.2 표준 라이브러리
@@ -463,7 +463,7 @@ PRINT("User:", user.name, user.age)  // User: Alice 30
 
 ```propertee
 total = SUM(1, 2, 3, 4, 5)        // 15
-sum = SUM(prices.0, prices.1)     // 가격 합계
+sum = SUM(prices.1, prices.2)     // 가격 합계
 ```
 
 **`MAX(...numbers)`**
@@ -471,7 +471,7 @@ sum = SUM(prices.0, prices.1)     // 가격 합계
 
 ```propertee
 highest = MAX(10, 25, 15, 30)     // 30
-max_score = MAX(scores.0, scores.1, scores.2)
+max_score = MAX(scores.1, scores.2, scores.3)
 ```
 
 **`MIN(...numbers)`**
@@ -479,7 +479,7 @@ max_score = MAX(scores.0, scores.1, scores.2)
 
 ```propertee
 lowest = MIN(10, 25, 15, 30)      // 10
-min_temp = MIN(temps.0, temps.1, temps.2)
+min_temp = MIN(temps.1, temps.2, temps.3)
 ```
 
 **`ABS(n)`**
@@ -641,9 +641,9 @@ end
 ```propertee
 // 통계 계산
 numbers = [10, 20, 15, 25, 30]
-total = SUM(numbers.0, numbers.1, numbers.2, numbers.3, numbers.4)
-max_val = MAX(numbers.0, numbers.1, numbers.2, numbers.3, numbers.4)
-min_val = MIN(numbers.0, numbers.1, numbers.2, numbers.3, numbers.4)
+total = SUM(numbers.1, numbers.2, numbers.3, numbers.4, numbers.5)
+max_val = MAX(numbers.1, numbers.2, numbers.3, numbers.4, numbers.5)
+min_val = MIN(numbers.1, numbers.2, numbers.3, numbers.4, numbers.5)
 average = total / LEN(numbers)
 
 PRINT("Total:", total)
