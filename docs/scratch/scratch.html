@@ -11,14 +11,30 @@
     <textarea id="properties" rows="5" cols="50">{"user": {"name": "Test", "score": 100}}</textarea>
     
     <h3>Script:</h3>
-    <textarea id="script" rows="10" cols="50">PRINT("Hello, ProperTee!")
-PRINT("User:", user.name)
-PRINT("Score:", user.score)
+    <textarea id="script" rows="10" cols="50">/* Error Line Number Test */
 
-user.score = user.score + 10
-PRINT("New Score:", user.score)
+// 테스트 1: 정상 실행
+x = 10
+y = 20
+PRINT("x + y =", x + y)
 
-user.score</textarea>
+// 테스트 2: 에러 발생 (라인 번호 확인)
+// 다음 줄의 주석을 해제하면 에러 발생
+
+// PRINT(unknownVar)  // Error at line 11: Variable 'unknownVar' is not defined
+
+// result = "hello" + 5  // Error at line 13: Addition requires...
+
+// obj = null
+// PRINT(obj.name)  // Error at line 16: Cannot access property...
+
+// function test(a) do
+//     return a * 2
+// end
+// test(1, 2, 3)  // Error at line 21: Function 'test' expects 1 argument(s)...
+
+PRINT("All tests passed!")
+</textarea>
     
     <br><br>
     <button onclick="run()">Run</button>
@@ -27,7 +43,7 @@ user.score</textarea>
     <pre id="output"></pre>
     
     <!-- ProperTee 번들 로드 -->
-    <script src="./propertee-bundle.js"></script>
+    <script src="https://raw.githubusercontent.com/flatide/propertee-js/main/dist/propertee-bundle.js"></script>
     
     <script>
         // 에러 리스너
@@ -88,7 +104,7 @@ user.score</textarea>
                 
                 const options = {
                     maxIterations: 1000,
-                    iterationLimitBehavior: 'warn'
+                    iterationLimitBehavior: 'error'
                 };
                 
                 // 5. Visitor 생성 및 실행

@@ -389,6 +389,7 @@ end
 
 - `break`: Exit current loop immediately
 - `continue`: Skip to next iteration
+- `return`: Exit current function/script and return a value (optional)
 
 **Examples:**
 ```javascript
@@ -405,6 +406,307 @@ loop i, num in numbers do
 end
 ```
 
+### 5.4 Return Statement
+
+The `return` statement can be used in two contexts:
+
+#### 1. Inside Functions
+Exits the current function and returns a value:
+
+```javascript
+function findMax(a, b) do
+    if a > b then
+        return a      // Exit function, return a
+    end
+    return b
+end
+```
+
+#### 2. Top-Level Script
+Exits the entire script execution and returns a value:
+
+```javascript
+// Script execution
+x = loadConfig()
+
+if x == null then
+    return null      // Stop script, return null
+end
+
+// Continue processing...
+result = process(x)
+return result       // End script, return result
+```
+
+**Syntax:**
+```
+return              // Returns null
+return expression   // Returns the evaluated expression
+```
+
+**Behavior:**
+- **In functions**: Immediately exits the function and returns to the caller
+- **At top-level**: Immediately stops script execution and returns to the host
+- Can appear anywhere in code (inside functions, loops, conditionals, or top-level)
+- Multiple return statements allowed (early returns)
+
+**Examples:**
+```javascript
+// Early return from script
+config = loadConfig()
+if config.disabled then
+    return "Feature disabled"  // Script ends here
+end
+
+// Script continues if not returned
+result = performTask(config)
+return result
+```
+
+### 5.5 User-Defined Functions
+
+**Syntax:**
+```
+function name(param1, param2, ...) do
+    statements
+end
+```
+
+**Function Definition:**
+- Functions must be defined before they are called
+- Parameters are comma-separated identifiers
+- Functions create a new local scope
+- Return value can be explicit (`return expression`) or implicit (last evaluated expression)
+
+**Return Behavior:**
+1. **Explicit return**: `return expression` exits function and returns the value
+2. **Implicit return**: Last expression evaluated in the function body is returned
+3. **No return**: If no statements or only non-expression statements, returns `null`
+
+#### Scoping Rules
+
+1. **Local Scope**: Variables assigned inside a function are local to that function
+2. **Global Access**: Functions can **read** variables from outer (global) scope
+3. **Global Modification**: To modify a global variable, it must exist before function call
+4. **Shadowing**: Local variables with same name as global variables shadow the global ones
+
+**Example - Local vs Global:**
+```javascript
+x = 100              // Global
+
+function test() do
+    x = 10           // Local (shadows global)
+    y = 20           // Local
+    return x + y
+end
+
+result = test()      // 30
+PRINT(x)            // 100 (global unchanged)
+```
+
+**Example - Accessing Global:**
+```javascript
+counter = 0          // Global
+
+function increment() do
+    counter = counter + 1    // Reads global, creates local
+    return counter
+end
+
+increment()          // 1 (returns local counter)
+PRINT(counter)      // 0 (global unchanged)
+```
+
+**Example - Modifying Existing Variable:**
+```javascript
+total = 0            // Global
+
+function addToTotal(amount) do
+    // If 'total' exists in outer scope, modifies it
+    // Otherwise creates local variable
+    total = total + amount
+    return total
+end
+
+addToTotal(10)       // 10
+PRINT(total)        // 10 (global modified)
+```
+
+#### Parameter Handling
+
+**Argument Omission:**
+- If fewer arguments provided than parameters, missing ones are `null`
+- If more arguments provided than parameters, error is thrown
+
+**Examples:**
+```javascript
+function greet(name, title) do
+    if title == null then
+        return "Hello, " + name
+    else
+        return "Hello, " + title + " " + name
+    end
+end
+
+greet("Alice")              // "Hello, Alice" (title is null)
+greet("Bob", "Dr.")         // "Hello, Dr. Bob"
+greet("Eve", "Ms.", "PhD")  // ❌ Error: Too many arguments
+```
+
+#### Recursion
+
+Functions can call themselves recursively:
+
+```javascript
+function factorial(n) do
+    if n <= 1 then
+        return 1
+    else
+        return n * factorial(n - 1)
+    end
+end
+
+result = factorial(5)    // 120
+```
+
+#### Recursion
+
+ProperTee supports recursive function calls without artificial limits.
+
+⚠️ **Important: Host Language Stack Limit**
+
+Recursion is implemented using the host language's (JavaScript, Python, etc.) native call stack. Therefore, **the host language's stack limit applies**.
+
+- **JavaScript (browser)**: Typically ~500-1000 calls
+- **JavaScript (Node.js)**: Typically ~10,000-15,000 calls
+- **Python**: Typically ~1000 calls (configurable)
+- **Java/C++**: Depends on stack size configuration
+
+**Recommendation:** For algorithms requiring deep recursion (>500 levels), **use loops instead**.
+
+**Examples:**
+
+**Example 1: Safe Recursion**
+```javascript
+function factorial(n) do
+    if n <= 1 then
+        return 1
+    else
+        return n * factorial(n - 1)
+    end
+end
+
+factorial(5)     // ✅ 120
+factorial(100)   // ✅ Works in most environments
+factorial(10000) // ❌ May cause: RangeError (depends on host)
+```
+
+**Example 2: Converting Recursion to Loop**
+```javascript
+// ❌ Recursive - will fail for large n
+function sum(n, acc) do
+    if n <= 0 then return acc end
+    return sum(n - 1, acc + n)
+end
+
+// ✅ Loop-based - no stack limit (infinite for large n)
+function sum(n) do
+    result = 0
+    i = 1
+    loop i <= n infinite do
+        result = result + i
+        i = i + 1
+    end
+    return result
+end
+
+sum(10000)  // ✅ Always works
+```
+
+**Example 3: Tail Recursion Pattern**
+```javascript
+// Tail-recursive fibonacci (still limited by host stack)
+function fib(n, a, b) do
+    if n == 0 then return a end
+    if n == 1 then return b end
+    return fib(n - 1, b, a + b)
+end
+
+fib(500, 0, 1)  // ✅ Usually works
+fib(5000, 0, 1) // ❌ Stack overflow
+```
+
+#### Return Statement
+
+**Syntax:**
+```
+return              // Returns null
+return expression   // Returns the evaluated expression
+```
+
+**Behavior:**
+- Immediately exits the function (or script if at top-level)
+- Can appear anywhere in function body (or top-level script)
+- Multiple return statements allowed (early returns)
+
+**Examples:**
+```javascript
+function abs(x) do
+    if x < 0 then
+        return -x
+    end
+    return x
+end
+
+function findFirst(items, target) do
+    loop item in items do
+        if item == target then
+            return item    // Early return
+        end
+    end
+    return null           // Not found
+end
+```
+
+#### Implicit Return
+
+If no `return` statement is executed, the last evaluated expression is returned:
+
+```javascript
+function add(a, b) do
+    a + b              // Implicitly returned
+end
+
+function calculate(x) do
+    temp = x * 2
+    temp + 10          // Implicitly returned
+end
+
+result1 = add(5, 3)       // 8
+result2 = calculate(10)   // 30
+```
+
+**Note:** If the last statement is not an expression (e.g., assignment, loop), `null` is returned:
+
+```javascript
+function test() do
+    x = 10             // Assignment, not an expression
+end
+
+result = test()        // null
+```
+
+#### Limitations
+
+❌ **Not Supported:**
+- Function overloading (same name, different parameters)
+- Variable arguments (`...args`)
+- Default parameter values
+- Nested function definitions
+- Anonymous functions / lambdas
+- Closures (capturing local variables)
+- First-class functions (functions as values)
+
 ---
 
 ## 6. Iteration Limits
@@ -415,34 +717,13 @@ end
 
 **Behavior when limit exceeded:**
 
-#### Warning Mode (Default) ⚠️
-- Outputs warning to stderr
-- **Breaks the loop** (equivalent to explicit `break`)
-- **Continues with next statement**
-- Warning message: `"Warning: Loop exceeded maximum iterations (1000), stopping loop"`
-
-**Example:**
-```javascript
-counter = 0
-loop counter < 10000 do
-    PRINT(counter)
-    counter = counter + 1
-end
-// After 1000 iterations:
-// ⚠️ Warning: Loop exceeded maximum iterations (1000), stopping loop
-
-PRINT("After loop")  // ✅ This executes
-```
-
-#### Error Mode (Optional)
+#### Error Mode (Default) ❌
 - Throws runtime error
 - **Stops execution completely**
 - Error message: `"Runtime Error: Loop exceeded maximum iterations (1000)..."`
 
 **Example:**
 ```javascript
-// With iterationLimitBehavior: 'error'
-
 counter = 0
 loop counter < 10000 do
     PRINT(counter)
@@ -454,27 +735,48 @@ end
 PRINT("This never executes")  // ❌ NOT EXECUTED
 ```
 
+#### Warning Mode (Optional) ⚠️
+- Outputs warning to stderr
+- **Breaks the loop** (equivalent to explicit `break`)
+- **Continues with next statement**
+- Warning message: `"Warning: Loop exceeded maximum iterations (1000), stopping loop"`
+
+**Example:**
+```javascript
+// With iterationLimitBehavior: 'warn'
+
+counter = 0
+loop counter < 10000 do
+    PRINT(counter)
+    counter = counter + 1
+end
+// After 1000 iterations:
+// ⚠️ Warning: Loop exceeded maximum iterations (1000), stopping loop
+
+PRINT("After loop")  // ✅ This executes
+```
+
 **Configuration:**
 ```javascript
-// Warning mode (default)
+// Error mode (default)
 const visitor = new ProperTeeCustomVisitor(
     properties,
     functions,
     ioStreams,
     { 
         maxIterations: 1000,
-        iterationLimitBehavior: 'warn'  // default
+        iterationLimitBehavior: 'error'  // default - stops execution
     }
 );
 
-// Error mode (strict)
+// Warning mode (lenient)
 const visitor = new ProperTeeCustomVisitor(
     properties,
     functions,
     ioStreams,
     { 
         maxIterations: 1000,
-        iterationLimitBehavior: 'error'  // stops execution on limit
+        iterationLimitBehavior: 'warn'  // breaks loop, continues execution
     }
 );
 ```
@@ -1002,28 +1304,34 @@ new ProperTeeCustomVisitor(
 - Maximum loop iterations before limit action
 - Set to `Infinity` to disable limit globally (not recommended)
 
-#### `iterationLimitBehavior` (string, default: 'warn')
-- **'warn'** (default): Output warning to stderr, break loop, continue execution
-- **'error'**: Throw runtime error and stop execution completely
+#### `iterationLimitBehavior` (string, default: 'error')
+- **'error'** (default): Throw runtime error and stop execution completely
+- **'warn'**: Output warning to stderr, break loop, continue execution
+
+#### `maxCallDepth` (number, default: 1000)
+- Maximum function call depth (recursion limit)
+- Prevents stack overflow from infinite recursion
+- Can be overridden per-function using `infinite` keyword
+- Set to `Infinity` to disable limit globally (not recommended)
 
 **Examples:**
 ```javascript
-// Warning mode (default) - lenient
+// Error mode (default) - strict
 const visitor = new ProperTeeCustomVisitor({}, {}, {}, {
     maxIterations: 1000,
-    iterationLimitBehavior: 'warn'  // or omit (default)
+    iterationLimitBehavior: 'error'  // or omit (default)
 });
 
-// Error mode - strict
+// Warning mode - lenient
 const visitor = new ProperTeeCustomVisitor({}, {}, {}, {
     maxIterations: 1000,
-    iterationLimitBehavior: 'error'
+    iterationLimitBehavior: 'warn'
 });
 
-// Custom iteration limit with warning
+// Custom iteration limit with error mode
 const visitor = new ProperTeeCustomVisitor({}, {}, {}, {
     maxIterations: 5000,
-    iterationLimitBehavior: 'warn'
+    iterationLimitBehavior: 'error'
 });
 ```
 
@@ -1078,6 +1386,130 @@ try {
 } catch (e) {
     console.error('Runtime Error:', e.message);
 }
+```
+
+### 12.4 Return Statement Implementation
+
+The `return` statement can exit both functions and top-level scripts. Implementation should use an exception mechanism:
+
+**ReturnException Class:**
+```javascript
+class ReturnException extends Error {
+    constructor(value) {
+        super('Return');
+        this.name = 'ReturnException';
+        this.value = value;
+    }
+}
+```
+
+**Return Statement Handler:**
+```javascript
+visitReturnStmt(ctx) {
+    const value = ctx.expression() 
+        ? this.visit(ctx.expression()) 
+        : null;
+    throw new ReturnException(value);
+}
+```
+
+**Function Execution:**
+```javascript
+callUserFunction(funcName, args) {
+    const funcDef = this.userDefinedFunctions[funcName];
+    
+    // Parameter binding and scope management
+    this.scopeStack.push(localScope);
+    
+    try {
+        // Execute function body
+        let lastValue = null;
+        for (let stmt of body.statement()) {
+            lastValue = this.visit(stmt);
+        }
+        return lastValue;  // Implicit return
+    } catch (e) {
+        if (e instanceof ReturnException) {
+            return e.value;  // Explicit return
+        }
+        throw e;  // Re-throw other errors
+    } finally {
+        this.scopeStack.pop();  // Always restore scope
+    }
+}
+```
+
+**Note:** ProperTee does not implement artificial recursion limits. Recursion is limited only by the host language's stack size.
+
+**Function Definition Storage:**
+```javascript
+visitFuncDefStmt(ctx) {
+    const funcName = ctx.funcName.text;
+    const params = this.extractParams(ctx.parameterList());
+    const hasInfinite = ctx.K_INFINITE() !== null;  // Check for infinite keyword
+    
+    this.functions[funcName] = {
+        params: params,
+        body: ctx.block(),
+        infinite: hasInfinite  // Store infinite flag
+    };
+    
+    return null;
+}
+```
+
+**Visitor Constructor:**
+```javascript
+constructor(properties, globalVars, ioStreams, options = {}) {
+    this.properties = properties;
+    this.ioStreams = ioStreams;
+    this.scopeStack = [];
+    this.variables = globalVars || {};
+    this.userDefinedFunctions = {};
+    
+    // Loop tracking
+    this.maxIterations = options.maxIterations || 1000;
+    this.iterationLimitBehavior = options.iterationLimitBehavior || 'warn';
+}
+```
+
+**Top-Level Script Execution:**
+```javascript
+// Entry point
+function executeScript(tree) {
+    try {
+        const visitor = new ProperTeeCustomVisitor(...);
+        
+        let lastValue = null;
+        const statements = tree.statement();
+        
+        for (let stmt of statements) {
+            lastValue = visitor.visit(stmt);
+        }
+        
+        return lastValue;  // Implicit return
+    } catch (e) {
+        if (e instanceof ReturnException) {
+            return e.value;  // Explicit return from script
+        }
+        throw e;  // Runtime error
+    }
+}
+```
+
+**Usage Example:**
+```javascript
+// Script with early return
+const script = `
+    config = loadConfig()
+    if config == null then
+        return "Config not found"
+    end
+    return processConfig(config)
+`;
+
+const result = executeScript(parseScript(script));
+console.log(result);  // "Config not found" or processed result
 ```
 
 ---
@@ -1209,6 +1641,46 @@ end
 PRINT(acronym)  // "PEE"
 ```
 
+#### Example 9: Top-Level Return (Script Exit)
+```javascript
+// Early exit from script
+config = loadConfiguration()
+
+if config == null then
+    PRINT("ERROR: Configuration not found")
+    return null              // Exit script, return null
+end
+
+if config.disabled then
+    PRINT("INFO: Feature is disabled")
+    return "disabled"        // Exit script, return status
+end
+
+// Continue if not returned
+result = processWithConfig(config)
+PRINT("Result:", result)
+return result               // Normal script completion
+```
+
+#### Example 10: Validation Script
+```javascript
+// Input validation script
+input = getInput()
+
+// Check empty
+if input == null or input == "" then
+    return {error: "Input required", code: 400}
+end
+
+// Check length
+if LEN(input) > 100 then
+    return {error: "Input too long", code: 413}
+end
+
+// All checks passed
+return {success: true, value: input}
+```
+
 ### 13.2 Error Cases
 
 #### Error 1: Division by Zero
@@ -1288,9 +1760,9 @@ result = -true
 // ❌ Runtime Error: Unary minus requires numeric operand
 ```
 
-#### Error 10: Loop Limit Exceeded (Error Mode)
+#### Error 10: Loop Limit Exceeded (Default)
 ```javascript
-// With iterationLimitBehavior: 'error'
+// Default behavior (iterationLimitBehavior: 'error')
 
 counter = 0
 loop counter < 10000 do
@@ -1299,9 +1771,24 @@ end
 // ❌ Runtime Error: Loop exceeded maximum iterations (1000)
 ```
 
-#### Warning 1: Loop Limit Exceeded (Warning Mode - Default)
+#### Error 11: Stack Overflow (Deep Recursion)
 ```javascript
-// With iterationLimitBehavior: 'warn' (default)
+// Deep recursion exceeds host language stack limit
+function deepRecursion(n) do
+    if n <= 0 then
+        return 0
+    end
+    return 1 + deepRecursion(n - 1)
+end
+
+deepRecursion(10000)
+// ❌ RangeError: Maximum call stack size exceeded
+//    (Host language's stack limit - typically ~500-15,000)
+```
+
+#### Warning 1: Loop Limit Exceeded (Warning Mode)
+```javascript
+// With iterationLimitBehavior: 'warn'
 
 counter = 0
 loop counter < 10000 do
@@ -1322,8 +1809,11 @@ The following keywords are reserved and cannot be used as variable names:
 - `if`, `then`, `else`, `end`
 - `loop`, `in`, `do`, `infinite`
 - `break`, `continue`
+- `function`, `return`
 - `and`, `or`, `not`
 - `true`, `false`, `null`
+
+**Note:** `infinite` is reserved for loop statements only (not for functions).
 
 ---
 
@@ -1353,7 +1843,13 @@ Features that may be added in future versions:
 - [ ] Optional chaining operator (`?.`)
 - [ ] Safe property check function (`HAS(obj, "property")`)
 - [x] Comments in code - ✅ Implemented (single-line `//` and block `/* */`)
-- [ ] Function definitions (user-defined functions)
+- [x] Function definitions (user-defined functions) - ✅ Implemented
+- [ ] Anonymous functions / Lambdas
+- [ ] First-class functions (functions as values)
+- [ ] Closures (capturing local variables)
+- [ ] Function overloading
+- [ ] Default parameter values
+- [ ] Variable arguments (`...args`)
 - [ ] Import/Export system
 
 ---
@@ -1364,9 +1860,17 @@ For the complete ANTLR4 grammar, see `ProperTee.g4`.
 
 Key grammar rules:
 - `root`: Top-level entry point
-- `statement`: Assignments, if, loop, expressions
+- `statement`: Assignments, if, loop, function definitions, expressions
+- `functionDef`: User-defined functions with parameters
+- `iterationStmt`: Loop with optional `infinite` keyword
+- `flowControl`: break, continue, return
 - `expression`: Operators, member access, atoms
-- `atom`: Literals (number, string, boolean, null, object, array)
+- `atom`: Literals (number, string, boolean, null, object, array), function calls
+
+**Function Definition Syntax:**
+```
+function name(params) do ... end  // User-defined functions
+```
 
 ---
 
@@ -1380,6 +1884,16 @@ Key grammar rules:
 - Property access validation
 - String manipulation functions (CHARS, SPLIT, JOIN, SUBSTRING, UPPERCASE, LOWERCASE, TRIM)
 - Block comments (`/* */`) and single-line comments (`//`)
+- **User-defined functions**: `function name(params) do ... end`
+- **Return statement**: Explicit and implicit return values
+  - Can be used inside functions to return values
+  - Can be used at top-level to exit script execution
+- **Function scoping**: Local scope with global access
+- **Recursion support**: Functions can call themselves
+  - **Default call depth limit: 1000**
+  - **`infinite` keyword**: Remove call depth limit per function
+  - Prevents infinite recursion and stack overflow
+- **Argument omission**: Missing arguments default to `null`
 
 ---
 

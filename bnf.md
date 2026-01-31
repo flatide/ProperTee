@@ -23,6 +23,7 @@
 <statement>         ::= <assignment>
                       | <if-statement>
                       | <loop-statement>
+                      | <function-definition>
                       | <flow-control>
                       | <expression>
 
@@ -39,8 +40,16 @@
                       | "loop" <identifier> "in" <expression> "do" <statement-list> "end"
                       | "loop" <identifier> "," <identifier> "in" <expression> "do" <statement-list> "end"
 
+<function-definition> ::= "function" <identifier> "(" ")" "do" <statement-list> "end"
+                        | "function" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
+
+<parameter-list>    ::= <identifier>
+                      | <parameter-list> "," <identifier>
+
 <flow-control>      ::= "break"
                       | "continue"
+                      | "return"
+                      | "return" <expression>
 
 <expression>        ::= <or-expression>
 
@@ -159,6 +168,7 @@
 if       then     else      end
 loop     in       do        infinite
 break    continue
+function return
 not      and      or
 true     false    null
 ```

@@ -27,6 +27,7 @@ program     = { statement } EOF ;
 statement   = assignment
             | if_statement
             | loop_statement
+            | function_def
             | flow_control
             | expression ;
 ```
@@ -120,8 +121,41 @@ end
 ### 3.3 흐름 제어
 
 ```ebnf
-flow_control = "break" | "continue" ;
+flow_control = "break" | "continue" | "return" [ expression ] ;
 ```
+
+- `break`: 현재 루프를 즉시 종료
+- `continue`: 다음 반복으로 건너뛰기
+- `return`: 함수 또는 스크립트 종료 (선택적으로 값 반환)
+
+### 3.4 함수 정의
+
+```ebnf
+function_def   = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
+parameter_list = ID { "," ID } ;
+```
+
+**예시:**
+```propertee
+// 함수 정의
+function add(a, b) do
+    return a + b
+end
+
+// 함수 호출
+result = add(10, 20)
+
+// 재귀 함수
+function factorial(n) do
+    if n <= 1 then
+        return 1
+    else
+        return n * factorial(n - 1)
+    end
+end
+```
+
+**주의**: 함수는 호스트 언어(JavaScript)의 스택 제한을 받습니다. 깊은 재귀는 스택 오버플로우를 발생시킬 수 있습니다.
 
 ---
 
@@ -311,8 +345,9 @@ escape_seq  = '\' <any character> ;
 
 ```
 if       then     else      end
-loop     in       do
-break    continue infinite
+loop     in       do        infinite
+break    continue
+function return
 not      and      or
 true     false    null
 ```
@@ -364,6 +399,7 @@ program         = { statement } EOF ;
 statement       = assignment
                 | if_statement
                 | loop_statement
+                | function_def
                 | flow_control
                 | expression ;
 
@@ -374,7 +410,9 @@ if_statement    = "if" expression "then" block [ "else" block ] "end" ;
 loop_statement  = "loop" ( loop_condition | loop_iteration ) "do" block "end" ;
 loop_condition  = expression [ "infinite" ] ;
 loop_iteration  = ID [ "," ID ] "in" expression ;
-flow_control    = "break" | "continue" ;
+function_def    = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
+parameter_list  = ID { "," ID } ;
+flow_control    = "break" | "continue" | "return" [ expression ] ;
 
 block           = { statement } ;
 

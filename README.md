@@ -11,6 +11,7 @@
 - **일급 자료구조**: 객체 리터럴 `{}`, 배열 리터럴 `[]` 내장
 - **표현식 중심 설계**: 모든 구문이 표현식으로 평가 가능
 - **통합 반복문**: `loop` 키워드로 조건, 반복, 무한 루프 통합
+- **사용자 정의 함수**: `function` 키워드로 재사용 가능한 함수 정의
 - **주석 지원**: 한 줄 주석(`//`)과 블럭 주석(`/* */`) 지원
 
 ## 빠른 예제
@@ -42,6 +43,13 @@ end
 loop port in config.ports do
     listen(port)
 end
+
+// 함수 정의
+function greet(name) do
+    return "Hello, " + name
+end
+
+message = greet("ProperTee")
 ```
 
 ## 문서

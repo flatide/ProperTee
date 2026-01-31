@@ -1,6 +1,6 @@
 # ProperTee v2.0 업데이트 완료
 
-**최종 업데이트**: 블럭 주석 문법 추가 (2026-01-25)
+**최종 업데이트**: 사용자 정의 함수 추가 (2026-01-25)
 
 ## ✅ 완료된 모든 작업
 
@@ -16,70 +16,72 @@
 - 구현 제약사항
 - 보안 고려사항
 - **주석 명세**: 한 줄 주석(`//`)과 블럭 주석(`/* */`) ✅
+- **사용자 정의 함수 명세**: `function` 키워드, 재귀, 스코프 규칙 ✅
 
-### 2. 문법 파일 확인 및 업데이트
+### 2. 문법 파일 업데이트
 **ProperTee.g4**:
 - `K_NULL # NullAtom` 포함 확인
-- `loop` 기반 반복문 확인
+- `loop` 기반 반복문 (infinite 키워드 지원)
 - 모듈로 연산자(`%`) 확인
-- `infinite` 키워드 확인
-- **블럭 주석 렉서 규칙 추가**: `BLOCK_COMMENT : '/*' .*? '*/' -> skip ;` ✅
+- `infinite` 키워드 확인 (loop 전용)
+- 블럭 주석 렉서 규칙 추가: `BLOCK_COMMENT : '/*' .*? '*/' -> skip ;` ✅
+- **사용자 정의 함수**: `K_FUNCTION`, `K_RETURN` 키워드 추가 ✅
+- **functionDef 규칙**: `function name(params) do ... end` ✅
+- **return 문**: `return expression?` ✅
 
 ### 3. 문서 업데이트
 
-#### README.md
+#### README.md ✅
 - 특징에 "통합 반복문" 추가
-- `for-do-end` → `loop-do-end`
-- LANGUAGE_SPEC.md 링크 추가
-- **"주석 지원" 특징 추가** ✅
+- 특징에 **"사용자 정의 함수"** 추가 ✅
+- "주석 지원" 특징 추가
+- 빠른 예제에 함수 정의 예제 추가 ✅
+- LANGUAGE_SPEC.md 링크 포함
 
-#### grammar.md
+#### grammar.md ✅
 - atom에 `"null"` 추가
-- 키워드: `loop`, `infinite` 추가, `while`/`for` 제거
-- 반복문 섹션 완전 재작성:
-  - `while_loop`, `for_loop` → `loop_statement`
-  - 조건 반복, 값 반복, 키-값 반복, 무한 루프 모두 포함
-- 모듈로 연산자 `%` 추가 (곱셈 우선순위)
-- 연산자 우선순위 표 업데이트 (5단계: `*` `/` `%`)
-- **주석 섹션 추가**: 한 줄 주석과 블럭 주석 설명 ✅
-
-#### bnf.md
-- atom에 `"null"` 추가
-- `while_loop`, `for_loop` → `loop_statement`로 변경
+- 키워드: `loop`, `infinite`, **`function`, `return`** 추가
+- 반복문 섹션: `loop_statement`
+- **함수 정의 섹션 추가** (3.4절) ✅
+- **흐름 제어에 return 추가** (3.3절) ✅
 - 모듈로 연산자 `%` 추가
-- 키워드 목록 업데이트 (`loop`, `infinite` 추가)
-- **주석 섹션 추가** ✅
+- 주석 섹션 추가
+- 전체 EBNF에 function_def, parameter_list 추가 ✅
+
+#### bnf.md ✅
+- atom에 `"null"` 추가
+- `loop_statement`로 통일
+- **`<function-definition>` 규칙 추가** ✅
+- **`<parameter-list>` 규칙 추가** ✅
+- **flow_control에 return 추가** ✅
+- 키워드 목록: **`function`, `return`** 추가 ✅
+- 모듈로 연산자 `%` 추가
+- 주석 섹션 추가
+
+#### docs/index.html ✅
+- JavaScript 예제 업데이트 (loop 문법)
+- 키워드 리스트: **`function`, `return`** 추가 ✅
+- 내장 함수 목록 최신화
 
 ### 4. 예제 파일 업데이트 (loop 문법)
 
-#### examples/03_control_flow.pt
+#### examples/03_control_flow.pt ✅
 - `while` → `loop` (조건 반복)
 - `for` → `loop` (값/키-값 반복)
 - 15개 이상의 반복문 업데이트
 
-#### examples/02_property_access.pt
+#### examples/02_property_access.pt ✅
 - API 응답 처리 예제 업데이트
 
-#### examples/04_real_world.pt
+#### examples/04_real_world.pt ✅
 - 10개 이상의 실전 예제 업데이트
 - 모든 `for`/`while` → `loop` 변환
 
-### 5. Playground 업데이트
-
-#### docs/index.html
-- JavaScript 예제 객체의 `control` 예제 업데이트
-- `for user in users do` → `loop user in users do`
-- 키워드 리스트 업데이트: `while`, `for` → `loop`, `infinite`
-- 내장 함수 목록 최신화 (REGEX, RUN 포함)
-
-### 6. 가이드 업데이트
-
-#### guide.md
-- **5.2절**: "While 루프" → "Loop: 조건 반복"
-- **5.3절**: "For 루프" → "Loop: 값 반복"
-- 무한 루프 예제 추가 (`loop true infinite do`)
-- **7절 추가**: "주석" 섹션 신규 추가 (한 줄/블럭 주석 설명) ✅
-- **실전 패턴** (기존 7절 → 8절로 변경) 모든 예제 업데이트
+### 5. 가이드 업데이트 (guide.md)
+- 5.2절: "Loop: 조건 반복"
+- 5.3절: "Loop: 값 반복"
+- 7절: "주석" 섹션 추가
+- 실전 패턴 (8절로 변경)
 
 ---
 
@@ -87,15 +89,16 @@
 
 ### 파일 변경
 - **신규**: 2개 (LANGUAGE_SPEC.md, UPDATE_SUMMARY.md)
-- **업데이트**: 8개
-  - README.md ✅ (주석 특징 추가)
-  - grammar.md ✅ (주석 섹션 추가)
-  - bnf.md ✅ (주석 섹션 추가)
-  - guide.md ✅ (주석 섹션 추가, 섹션 번호 재정렬)
-  - docs/index.html
-  - examples/02_property_access.pt
-  - examples/03_control_flow.pt
-  - examples/04_real_world.pt
+- **업데이트**: 9개
+  - README.md ✅ (함수 특징 추가)
+  - grammar.md ✅ (함수 정의 섹션 추가)
+  - bnf.md ✅ (함수 정의 규칙 추가)
+  - guide.md ✅
+  - docs/index.html ✅ (function, return 키워드 추가)
+  - examples/02_property_access.pt ✅
+  - examples/03_control_flow.pt ✅
+  - examples/04_real_world.pt ✅
+  - UPDATE_SUMMARY.md ✅
 
 ### 구문 변경
 - `while` → `loop`: ~5개
@@ -105,7 +108,9 @@
 ### 문법 추가
 - **블럭 주석**: `/* */` ✅
 - **모듈로 연산자**: `%` ✅
-- **infinite 키워드**: 무한 루프 명시 ✅
+- **infinite 키워드**: 무한 루프 (loop 전용) ✅
+- **사용자 정의 함수**: `function`, `return` 키워드 ✅
+- **재귀 함수 지원**: 함수 내 자기 호출 가능 ✅
 
 ---
 
@@ -116,6 +121,7 @@
 if then else end
 loop in do infinite
 break continue
+function return      ← 새로 추가!
 not and or
 true false null
 ```
@@ -133,6 +139,34 @@ true false null
 ```
 
 **주의**: 블럭 주석은 중첩되지 않습니다.
+
+### 함수 정의
+```propertee
+// 함수 정의
+function add(a, b) do
+    return a + b
+end
+
+// 함수 호출
+result = add(10, 20)
+
+// 재귀 함수
+function factorial(n) do
+    if n <= 1 then
+        return 1
+    else
+        return n * factorial(n - 1)
+    end
+end
+
+// 스크립트 조기 종료
+config = loadConfig()
+if config == null then
+    return null    // 스크립트 전체 종료
+end
+```
+
+**주의**: 함수는 호스트 언어의 스택 제한을 받습니다. 함수에는 `infinite` 키워드를 사용할 수 없습니다.
 
 ### 반복문
 ```propertee
@@ -248,16 +282,28 @@ ProperTee/
 
 ### 문법 기능 완성도
 - ✅ 조건문 (`if-then-else-end`)
-- ✅ 통합 반복문 (`loop`)
-- ✅ 흐름 제어 (`break`, `continue`)
+- ✅ 통합 반복문 (`loop`, `loop infinite`)
+- ✅ 흐름 제어 (`break`, `continue`, `return`)
+- ✅ 사용자 정의 함수 (`function`, 재귀 지원)
 - ✅ 프로퍼티 접근 (`.`, `.$`, `.$(`)
 - ✅ 산술/논리/비교 연산자 (`+`, `-`, `*`, `/`, `%`, `and`, `or`, `not`, 비교)
 - ✅ 리터럴 (Number, String, Boolean, Null, Object, Array)
-- ✅ 함수 호출
+- ✅ 함수 호출 (내장/사용자 정의)
 - ✅ 주석 (한 줄 `//`, 블럭 `/* */`)
 
+### 주요 제약 및 동작
+- **Loop 제한**: 기본 1000회, 초과 시 **Runtime Error** (기본값)
+  - `infinite` 키워드로 제한 해제 가능
+  - `iterationLimitBehavior: 'warn'` 옵션으로 경고 모드 전환 가능
+- **재귀 제한**: 호스트 언어(JavaScript) 스택 제한에 의존
+  - `infinite` 키워드 사용 불가 (함수에는 적용 안 됨)
+  - 깊은 재귀는 스택 오버플로우 가능
+- **Return 문**: 함수 내부 및 최상위 스크립트에서 사용 가능
+- **스코프**: 함수 내 로컬 스코프, 외부 전역 변수 접근 가능
+
 ### 다음 단계
-- 구현체(visitor)를 `loop` 문법에 맞게 업데이트 (필요시)
+- 구현체(visitor)를 `loop`, `function`, `return` 문법에 맞게 업데이트
 - JavaScript 번들 재생성 (ANTLR4)
 - Playground 테스트
-- 블럭 주석 파싱 테스트
+- 함수 정의 및 재귀 테스트
+- 스크립트 레벨 return 테스트

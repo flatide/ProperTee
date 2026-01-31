@@ -6,6 +6,7 @@ statement
     : assignment    # AssignStmt
     | ifStatement   # IfStmt
     | iterationStmt # iterStmt
+    | functionDef   # FuncDefStmt
     | flowControl   # FlowStmt
     | expression    # ExprStmt
     ;
@@ -29,6 +30,14 @@ ifStatement
     : K_IF condition=expression K_THEN thenBody=block (K_ELSE elseBody=block)? K_END
     ;
 
+functionDef
+    : K_FUNCTION funcName=ID '(' parameterList? ')' K_DO block K_END
+    ;
+
+parameterList
+    : ID (',' ID)*
+    ;
+
 iterationStmt
     : K_LOOP expression K_INFINITE? K_DO block K_END                          # ConditionLoop
     | K_LOOP value=ID K_IN expression K_INFINITE? K_DO block K_END            # ValueLoop
@@ -36,8 +45,9 @@ iterationStmt
     ;
 
 flowControl
-    : K_BREAK     # BreakStmt
-    | K_CONTINUE  # ContinueStmt
+    : K_BREAK              # BreakStmt
+    | K_CONTINUE           # ContinueStmt
+    | K_RETURN expression? # ReturnStmt
     ;
 
 expression
@@ -108,6 +118,8 @@ K_IN        : 'in';
 K_DO        : 'do';
 K_BREAK     : 'break';
 K_CONTINUE  : 'continue';
+K_FUNCTION  : 'function';
+K_RETURN    : 'return';
 K_NOT       : 'not';
 K_AND       : 'and';
 K_OR        : 'or';
