@@ -121,5 +121,6 @@ NUMBER : [0-9]+ ('.' [0-9]+)? ;
 STRING : '"' ( '\\' . | ~["\\] )* '"' ;
 
 // 주석과 공백 처리
-COMMENT : '//' ~[\r\n]* -> skip ;      // 한 줄 주석
+COMMENT : '//' ~[\r\n]* -> skip ;           // 한 줄 주석
+BLOCK_COMMENT : '/*' .*? '*/' -> skip ;     // 블럭 주석
 WS : [ \t\r\n;]+ -> skip ;

@@ -1,200 +1,269 @@
 # ProperTee Language Specification
 
-## Overview
+Version: 1.0  
+Last Updated: 2026-01-25
 
-ProperTee는 프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어입니다. 이 문서는 언어의 공식 명세와 구현 제약사항을 정의합니다.
+## 1. Type System
 
-## Version
+### 1.1 Primitive Types
+- **Number**: IEEE 754 floating-point numbers (e.g., `42`, `3.14`, `-7.5`)
+- **String**: UTF-16 encoded strings (e.g., `"hello"`, `"world"`)
+- **Boolean**: `true` or `false`
+- **Null**: `null` (represents intentional absence of value)
 
-- **Grammar Version**: 2.0
-- **Last Updated**: 2026-01-25
+### 1.2 Complex Types
+- **Object**: Key-value pairs `{key: value, ...}`
+- **Array**: Ordered collections `[item1, item2, ...]`
 
----
+### 1.3 No Undefined
+⚠️ **ProperTee does NOT have an `undefined` type.**
 
-## 1. Lexical Elements
-
-### 1.1 Keywords
-
-다음 키워드는 예약어이며 식별자로 사용할 수 없습니다:
-
-```
-if      then    else    end
-loop    in      do
-break   continue
-not     and     or
-true    false   null
-infinite
-```
-
-### 1.2 Identifiers
-
-- **Pattern**: `[a-zA-Z_][a-zA-Z0-9_]*`
-- **Examples**: `name`, `user_id`, `_temp`, `value123`
-- **Restrictions**: 
-  - 키워드를 식별자로 사용 불가
-  - 숫자로 시작 불가
-  - 특수문자 사용 불가 (언더스코어 제외)
-
-### 1.3 Literals
-
-#### Numbers
-- **Pattern**: `[0-9]+ ('.' [0-9]+)?`
-- **Types**: 정수와 부동소수점 통합
-- **Examples**: `42`, `3.14`, `0.5`, `1000`
-- **Constraints**:
-  - 과학적 표기법(e notation) 미지원
-  - 16진수, 8진수 표기법 미지원
-  - 음수는 unary minus 연산자로 표현 (`-42`)
-
-#### Strings
-- **Pattern**: `'"' ( '\\' . | ~["\\] )* '"'`
-- **Delimiter**: 쌍따옴표만 지원 (작은따옴표 미지원)
-- **Escape Sequences**: `\"`, `\\`, `\n`, `\t` 등 표준 이스케이프 지원
-- **Examples**: `"hello"`, `"line1\nline2"`, `"path\\to\\file"`
-
-#### Booleans
-- **Values**: `true`, `false`
-- **Case Sensitive**: 대소문자 구분 (True, FALSE 등 불가)
-
-#### Null
-- **Value**: `null`
-- **Semantics**: 값의 부재를 나타냄
-
-### 1.4 Comments
-
-- **Single Line**: `//` 부터 줄 끝까지
-- **Multi-line**: 미지원
-- **Example**: `// 이것은 주석입니다`
-
-### 1.5 Whitespace
-
-다음 문자는 토큰 구분자로 처리되며 무시됩니다:
-- Space (` `)
-- Tab (`\t`)
-- Newline (`\r`, `\n`)
-- Semicolon (`;`) - 문장 구분자로 선택적 사용 가능
+Any attempt to access non-existent variables or properties results in a **runtime error**.
 
 ---
 
-## 2. Data Types
+## 2. Operators
 
-### 2.1 Type System
+### 2.1 Arithmetic Operators
 
-ProperTee는 **동적 타입 언어**입니다.
+#### Addition (`+`)
+- **Allowed types**: 
+  - `Number + Number` → Number
+  - `String + String` → String (concatenation)
+- **Type coercion**: ❌ None
+- **Error cases**:
+  - `String + Number` → Runtime Error
+  - `Boolean + Number` → Runtime Error
+  - Mixed types → Runtime Error
 
-#### Primitive Types
-1. **Number**: 정수 및 부동소수점 (내부적으로 IEEE 754 double)
-2. **String**: UTF-8 문자열
-3. **Boolean**: `true` 또는 `false`
-4. **Null**: `null`
+**Examples:**
+```javascript
+10 + 5         // ✅ 15
+"Hello" + " World"  // ✅ "Hello World"
+"5" + 3        // ❌ Runtime Error: Type mismatch
+```
 
-#### Composite Types
-1. **Object**: 키-값 쌍의 컬렉션 (순서 보장 없음)
-2. **Array**: 순서가 있는 값의 목록 (0-based 인덱싱)
+#### Subtraction (`-`)
+- **Allowed types**: `Number - Number` only
+- **Error cases**: Non-numeric operands → Runtime Error
 
-### 2.2 Type Coercion
+**Examples:**
+```javascript
+10 - 3         // ✅ 7
+"10" - 5       // ❌ Runtime Error
+```
 
-ProperTee는 **명시적 타입 변환**을 권장하며, 암묵적 변환은 최소화합니다.
+#### Multiplication (`*`)
+- **Allowed types**: `Number * Number` only
+- **Error cases**: Non-numeric operands → Runtime Error
 
-#### Truthy/Falsy Values
-- **Falsy**: `false`, `null`, `0`, `""` (빈 문자열)
-- **Truthy**: 그 외 모든 값
+#### Division (`/`)
+- **Allowed types**: `Number / Number` only
+- **Error cases**: 
+  - Non-numeric operands → Runtime Error
+  - **Division by zero → Runtime Error** ⚠️
+
+**Examples:**
+```javascript
+10 / 2         // ✅ 5
+10 / 0         // ❌ Runtime Error: Division by zero
+```
+
+#### Modulo (`%`)
+- **Allowed types**: `Number % Number` only
+- **Error cases**:
+  - Non-numeric operands → Runtime Error
+  - **Modulo by zero → Runtime Error** ⚠️
+
+**Examples:**
+```javascript
+10 % 3         // ✅ 1
+10 % 0         // ❌ Runtime Error: Division by zero
+```
+
+#### Unary Minus (`-`)
+- **Allowed types**: `-Number` only
+- Negates numeric value
+- **Error cases**: Non-numeric operand → Runtime Error
+
+**Examples:**
+```javascript
+x = -5        // ✅ -5
+y = -(3 + 2)  // ✅ -5
+z = -"10"     // ❌ Runtime Error: Unary minus requires numeric operand
+```
+
+### 2.2 Comparison Operators
+
+All comparison operators: `==`, `!=`, `>`, `<`, `>=`, `<=`
+
+#### Equality operators (`==`, `!=`)
+- **Allowed types**: Any type (no type coercion)
+- Compares values using strict equality
+- Different types are never equal
+
+**Examples:**
+```javascript
+5 == 5         // ✅ true
+5 != 3         // ✅ true
+null == null   // ✅ true
+5 == "5"       // ✅ false (no type coercion)
+true == 1      // ✅ false (different types)
+```
+
+#### Ordering operators (`>`, `<`, `>=`, `<=`)
+- **Allowed types**: `Number` comparison `Number` only
+- **Error cases**: Non-numeric operands → Runtime Error
+
+**Examples:**
+```javascript
+10 > 5         // ✅ true
+3.5 <= 3.5     // ✅ true
+"10" > 5       // ❌ Runtime Error: Comparison requires numeric operands
+```
+
+### 2.3 Logical Operators
+
+- `and`: Logical AND
+- `or`: Logical OR
+- `not`: Logical NOT
+
+#### Type Requirements
+- **Allowed types**: `Boolean` operands only
+- **No truthy/falsy evaluation**: Unlike JavaScript, only `true` and `false` are valid
+- **Error cases**: Non-boolean operands → Runtime Error
+
+**Examples:**
+```javascript
+true and false     // ✅ false
+true or false      // ✅ true
+not true           // ✅ false
+
+// Comparisons return boolean, so can be combined
+(5 > 3) and (2 < 4)    // ✅ true
+(x == 10) or (y == 20) // ✅ Works if x and y are defined
+
+// These are ERRORS (no truthy/falsy)
+1 and 0            // ❌ Runtime Error: Logical AND requires boolean operands
+"hello" or ""      // ❌ Runtime Error: Logical OR requires boolean operands
+not 0              // ❌ Runtime Error: Logical NOT requires boolean operand
+```
+
+**Short-circuit evaluation:**
+- `and`: If left is `false`, right is not evaluated
+- `or`: If left is `true`, right is not evaluated
 
 ---
 
-## 3. Expressions
+## 3. Variables and Scope
 
-### 3.1 Operator Precedence
+### 3.1 Variable Declaration
 
-우선순위가 높은 순서대로:
+Variables are created on **first assignment**. No explicit declaration keyword needed.
 
-| Precedence | Operator | Description | Associativity |
-|------------|----------|-------------|---------------|
-| 1 (highest) | `.` | Member access | Left |
-| 2 | `-`, `not` | Unary minus, logical NOT | Right |
-| 3 | `*`, `/`, `%` | Multiplication, division, modulo | Left |
-| 4 | `+`, `-` | Addition, subtraction | Left |
-| 5 | `>`, `<`, `>=`, `<=`, `==`, `!=` | Comparison | Left |
-| 6 | `and` | Logical AND | Left |
-| 7 (lowest) | `or` | Logical OR | Left |
-
-### 3.2 Arithmetic Operators
-
-- `+` : 덧셈
-- `-` : 뺄셈 (binary) 또는 부호 반전 (unary)
-- `*` : 곱셈
-- `/` : 나눗셈 (부동소수점)
-- `%` : 나머지 (모듈로)
-
-**Constraints**:
-- 0으로 나누기는 구현에 따라 오류 또는 특수 값 반환
-- 정수 나눗셈 전용 연산자 없음 (모든 나눗셈은 부동소수점)
-
-### 3.3 Comparison Operators
-
-- `==` : 같음
-- `!=` : 다름
-- `<` : 작음
-- `>` : 큼
-- `<=` : 작거나 같음
-- `>=` : 크거나 같음
-
-**Semantics**:
-- 타입이 다른 값의 비교는 구현 정의
-- 권장: 타입이 다르면 `false` 반환
-
-### 3.4 Logical Operators
-
-- `and` : 논리 AND (short-circuit evaluation)
-- `or` : 논리 OR (short-circuit evaluation)
-- `not` : 논리 NOT
-
-**Constraints**:
-- `&&`, `||`, `!` 표기법 미지원 (키워드만 사용)
-- Short-circuit 평가 필수 구현
-
-### 3.5 Property Access
-
-#### Static Access
-```propertee
-obj.property
-obj.0          // 배열 인덱스
-obj."key-name" // 특수문자 포함 키
+**Examples:**
+```javascript
+x = 10              // Creates variable x
+myName = "Alice"    // Creates variable myName
 ```
 
-#### Dynamic Access
-```propertee
-obj.$variableName           // 변수 값을 키로 사용
-obj.$(expression)           // 표현식 평가 결과를 키로 사용
+### 3.2 Variable Reference
+
+⚠️ **Error**: Accessing undefined variable → **Runtime Error**
+
+Variables **must be assigned before use**.
+
+**Examples:**
+```javascript
+x = 10
+PRINT(x)           // ✅ 10
+
+PRINT(y)           // ❌ Runtime Error: Variable 'y' is not defined
 ```
 
-**Constraints**:
-- 대괄호 표기법(`obj[0]`) 미지원
-- 동적 접근에서 표현식은 문자열 또는 숫자로 평가되어야 함
+### 3.3 Scoping Rules
+
+- All variables are **function-scoped** (or global in top-level)
+- No block scoping
+- Assignments create or update variables in current scope
+
+### 3.4 Variable Lookup Priority
+
+1. Local variables (`this.variables`)
+2. Built-in properties (`this.properties`)
+
+If variable not found in either → Runtime Error
 
 ---
 
-## 4. Statements
+## 4. Property Access
 
-### 4.1 Assignment
+### 4.1 Reading Properties
 
-```propertee
-identifier = expression
-lvalue.property = expression
-lvalue.$key = expression
+**Syntax:**
+- `object.property` - Static property name
+- `object.0` - Numeric key (array index)
+- `object."key-name"` - String key with special characters
+- `object.$varName` - Dynamic property using variable (shorthand)
+- `object.$(expression)` - Dynamic property using expression
+
+⚠️ **Error cases:**
+- `null.property` → Runtime Error: "Cannot access property of null"
+- `object.nonExistent` → Runtime Error: "Property does not exist"
+
+**Examples:**
+```javascript
+obj = {name: "Alice", age: 30}
+PRINT(obj.name)        // ✅ "Alice"
+PRINT(obj.city)        // ❌ Runtime Error: Property 'city' does not exist
+
+arr = [1, 2, 3]
+PRINT(arr.0)           // ✅ 1
+PRINT(arr.10)          // ❌ Runtime Error: Property '10' does not exist
+
+obj2 = null
+PRINT(obj2.name)       // ❌ Runtime Error: Cannot access property 'name' of null
 ```
 
-**Constraints**:
-- 좌변(lvalue)은 변수 또는 프로퍼티 접근만 가능
-- 상수 또는 표현식은 좌변으로 사용 불가
+### 4.2 Writing Properties
 
-### 4.2 Conditional Statement
+**Syntax:** `object.property = value`
 
-```propertee
-if condition then
-    statements
-end
+- **Creates new property** if it doesn't exist
+- Updates existing property if it exists
 
+⚠️ **Error cases:**
+- `null.property = value` → Runtime Error
+- Assigning to non-object (e.g., `5.property = 10`) → Runtime Error
+
+**Examples:**
+```javascript
+obj = {name: "Alice"}
+obj.age = 30           // ✅ Creates new property
+obj.name = "Bob"       // ✅ Updates existing property
+
+PRINT(obj.age)         // ✅ 30
+PRINT(obj.name)        // ✅ "Bob"
+```
+
+### 4.3 Dynamic Property Access
+
+**Using variables:**
+```javascript
+key = "name"
+obj = {name: "Alice"}
+PRINT(obj.$key)        // ✅ "Alice" (shorthand for .$(key))
+PRINT(obj.$(key))      // ✅ "Alice" (full form)
+```
+
+---
+
+## 5. Control Flow
+
+### 5.1 If Statement
+
+**Syntax:**
+```
 if condition then
     statements
 else
@@ -202,343 +271,1116 @@ else
 end
 ```
 
-**Constraints**:
-- `elseif` 또는 `elif` 미지원 (중첩 if 사용)
-- condition은 truthy/falsy로 평가됨
+- `else` block is optional
+- Condition should evaluate to boolean
 
-### 4.3 Loop Statement
+**Examples:**
+```javascript
+x = 10
+if x > 5 then
+    PRINT("Greater than 5")
+end
 
-ProperTee는 `loop` 키워드로 통합된 반복문을 제공합니다.
+if x == 0 then
+    PRINT("Zero")
+else
+    PRINT("Non-zero")
+end
+```
 
-#### Condition Loop (while-style)
-```propertee
+### 5.2 Loop Statement
+
+#### Condition Loop
+
+**Syntax:**
+```
 loop condition do
     statements
 end
-```
 
-#### Value Loop (for-each style)
-```propertee
-loop value in collection do
-    statements
-end
-```
-
-#### Key-Value Loop
-```propertee
-loop key, value in collection do
-    statements
-end
-```
-
-#### Infinite Loop
-```propertee
 loop condition infinite do
     statements
 end
 ```
 
-**Constraints**:
-- `while`, `for` 키워드 미지원 (모두 `loop`로 통합)
-- C-style for loop 미지원
-- `infinite` 키워드는 무한 루프 의도를 명시적으로 표현
+- Default iteration limit: **1000** (configurable)
+- Use `infinite` keyword to remove limit
 
-### 4.4 Flow Control
+**Examples:**
+```javascript
+counter = 0
+loop counter < 10 do
+    PRINT(counter)
+    counter = counter + 1
+end
 
-```propertee
-break      // 루프 탈출
-continue   // 다음 반복으로
+// Infinite loop (must have break)
+loop true infinite do
+    PRINT("Running...")
+    if shouldStop then
+        break
+    end
+end
 ```
 
-**Constraints**:
-- 루프 외부에서 사용 시 구현 정의 (권장: 오류)
-- 레이블 지원 없음
+#### Collection Loop (Value Only)
+
+**Syntax:**
+```
+loop value in collection do
+    statements
+end
+```
+
+- Iterates over **values** only
+- Arrays: iterates over elements
+- Objects: iterates over property values
+
+**Examples:**
+```javascript
+// Array
+numbers = [10, 20, 30]
+loop num in numbers do
+    PRINT(num)        // 10, 20, 30
+end
+
+// Object
+scores = {alice: 95, bob: 87}
+loop score in scores do
+    PRINT(score)      // 95, 87
+end
+```
+
+#### Collection Loop (Key and Value)
+
+**Syntax:**
+```
+loop key, value in collection do
+    statements
+end
+```
+
+- First variable = **key/index**
+- Second variable = **value**
+- Arrays: key is numeric index (0, 1, 2, ...)
+- Objects: key is string property name
+
+**Examples:**
+```javascript
+// Array with index
+items = ["apple", "banana", "cherry"]
+loop idx, item in items do
+    PRINT(idx, ":", item)
+    // 0 : apple
+    // 1 : banana
+    // 2 : cherry
+end
+
+// Object with keys
+person = {name: "Alice", age: 30}
+loop key, val in person do
+    PRINT(key, "=", val)
+    // name = Alice
+    // age = 30
+end
+```
+
+### 5.3 Flow Control
+
+- `break`: Exit current loop immediately
+- `continue`: Skip to next iteration
+
+**Examples:**
+```javascript
+loop i, num in numbers do
+    if num < 0 then
+        continue      // Skip negative numbers
+    end
+    
+    if num > 100 then
+        break         // Stop if number too large
+    end
+    
+    PRINT(num)
+end
+```
 
 ---
 
-## 5. Functions
+## 6. Iteration Limits
 
-### 5.1 Function Call Syntax
+### 6.1 Default Behavior
 
-```propertee
-functionName()
-functionName(arg1)
-functionName(arg1, arg2, arg3)
+⚠️ All loops have a default maximum iteration count: **1000**
+
+**Behavior when limit exceeded:**
+
+#### Warning Mode (Default) ⚠️
+- Outputs warning to stderr
+- **Breaks the loop** (equivalent to explicit `break`)
+- **Continues with next statement**
+- Warning message: `"Warning: Loop exceeded maximum iterations (1000), stopping loop"`
+
+**Example:**
+```javascript
+counter = 0
+loop counter < 10000 do
+    PRINT(counter)
+    counter = counter + 1
+end
+// After 1000 iterations:
+// ⚠️ Warning: Loop exceeded maximum iterations (1000), stopping loop
+
+PRINT("After loop")  // ✅ This executes
 ```
 
-**Constraints**:
-- 함수 정의 구문 없음 (호출만 가능)
-- 모든 함수는 외부에서 제공되어야 함
-- 가변 인자 지원은 함수 구현에 따름
+#### Error Mode (Optional)
+- Throws runtime error
+- **Stops execution completely**
+- Error message: `"Runtime Error: Loop exceeded maximum iterations (1000)..."`
 
-### 5.2 Standard Library
+**Example:**
+```javascript
+// With iterationLimitBehavior: 'error'
 
-ProperTee 구현체는 다음 표준 함수를 **반드시** 제공해야 합니다:
+counter = 0
+loop counter < 10000 do
+    PRINT(counter)
+    counter = counter + 1
+end
+// After 1000 iterations:
+// ❌ Runtime Error: Loop exceeded maximum iterations (1000)...
 
-#### I/O Functions
-- `PRINT(...args)` : 값 출력
+PRINT("This never executes")  // ❌ NOT EXECUTED
+```
 
-#### Math Functions
-- `SUM(...numbers)` : 합계
-- `MAX(...numbers)` : 최댓값
-- `MIN(...numbers)` : 최솟값
-- `ABS(n)` : 절댓값
-- `FLOOR(n)` : 내림
-- `CEIL(n)` : 올림
-- `ROUND(n)` : 반올림
+**Configuration:**
+```javascript
+// Warning mode (default)
+const visitor = new ProperTeeCustomVisitor(
+    properties,
+    functions,
+    ioStreams,
+    { 
+        maxIterations: 1000,
+        iterationLimitBehavior: 'warn'  // default
+    }
+);
 
-#### Utility Functions
-- `LEN(arr|string)` : 길이 반환
+// Error mode (strict)
+const visitor = new ProperTeeCustomVisitor(
+    properties,
+    functions,
+    ioStreams,
+    { 
+        maxIterations: 1000,
+        iterationLimitBehavior: 'error'  // stops execution on limit
+    }
+);
+```
 
-#### Extended Functions (Optional)
-- `REGEX(pattern, text, mode)` : 정규표현식 처리
-- `RUN(command, ...args)` : 외부 명령 실행
+### 6.2 Infinite Loops
 
-**Constraints**:
-- 함수 이름은 대소문자 구분
-- 표준 함수는 오버라이드 가능
-- 추가 함수는 호스트 환경에서 제공
+Use `infinite` keyword after condition to remove iteration limit:
+
+**Syntax:**
+```
+loop condition infinite do
+    statements
+end
+
+loop key, value in collection infinite do
+    statements
+end
+```
+
+⚠️ **Must include explicit `break`** to avoid true infinite loop
+
+**Example:**
+```javascript
+loop true infinite do
+    PRINT("Running...")
+    if shouldStop then
+        break  // Must have break!
+    end
+end
+```
+
+### 6.3 Configuration
+
+Iteration limit can be configured when creating the visitor:
+
+```javascript
+const visitor = new ProperTeeCustomVisitor(
+    properties,
+    functions,
+    ioStreams,
+    { maxIterations: 5000 }  // Custom limit
+);
+```
 
 ---
 
-## 6. Literals
+## 7. Error Handling
 
-### 6.1 Object Literal
+### 7.1 Runtime Errors (Fatal)
 
-```propertee
-{}
-{key: value}
-{key1: value1, key2: value2}
-{
-    "special-key": value,
-    123: "numeric key",
-    nested: {inner: "value"}
+All runtime errors **immediately halt execution**. There is no try-catch mechanism.
+
+**Error Categories:**
+
+1. **Division by zero**
+   - `x / 0`
+   - `x % 0`
+
+2. **Undefined variable**
+   - Accessing non-existent variable
+
+3. **Property access errors**
+   - Null property access: `null.property`
+   - Non-existent property: `object.missingProperty`
+
+4. **Type errors**
+   - Invalid operator operands: `"hello" * 5`
+   - Non-object property assignment: `5.property = 10`
+
+5. **Loop limit exceeded** (only in 'error' mode)
+   - Iteration limit reached without `infinite` keyword
+   - Default behavior is 'warn' mode (non-fatal)
+
+6. **Unknown function**
+   - Calling undefined function
+
+### 7.2 Warnings (Non-Fatal)
+
+**Loop limit warnings** (default behavior):
+- Iteration limit reached → warning to stderr, loop breaks, execution continues
+- Use `infinite` keyword to remove limit
+- Can be changed to error mode via `iterationLimitBehavior: 'error'`
+
+### 7.3 No Exception Handling
+
+ProperTee does **NOT** have try-catch exception handling.
+
+All errors are **fatal** and stop execution immediately (warnings are non-fatal).
+
+### 7.4 Error Output
+
+When runtime error occurs:
+- Previous output (from `PRINT`) is displayed
+- Error message is shown
+- Execution stops
+
+When warning occurs:
+- Warning message is output to stderr
+- Loop breaks
+- Execution continues with next statement
+
+---
+
+## 8. Type Coercion
+
+### 8.1 Strict Type System
+
+⚠️ ProperTee does **NOT** perform implicit type coercion.
+
+**JavaScript behavior NOT supported:**
+```javascript
+// JavaScript (works with coercion)
+"5" + 3        // "53"
+"10" - 2       // 8
+true + false   // 1
+5 * "2"        // 10
+
+// ProperTee (all errors)
+"5" + 3        // ❌ Runtime Error
+"10" - 2       // ❌ Runtime Error
+true + false   // ❌ Runtime Error
+5 * "2"        // ❌ Runtime Error
+```
+
+### 8.2 Valid Type Combinations
+
+**Addition (`+`):**
+- ✅ Number + Number → Number
+- ✅ String + String → String
+- ❌ Any other combination → Error
+
+**Subtraction, Multiplication, Division, Modulo (`-`, `*`, `/`, `%`):**
+- ✅ Number (operator) Number → Number
+- ❌ Any other combination → Error
+
+**Comparison (`>`, `<`, `>=`, `<=`):**
+- ✅ Number (operator) Number → Boolean
+- ❌ Any other combination → Error
+
+**Equality (`==`, `!=`):**
+- ✅ Any type (operator) Any type → Boolean
+- Note: No type coercion, so `5 == "5"` is `false`
+
+**Logical operators (`and`, `or`, `not`):**
+- ✅ Boolean (operator) Boolean → Boolean
+- ❌ Any other combination → Error
+
+### 8.3 Explicit Conversion
+
+Currently, ProperTee does not provide type conversion functions.
+
+If needed in the future, consider adding:
+- `TO_NUMBER(value)` - Convert to number
+- `TO_STRING(value)` - Convert to string
+- `TO_BOOLEAN(value)` - Convert to boolean
+
+---
+
+## 9. Built-in Functions
+
+### 9.1 I/O Functions
+
+#### `PRINT(...args)`
+- Outputs arguments to stdout
+- Multiple arguments are space-separated
+- Automatically adds newline
+- **Returns**: `null` (no meaningful return value)
+
+**Examples:**
+```javascript
+PRINT("Hello")              // Hello
+PRINT("Score:", 95)         // Score: 95
+PRINT(1, 2, 3)              // 1 2 3
+
+result = PRINT("Test")      // result is null
+```
+
+### 9.2 Math Functions
+
+#### `SUM(...args)`
+- **Returns**: Number (sum of all arguments)
+- All arguments must be numbers
+
+#### `MAX(...args)`
+- **Returns**: Number (maximum value)
+- All arguments must be numbers
+
+#### `MIN(...args)`
+- **Returns**: Number (minimum value)
+- All arguments must be numbers
+
+#### `ABS(n)`
+- **Returns**: Number (absolute value)
+
+#### `FLOOR(n)`
+- **Returns**: Number (largest integer ≤ n)
+
+#### `CEIL(n)`
+- **Returns**: Number (smallest integer ≥ n)
+
+#### `ROUND(n)`
+- **Returns**: Number (nearest integer)
+
+**Examples:**
+```javascript
+PRINT(SUM(1, 2, 3, 4))      // 10
+PRINT(MAX(5, 2, 8, 1))      // 8
+PRINT(MIN(5, 2, 8, 1))      // 2
+PRINT(ABS(-5))              // 5
+PRINT(FLOOR(3.7))           // 3
+PRINT(CEIL(3.2))            // 4
+PRINT(ROUND(3.6))           // 4
+```
+
+### 9.3 Utility Functions
+
+#### `LEN(array|string)`
+- **Returns**: Number (length of array or string)
+- Returns 0 for other types
+
+**Examples:**
+```javascript
+PRINT(LEN([1, 2, 3]))       // 3
+PRINT(LEN("hello"))         // 5
+```
+
+### 9.4 String Functions
+
+#### `CHARS(string)`
+- **Returns**: Array of strings (each character as a string)
+- Converts string to array of characters
+- Based on Unicode code points (not UTF-16 code units)
+
+⚠️ **Note on complex characters:**
+- Emoji with modifiers (e.g., "👍🏻") will be split into multiple elements
+- "👍🏻" → ["👍", "🏻"] (thumbs up + skin tone modifier = 2 elements)
+- This is technically correct as they are separate Unicode code points
+- For grapheme cluster support (visual characters), external library would be needed
+
+**Examples:**
+```javascript
+text = "Hello"
+chars = CHARS(text)
+PRINT(chars)                // ["H", "e", "l", "l", "o"]
+
+// Iterate over characters
+loop char in CHARS("ProperTee") do
+    PRINT(char)
+end
+// P, r, o, p, e, r, T, e, e
+
+// Emoji with modifiers are split
+emoji = "👍🏻"
+chars = CHARS(emoji)
+PRINT(LEN(chars))           // 2 (base emoji + modifier)
+
+// Count specific character
+text = "ProperTee"
+count = 0
+loop char in CHARS(text) do
+    if char == "e" then
+        count = count + 1
+    end
+end
+PRINT(count)                // 3
+```
+
+#### `SPLIT(string, delimiter)`
+- **Returns**: Array of strings
+- Splits string into array by delimiter
+- Both arguments must be strings
+
+**Examples:**
+```javascript
+// CSV parsing
+csv = "apple,banana,cherry"
+items = SPLIT(csv, ",")
+PRINT(items)                // ["apple", "banana", "cherry"]
+
+// Split by space
+sentence = "Hello World Test"
+words = SPLIT(sentence, " ")
+loop word in words do
+    PRINT(word)
+end
+// Hello, World, Test
+
+// Split lines
+text = "line1\nline2\nline3"
+lines = SPLIT(text, "\n")
+PRINT(LEN(lines))           // 3
+```
+
+#### `JOIN(array, separator)`
+- **Returns**: String (joined elements)
+- Joins array elements into a string
+- First argument must be array
+- Second argument must be string (default: empty string)
+
+**Examples:**
+```javascript
+words = ["Hello", "World"]
+text = JOIN(words, " ")
+PRINT(text)                 // "Hello World"
+
+// With comma
+items = ["apple", "banana", "cherry"]
+csv = JOIN(items, ",")
+PRINT(csv)                  // "apple,banana,cherry"
+
+// Without separator
+letters = ["a", "b", "c"]
+combined = JOIN(letters, "")
+PRINT(combined)             // "abc"
+```
+
+#### `SUBSTRING(string, start, length?)`
+- **Returns**: String (extracted substring)
+- Extracts substring from string
+- `start`: starting index (0-based)
+- `length`: number of characters (optional, defaults to rest of string)
+
+**Examples:**
+```javascript
+text = "ProperTee"
+sub1 = SUBSTRING(text, 0, 6)
+PRINT(sub1)                 // "Proper"
+
+sub2 = SUBSTRING(text, 6)
+PRINT(sub2)                 // "Tee"
+
+// Extract first character
+first = SUBSTRING(text, 0, 1)
+PRINT(first)                // "P"
+```
+
+#### `UPPERCASE(string)`
+- **Returns**: String (uppercase version)
+- Converts string to uppercase
+- Argument must be string
+
+**Examples:**
+```javascript
+text = "Hello World"
+upper = UPPERCASE(text)
+PRINT(upper)                // "HELLO WORLD"
+
+name = "alice"
+formatted = UPPERCASE(name)
+PRINT(formatted)            // "ALICE"
+```
+
+#### `LOWERCASE(string)`
+- **Returns**: String (lowercase version)
+- Converts string to lowercase
+- Argument must be string
+
+**Examples:**
+```javascript
+text = "Hello World"
+lower = LOWERCASE(text)
+PRINT(lower)                // "hello world"
+
+NAME = "ALICE"
+normalized = LOWERCASE(NAME)
+PRINT(normalized)           // "alice"
+```
+
+#### `TRIM(string)`
+- **Returns**: String (trimmed version)
+- Removes whitespace from both ends of string
+- Argument must be string
+
+**Examples:**
+```javascript
+text = "  hello  "
+trimmed = TRIM(text)
+PRINT(trimmed)              // "hello"
+
+input = "\n\t  test  \n"
+cleaned = TRIM(input)
+PRINT(cleaned)              // "test"
+```
+
+### 9.5 Custom Functions
+
+Custom functions can be injected via constructor:
+
+```javascript
+const customFunctions = {
+    'DOUBLE': (n) => n * 2,
+    'GREET': (name) => `Hello, ${name}!`
+};
+
+const visitor = new ProperTeeCustomVisitor(
+    {},
+    customFunctions,
+    {}
+);
+```
+
+---
+
+## 10. Literals
+
+### 10.1 Number Literals
+
+- Integer: `42`, `-7`, `0`
+- Decimal: `3.14`, `-0.5`
+- Scientific notation: Not supported
+
+### 10.2 String Literals
+
+- Enclosed in double quotes: `"hello"`
+- Escape sequences: `\"` (quote), `\\` (backslash)
+- No template strings or interpolation
+
+### 10.3 Boolean Literals
+
+- `true`
+- `false`
+
+### 10.4 Null Literal
+
+- `null`
+
+### 10.5 Object Literals
+
+**Syntax:** `{key: value, key2: value2}`
+
+- Keys can be identifiers, strings, or numbers
+- Values can be any expression
+
+**Examples:**
+```javascript
+obj1 = {name: "Alice", age: 30}
+obj2 = {"full-name": "Bob Smith", 0: "first"}
+obj3 = {x: 1, y: 2, nested: {a: 10}}
+```
+
+### 10.6 Array Literals
+
+**Syntax:** `[value1, value2, value3]`
+
+- Values can be any expression
+
+**Examples:**
+```javascript
+arr1 = [1, 2, 3]
+arr2 = ["apple", "banana", "cherry"]
+arr3 = [1, "mixed", true, null]
+arr4 = [[1, 2], [3, 4]]  // Nested arrays
+```
+
+---
+
+## 11. Comments
+
+ProperTee supports two types of comments:
+
+### 11.1 Single-Line Comments
+
+**Syntax:** `// comment text`
+
+- Starts with `//`
+- Continues until the end of the line
+- Ignored during parsing
+
+**Examples:**
+```javascript
+// This is a single-line comment
+x = 10  // Comment after code
+
+// Multiple single-line comments
+// can be used for longer explanations
+```
+
+### 11.2 Block Comments
+
+**Syntax:** `/* comment text */`
+
+- Starts with `/*`
+- Ends with `*/`
+- Can span multiple lines
+- Ignored during parsing
+
+**Examples:**
+```javascript
+/* This is a block comment */
+x = 10
+
+/*
+This is a multi-line
+block comment
+*/
+y = 20
+
+z = /* inline comment */ 30
+```
+
+**Note:** Block comments do **not** nest. The first `*/` closes the comment.
+
+```javascript
+/* outer /* inner */ still in comment? */  // ⚠️ Closes at first */
+```
+
+---
+
+## 12. Configuration Options
+
+### 11.1 Constructor Signature
+
+```javascript
+new ProperTeeCustomVisitor(
+    builtInProperties,    // Object: External properties
+    builtInFunctions,     // Object: Custom functions
+    ioStreams,           // Object: I/O redirection
+    options              // Object: Runtime options
+)
+```
+
+### 11.2 Available Options
+
+#### `maxIterations` (number, default: 1000)
+- Maximum loop iterations before limit action
+- Set to `Infinity` to disable limit globally (not recommended)
+
+#### `iterationLimitBehavior` (string, default: 'warn')
+- **'warn'** (default): Output warning to stderr, break loop, continue execution
+- **'error'**: Throw runtime error and stop execution completely
+
+**Examples:**
+```javascript
+// Warning mode (default) - lenient
+const visitor = new ProperTeeCustomVisitor({}, {}, {}, {
+    maxIterations: 1000,
+    iterationLimitBehavior: 'warn'  // or omit (default)
+});
+
+// Error mode - strict
+const visitor = new ProperTeeCustomVisitor({}, {}, {}, {
+    maxIterations: 1000,
+    iterationLimitBehavior: 'error'
+});
+
+// Custom iteration limit with warning
+const visitor = new ProperTeeCustomVisitor({}, {}, {}, {
+    maxIterations: 5000,
+    iterationLimitBehavior: 'warn'
+});
+```
+
+---
+
+## 13. Implementation Notes
+
+### 12.1 Null vs Undefined
+
+- `null` is a **valid value** in ProperTee
+- JavaScript `undefined` should **NEVER** be returned to ProperTee scripts
+- Internal implementation may use `undefined`, but runtime must convert to errors
+
+### 12.2 JavaScript Interop
+
+When embedding ProperTee in JavaScript:
+
+**Passing data in:**
+```javascript
+const properties = {
+    user: { name: "Alice", score: 100 },
+    config: { debug: true }
+};
+
+const visitor = new ProperTeeCustomVisitor(properties, {}, {});
+```
+
+**Custom functions:**
+```javascript
+const functions = {
+    'LOG': (msg) => console.log('[LOG]', msg),
+    'NOW': () => Date.now()
+};
+```
+
+**I/O redirection:**
+```javascript
+const output = [];
+const ioStreams = {
+    stdout: (...args) => output.push(args.join(' ')),
+    stderr: (...args) => console.error(...args)
+};
+```
+
+### 12.3 Error Handling in JavaScript
+
+ProperTee runtime errors throw JavaScript `Error` objects:
+
+```javascript
+try {
+    const result = visitor.visit(tree);
+} catch (e) {
+    console.error('Runtime Error:', e.message);
 }
 ```
 
-**Constraints**:
-- 키는 식별자, 문자열, 또는 숫자
-- 중복 키의 동작은 구현 정의 (권장: 마지막 값 사용)
-- Trailing comma 지원은 구현 정의
-
-### 6.2 Array Literal
-
-```propertee
-[]
-[1, 2, 3]
-[1, "two", true, null, {key: "value"}]
-[[1, 2], [3, 4]]
-```
-
-**Constraints**:
-- 혼합 타입 허용
-- Trailing comma 지원은 구현 정의
-- Sparse array 미지원
-
 ---
 
-## 7. Scoping and Variables
+## 14. Complete Examples
 
-### 7.1 Variable Declaration
+### 13.1 Valid Programs
 
-ProperTee는 **명시적 선언이 불필요**합니다. 첫 할당이 선언입니다.
+#### Example 1: Basic Arithmetic
+```javascript
+x = 10
+y = 20
+sum = x + y
+diff = x - y
+product = x * y
+quotient = y / x
 
-```propertee
-x = 10          // x 생성
-y = x + 5       // x 읽기, y 생성
+PRINT("Sum:", sum)           // Sum: 30
+PRINT("Difference:", diff)   // Difference: -10
+PRINT("Product:", product)   // Product: 200
+PRINT("Quotient:", quotient) // Quotient: 2
 ```
 
-### 7.2 Scope Rules
+#### Example 2: Object Manipulation
+```javascript
+person = {name: "Alice", age: 30}
+person.city = "Seoul"        // Add new property
+person.age = 31             // Update property
 
-- **Global Scope**: 스크립트 최상위 레벨
-- **Local Scope**: 블록 스코프 미지원 (모든 변수는 전역)
+PRINT(person.name)          // Alice
+PRINT(person.age)           // 31
+PRINT(person.city)          // Seoul
+```
 
-**Constraints**:
-- 블록 내에서 선언된 변수도 전역
-- 함수 스코프 없음 (함수 정의 자체가 없음)
-- Hoisting 없음 (선언 전 사용 불가)
+#### Example 3: Array Iteration
+```javascript
+numbers = [1, 2, 3, 4, 5]
+sum = 0
 
-### 7.3 Properties vs Variables
-
-- **Properties**: 외부에서 주입된 초기 데이터 (read-only 권장)
-- **Variables**: 스크립트 내에서 생성된 변수 (read-write)
-
-**Lookup Order**:
-1. Variables
-2. Properties
-
----
-
-## 8. Grammar Constraints
-
-### 8.1 Statement Termination
-
-- 세미콜론(`;`) 선택적
-- 줄바꿈이 문장 구분자 역할
-- 명시적 세미콜론 사용 권장하지 않음
-
-### 8.2 Block Structure
-
-```propertee
-if condition then
-    // block
+loop num in numbers do
+    sum = sum + num
 end
 
-loop value in items do
-    // block
+PRINT("Sum:", sum)          // Sum: 15
+```
+
+#### Example 4: Conditional with Null Check
+```javascript
+obj = null
+
+if obj != null then
+    PRINT(obj.value)
+else
+    PRINT("Object is null")  // This executes
 end
 ```
 
-**Constraints**:
-- 모든 블록은 명시적 종료자(`end`) 필요
-- 중괄호 스타일 블록 미지원
-- 빈 블록 허용
+#### Example 5: Finding Even Numbers
+```javascript
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-### 8.3 Expression Statements
+loop idx, num in numbers do
+    if num % 2 == 0 then
+        PRINT("Even number at index", idx, ":", num)
+    end
+end
+```
 
-표현식 자체를 문장으로 사용 가능:
+#### Example 6: String Processing with CHARS
+```javascript
+// Count vowels
+text = "ProperTee"
+vowels = CHARS("aeiouAEIOU")
+vowelCount = 0
 
-```propertee
-42                  // 표현식 문장 (값은 평가되지만 버려짐)
-functionCall()      // 부수효과를 위한 호출
-obj.property        // 프로퍼티 접근 (값 확인 등)
+loop char in CHARS(text) do
+    loop vowel in vowels do
+        if char == vowel then
+            vowelCount = vowelCount + 1
+            break
+        end
+    end
+end
+
+PRINT("Vowel count:", vowelCount)  // 4
+```
+
+#### Example 7: CSV Processing with SPLIT
+```javascript
+// Parse CSV data
+csv = "name,age,city\nAlice,30,Seoul\nBob,25,Busan"
+lines = SPLIT(csv, "\n")
+
+// Skip header
+firstLine = true
+loop line in lines do
+    if firstLine then
+        firstLine = false
+        continue
+    end
+    
+    columns = SPLIT(line, ",")
+    name = columns.0
+    age = columns.1
+    city = columns.2
+    
+    PRINT(name, "is", age, "years old and lives in", city)
+end
+// Alice is 30 years old and lives in Seoul
+// Bob is 25 years old and lives in Busan
+```
+
+#### Example 8: String Formatting
+```javascript
+// Capitalize first letter
+name = "alice"
+firstChar = SUBSTRING(name, 0, 1)
+restChars = SUBSTRING(name, 1)
+formatted = UPPERCASE(firstChar) + LOWERCASE(restChars)
+PRINT(formatted)  // "Alice"
+
+// Create acronym
+words = SPLIT("ProperTee Execution Engine", " ")
+acronym = ""
+loop word in words do
+    firstLetter = SUBSTRING(word, 0, 1)
+    acronym = acronym + UPPERCASE(firstLetter)
+end
+PRINT(acronym)  // "PEE"
+```
+
+### 13.2 Error Cases
+
+#### Error 1: Division by Zero
+```javascript
+x = 10 / 0
+// ❌ Runtime Error: Division by zero
+```
+
+#### Error 2: Undefined Variable
+```javascript
+PRINT(unknownVar)
+// ❌ Runtime Error: Variable 'unknownVar' is not defined
+```
+
+#### Error 3: Non-existent Property
+```javascript
+obj = {name: "Test"}
+PRINT(obj.age)
+// ❌ Runtime Error: Property 'age' does not exist
+```
+
+#### Error 4: Type Mismatch in Addition
+```javascript
+result = "hello" + 5
+// ❌ Runtime Error: Addition requires both operands to be numbers or both to be strings
+
+result = 5 + "hello"
+// ❌ Runtime Error: Addition requires both operands to be numbers or both to be strings
+```
+
+#### Error 5: Type Mismatch in Arithmetic
+```javascript
+result = "10" - 5
+// ❌ Runtime Error: Subtraction requires numeric operands
+
+result = "5" * 2
+// ❌ Runtime Error: Arithmetic operator '*' requires numeric operands
+
+result = true / false
+// ❌ Runtime Error: Arithmetic operator '/' requires numeric operands
+```
+
+#### Error 6: Null Access
+```javascript
+obj = null
+PRINT(obj.name)
+// ❌ Runtime Error: Cannot access property 'name' of null
+```
+
+#### Error 7: Type Mismatch in Comparison
+```javascript
+result = "10" > 5
+// ❌ Runtime Error: Comparison operator '>' requires numeric operands
+
+result = true >= false
+// ❌ Runtime Error: Comparison operator '>=' requires numeric operands
+```
+
+#### Error 8: Type Mismatch in Logical Operators
+```javascript
+result = 1 and 0
+// ❌ Runtime Error: Logical AND requires boolean operands
+
+result = "hello" or ""
+// ❌ Runtime Error: Logical OR requires boolean operands
+
+result = not 0
+// ❌ Runtime Error: Logical NOT requires boolean operand
+```
+
+#### Error 9: Type Mismatch in Unary Minus
+```javascript
+result = -"5"
+// ❌ Runtime Error: Unary minus requires numeric operand
+
+result = -true
+// ❌ Runtime Error: Unary minus requires numeric operand
+```
+
+#### Error 10: Loop Limit Exceeded (Error Mode)
+```javascript
+// With iterationLimitBehavior: 'error'
+
+counter = 0
+loop counter < 10000 do
+    counter = counter + 1
+end
+// ❌ Runtime Error: Loop exceeded maximum iterations (1000)
+```
+
+#### Warning 1: Loop Limit Exceeded (Warning Mode - Default)
+```javascript
+// With iterationLimitBehavior: 'warn' (default)
+
+counter = 0
+loop counter < 10000 do
+    counter = counter + 1
+end
+// ⚠️ Warning: Loop exceeded maximum iterations (1000), stopping loop
+// Execution continues
+
+PRINT("Counter after loop:", counter)  // ✅ Prints: Counter after loop: 1001
 ```
 
 ---
 
-## 9. Implementation Requirements
+## 15. Reserved Keywords
 
-### 9.1 Mandatory Features
+The following keywords are reserved and cannot be used as variable names:
 
-구현체는 다음을 **반드시** 지원해야 합니다:
-
-1. 모든 키워드와 연산자
-2. 표준 라이브러리 핵심 함수 (PRINT, SUM, MAX, MIN, ABS, LEN)
-3. 동적 프로퍼티 접근 (`.$(expr)`)
-4. 객체 및 배열 리터럴
-5. Null 값 처리
-
-### 9.2 Optional Features
-
-다음 기능은 선택적입니다:
-
-1. REGEX, RUN 등 확장 함수
-2. 성능 최적화 (JIT 컴파일 등)
-3. 디버깅 정보
-4. 에러 스택 트레이스
-
-### 9.3 Error Handling
-
-구현체는 다음 상황에서 명확한 에러를 발생시켜야 합니다:
-
-- 구문 오류 (syntax error)
-- 정의되지 않은 변수 참조
-- 타입 오류 (예: 숫자가 아닌 값에 산술 연산)
-- 0으로 나누기 (선택적)
-
-### 9.4 Numeric Precision
-
-- 권장: IEEE 754 double precision (64-bit)
-- 최소 요구사항: 15자리 유효숫자
+- `if`, `then`, `else`, `end`
+- `loop`, `in`, `do`, `infinite`
+- `break`, `continue`
+- `and`, `or`, `not`
+- `true`, `false`, `null`
 
 ---
 
-## 10. Security Considerations
+## 16. Operator Precedence
 
-### 10.1 Sandboxing
+From highest to lowest priority:
 
-ProperTee는 임베딩을 위해 설계되었으므로:
+1. Member access (`.`)
+2. Unary operators (`-`, `not`)
+3. Multiplicative (`*`, `/`, `%`)
+4. Additive (`+`, `-`)
+5. Comparison (`>`, `<`, `==`, `>=`, `<=`, `!=`)
+6. Logical AND (`and`)
+7. Logical OR (`or`)
 
-1. 파일 시스템 접근 제한
-2. 네트워크 접근 제한
-3. RUN() 함수는 샌드박스 환경에서 제한
-
-### 10.2 Resource Limits
-
-구현체는 다음을 고려해야 합니다:
-
-- 무한 루프 타임아웃
-- 메모리 사용량 제한
-- 재귀 깊이 제한 (표현식 평가)
+Use parentheses `()` to override precedence.
 
 ---
 
-## 11. Future Considerations
+## 17. Future Considerations
 
-다음 기능은 향후 버전에서 고려될 수 있습니다:
+Features that may be added in future versions:
 
-- 함수 정의 구문
-- 모듈 시스템
-- 예외 처리 (try-catch)
-- 패턴 매칭
-- 구조 분해 할당
-- spread/rest 연산자
-
----
-
-## 12. Conformance
-
-ProperTee 호환 구현체는:
-
-1. 이 명세의 모든 필수 기능을 구현해야 함
-2. 표준 라이브러리 핵심 함수를 제공해야 함
-3. 명세에 정의된 동작과 일치해야 함
-4. 확장 기능 추가 시 명세와 충돌하지 않아야 함
+- [ ] Type conversion functions (`TO_NUMBER`, `TO_STRING`, etc.)
+- [ ] Array manipulation functions (`PUSH`, `POP`, `SLICE`, etc.)
+- [x] String manipulation functions (`SPLIT`, `JOIN`, `SUBSTRING`, etc.) - ✅ Implemented
+- [ ] Optional chaining operator (`?.`)
+- [ ] Safe property check function (`HAS(obj, "property")`)
+- [x] Comments in code - ✅ Implemented (single-line `//` and block `/* */`)
+- [ ] Function definitions (user-defined functions)
+- [ ] Import/Export system
 
 ---
 
 ## Appendix A: Grammar Summary
 
-```antlr
-// 간소화된 문법 개요
-root : statement* EOF ;
+For the complete ANTLR4 grammar, see `ProperTee.g4`.
 
-statement
-    : assignment
-    | ifStatement
-    | iterationStmt
-    | flowControl
-    | expression
-    ;
-
-expression
-    : atom
-    | expression '.' access
-    | unary_op expression
-    | expression binary_op expression
-    ;
-
-// 자세한 문법은 ProperTee.g4 참조
-```
+Key grammar rules:
+- `root`: Top-level entry point
+- `statement`: Assignments, if, loop, expressions
+- `expression`: Operators, member access, atoms
+- `atom`: Literals (number, string, boolean, null, object, array)
 
 ---
 
-## Appendix B: Standard Library Reference
+## Appendix B: Version History
 
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| PRINT | PRINT(...args) | 값 출력 |
-| SUM | SUM(...numbers) | 숫자 합계 |
-| MAX | MAX(...numbers) | 최댓값 |
-| MIN | MIN(...numbers) | 최솟값 |
-| ABS | ABS(n) | 절댓값 |
-| FLOOR | FLOOR(n) | 내림 |
-| CEIL | CEIL(n) | 올림 |
-| ROUND | ROUND(n) | 반올림 |
-| LEN | LEN(arr\|string) | 길이 |
-| REGEX | REGEX(pattern, text, mode) | 정규식 (선택) |
-| RUN | RUN(command, ...args) | 외부 실행 (선택) |
+### Version 1.0 (2026-01-25)
+- Initial specification
+- Basic types, operators, control flow
+- Loop with `infinite` keyword
+- Strict error handling (no undefined)
+- Property access validation
+- String manipulation functions (CHARS, SPLIT, JOIN, SUBSTRING, UPPERCASE, LOWERCASE, TRIM)
+- Block comments (`/* */`) and single-line comments (`//`)
 
 ---
 
-## Document History
-
-- **v2.0 (2026-01-25)**: 
-  - K_NULL atom 추가 명시
-  - loop 통합 반복문 반영
-  - 모듈로 연산자(%) 추가
-  - infinite 키워드 추가
-  - 구현 제약사항 문서화
-
-- **v1.0 (Initial)**: 
-  - 최초 명세 작성
+**End of Language Specification**

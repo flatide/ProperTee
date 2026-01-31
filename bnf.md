@@ -22,8 +22,7 @@
 
 <statement>         ::= <assignment>
                       | <if-statement>
-                      | <while-loop>
-                      | <for-loop>
+                      | <loop-statement>
                       | <flow-control>
                       | <expression>
 
@@ -35,10 +34,10 @@
 <if-statement>      ::= "if" <expression> "then" <statement-list> "end"
                       | "if" <expression> "then" <statement-list> "else" <statement-list> "end"
 
-<while-loop>        ::= "while" <expression> "do" <statement-list> "end"
-
-<for-loop>          ::= "for" <identifier> "in" <expression> "do" <statement-list> "end"
-                      | "for" <identifier> "," <identifier> "in" <expression> "do" <statement-list> "end"
+<loop-statement>    ::= "loop" <expression> "do" <statement-list> "end"
+                      | "loop" <expression> "infinite" "do" <statement-list> "end"
+                      | "loop" <identifier> "in" <expression> "do" <statement-list> "end"
+                      | "loop" <identifier> "," <identifier> "in" <expression> "do" <statement-list> "end"
 
 <flow-control>      ::= "break"
                       | "continue"
@@ -68,6 +67,7 @@
 <multiplicative-expression> ::= <unary-expression>
                               | <multiplicative-expression> "*" <unary-expression>
                               | <multiplicative-expression> "/" <unary-expression>
+                              | <multiplicative-expression> "%" <unary-expression>
 
 <unary-expression>  ::= <postfix-expression>
                       | "-" <unary-expression>
@@ -156,12 +156,26 @@
 ## 키워드
 
 ```
-if    then    else    end
-while for     in      do
-break continue
-not   and     or
-true  false   null
+if       then     else      end
+loop     in       do        infinite
+break    continue
+not      and      or
+true     false    null
 ```
+
+---
+
+## 주석
+
+ProperTee는 두 가지 형태의 주석을 지원합니다:
+
+```
+// 한 줄 주석 - 라인 끝까지
+
+/* 블럭 주석 - 여러 줄 가능 */
+```
+
+**주의**: 블럭 주석은 중첩되지 않습니다.
 
 ---
 
@@ -173,6 +187,6 @@ true  false   null
 | 2 | `and` | 좌결합 |
 | 3 | `==` `!=` `<` `>` `<=` `>=` | 비결합 |
 | 4 | `+` `-` | 좌결합 |
-| 5 | `*` `/` | 좌결합 |
+| 5 | `*` `/` `%` | 좌결합 |
 | 6 | `-` (단항) `not` | 우결합 |
 | 7 | `.` (멤버 접근) | 좌결합 |
