@@ -79,7 +79,7 @@ ProperTee를 자신의 웹페이지에 통합하려면 GitHub의 샘플을 참�
 
 ```html
 <!-- ProperTee 번들 로드 -->
-<script src="https://raw.githubusercontent.com/flatide/propertee-js/main/dist/propertee-bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/flatide/propertee-js@main/dist/propertee-bundle.js"></script>
 
 <script>
 // Properties와 스크립트 준비
