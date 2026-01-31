@@ -24,10 +24,12 @@
 ```ebnf
 program     = { statement } EOF ;
 
-statement   = assignment
+statement   = shared_decl
+            | assignment
             | if_statement
             | loop_statement
             | function_def
+            | parallel_stmt
             | flow_control
             | expression ;
 ```
@@ -156,6 +158,77 @@ end
 ```
 
 **주의**: 함수는 호스트 언어(JavaScript)의 스택 제한을 받습니다. 깊은 재귀는 스택 오버플로우를 발생시킬 수 있습니다.
+
+### 3.5 공유 변수 선언 (SHARED)
+
+```ebnf
+shared_decl    = "shared" shared_var { "," shared_var } ;
+shared_var     = ID [ "=" expression ] ;
+```
+
+**예시:**
+```propertee
+// 공유 변수 선언
+shared counter = 0
+shared data, cache
+
+// 함수에서 uses 절로 접근
+function increment() uses counter do
+    counter = counter + 1
+end
+```
+
+**주의**: `shared` 선언은 전역 스코프에서만 가능합니다.
+
+### 3.6 병렬 실행 (PARALLEL)
+
+```ebnf
+parallel_stmt  = "parallel" { parallel_task } "end" ;
+parallel_task  = ID "=" function_call
+               | function_call ;
+```
+
+**예시:**
+```propertee
+shared total = 0
+
+function work1() uses total do
+    total = total + 10
+end
+
+function work2() uses total do
+    total = total + 20
+end
+
+parallel
+    work1()
+    work2()
+end
+
+PRINT(total)  // 30
+```
+
+**주의**: 
+- `parallel` 블록 내에서는 함수 호출만 가능합니다
+- 공유 변수에 접근하는 함수는 `uses` 절을 명시해야 합니다
+- 자동 데드락 방지 (알파벳 순 잠금)
+
+### 3.7 USES 절
+
+```ebnf
+uses_clause    = "uses" ID { "," ID } ;
+function_def   = "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
+```
+
+**예시:**
+```propertee
+shared account1, account2
+
+function transfer(amount) uses account1, account2 do
+    account1 = account1 - amount
+    account2 = account2 + amount
+end
+```
 
 ---
 
@@ -353,6 +426,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function return
+shared   uses     parallel
 not      and      or
 true     false    null
 ```
@@ -401,10 +475,12 @@ z = /* 인라인 주석 */ 30
 
 program         = { statement } EOF ;
 
-statement       = assignment
+statement       = shared_decl
+                | assignment
                 | if_statement
                 | loop_statement
                 | function_def
+                | parallel_stmt
                 | flow_control
                 | expression ;
 
@@ -415,8 +491,17 @@ if_statement    = "if" expression "then" block [ "else" block ] "end" ;
 loop_statement  = "loop" ( loop_condition | loop_iteration ) "do" block "end" ;
 loop_condition  = expression [ "infinite" ] ;
 loop_iteration  = ID [ "," ID ] "in" expression ;
-function_def    = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
+
+shared_decl     = "shared" shared_var { "," shared_var } ;
+shared_var      = ID [ "=" expression ] ;
+
+function_def    = "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
 parameter_list  = ID { "," ID } ;
+uses_clause     = "uses" ID { "," ID } ;
+
+parallel_stmt   = "parallel" { parallel_task } "end" ;
+parallel_task   = ID "=" function_call | function_call ;
+
 flow_control    = "break" | "continue" | "return" [ expression ] ;
 
 block           = { statement } ;

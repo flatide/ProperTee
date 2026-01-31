@@ -1,15 +1,15 @@
 # ProperTee v2.0 업데이트 완료
 
-**최종 업데이트**: 1-based 인덱싱으로 변경 (2026-01-25)
+**최종 업데이트**: 병렬 실행 및 쓰레딩 기능 추가 (2026-01-31)
 
 ## ✅ 완료된 모든 작업
 
-### 1. LANGUAGE_SPEC.md 생성
+### 1. LANGUAGE_SPEC.md 생성 및 업데이트
 **위치**: `grammar/LANGUAGE_SPEC.md`
 
 완전한 언어 명세 문서 생성:
 - 렉시컬 요소 (키워드, 식별자, 리터럴)
-- 데이터 타입 시스템
+- 데이터 타입 시스템 (1-based 인덱싱)
 - 연산자 우선순위
 - 문장 구조
 - 표준 라이브러리 명세 (필수/선택 함수)
@@ -17,6 +17,8 @@
 - 보안 고려사항
 - **주석 명세**: 한 줄 주석(`//`)과 블럭 주석(`/* */`) ✅
 - **사용자 정의 함수 명세**: `function` 키워드, 재귀, 스코프 규칙 ✅
+- **병렬 실행 및 쓰레딩**: `shared`, `uses`, `parallel` 키워드 ✅
+- **1-based 인덱싱**: 배열 첫 번째 요소는 `.1` ✅
 
 ### 2. 문법 파일 업데이트
 **ProperTee.g4**:
@@ -28,25 +30,36 @@
 - **사용자 정의 함수**: `K_FUNCTION`, `K_RETURN` 키워드 추가 ✅
 - **functionDef 규칙**: `function name(params) do ... end` ✅
 - **return 문**: `return expression?` ✅
+- **병렬 실행**: `K_SHARED`, `K_USES`, `K_PARALLEL` 키워드 추가 ✅
+- **sharedDecl 규칙**: `shared var1, var2 = init` ✅
+- **parallelStmt 규칙**: `parallel ... end` ✅
+- **usesClause 규칙**: `uses res1, res2` ✅
+- **1-based 인덱싱 주석**: ArrayAccess 주석 업데이트 ✅
 
 ### 3. 문서 업데이트
 
 #### README.md ✅
 - 특징에 "통합 반복문" 추가
+- 특징에 "1-based 인덱싱" 추가 ✅
 - 특징에 **"사용자 정의 함수"** 추가 ✅
+- 특징에 **"병렬 실행"** 추가 ✅
 - "주석 지원" 특징 추가
 - 빠른 예제에 함수 정의 예제 추가 ✅
+- 빠른 예제에 **병렬 실행 예제** 추가 ✅
 - LANGUAGE_SPEC.md 링크 포함
 
 #### grammar.md ✅
 - atom에 `"null"` 추가
-- 키워드: `loop`, `infinite`, **`function`, `return`** 추가
+- 키워드: `loop`, `infinite`, **`function`, `return`, `shared`, `uses`, `parallel`** 추가 ✅
 - 반복문 섹션: `loop_statement`
 - **함수 정의 섹션 추가** (3.4절) ✅
+- **공유 변수 선언 섹션 추가** (3.5절) ✅
+- **병렬 실행 섹션 추가** (3.6절) ✅
+- **USES 절 섹션 추가** (3.7절) ✅
 - **흐름 제어에 return 추가** (3.3절) ✅
 - 모듈로 연산자 `%` 추가
 - 주석 섹션 추가
-- 전체 EBNF에 function_def, parameter_list 추가 ✅
+- 전체 EBNF에 shared_decl, parallel_stmt, uses_clause 추가 ✅
 - **1-based 인덱싱 명시** ✅
 
 #### bnf.md ✅
@@ -54,16 +67,20 @@
 - `loop_statement`로 통일
 - **`<function-definition>` 규칙 추가** ✅
 - **`<parameter-list>` 규칙 추가** ✅
+- **`<uses-clause>` 규칙 추가** ✅
+- **`<shared-declaration>` 규칙 추가** ✅
+- **`<parallel-statement>` 규칙 추가** ✅
 - **flow_control에 return 추가** ✅
-- 키워드 목록: **`function`, `return`** 추가 ✅
+- 키워드 목록: **`function`, `return`, `shared`, `uses`, `parallel`** 추가 ✅
 - 모듈로 연산자 `%` 추가
 - 주석 섹션 추가
 
 #### docs/index.html ✅
 - JavaScript 예제 업데이트 (loop 문법)
-- 키워드 리스트: **`function`, `return`** 추가 ✅
+- 키워드 리스트: **`function`, `return`, `shared`, `uses`, `parallel`** 추가 ✅
 - 내장 함수 목록 최신화
 - **배열 인덱스를 1-based로 변경** ✅
+- **병렬 실행 예제 추가** ✅
 
 #### guide.md ✅
 - 5.2절: "Loop: 조건 반복"
@@ -125,6 +142,11 @@
 - **사용자 정의 함수**: `function`, `return` 키워드 ✅
 - **재귀 함수 지원**: 함수 내 자기 호출 가능 ✅
 - **1-based 인덱싱**: 배열 첫 번째 요소는 `.1` ✅
+- **병렬 실행 및 쓰레딩**: `shared`, `uses`, `parallel` 키워드 ✅
+  - 공유 변수 선언 (`shared`)
+  - 함수의 공유 자원 명시 (`uses`)
+  - 병렬 블록 실행 (`parallel...end`)
+  - 자동 데드락 방지 (알파벳 순 잠금)
 
 ---
 
@@ -135,7 +157,8 @@
 if then else end
 loop in do infinite
 break continue
-function return      ← 새로 추가!
+function return
+shared uses parallel    ← 병렬 실행 추가!
 not and or
 true false null
 ```
@@ -182,6 +205,40 @@ end
 
 **주의**: 함수는 호스트 언어의 스택 제한을 받습니다. 함수에는 `infinite` 키워드를 사용할 수 없습니다.
 
+### 병렬 실행
+```propertee
+// 공유 변수 선언
+shared counter = 0
+shared data = []
+
+// 공유 자원을 사용하는 함수
+function increment() uses counter do
+    counter = counter + 1
+end
+
+function addData(value) uses data do
+    PUSH(data, value)
+end
+
+// 병렬 실행 블록
+parallel
+    increment()
+    increment()
+    addData(10)
+    addData(20)
+end
+
+PRINT("Counter:", counter)  // 2
+PRINT("Data:", data)         // [10, 20]
+```
+
+**특징**:
+- `shared`: 전역 스코프에서 공유 변수 선언
+- `uses`: 함수가 접근하는 공유 자원 명시
+- `parallel...end`: 함수 호출을 병렬로 실행
+- **자동 데드락 방지**: 자원을 알파벳 순으로 잠금
+- **쓰레드 안전**: 명시적 선언으로 안전한 동시 실행
+
 ### 반복문
 ```propertee
 // 조건 반복 (while-style)
@@ -224,6 +281,11 @@ end
 - Number, String, Boolean, **Null**
 - Object `{}`, Array `[]`
 - Function call, Variable, `(expression)`
+
+### 배열 인덱싱
+- **1-based**: 첫 번째 요소는 `.1`
+- 예: `arr = [10, 20, 30]` → `arr.1 = 10`, `arr.2 = 20`, `arr.3 = 30`
+- 주의: `arr.0`은 에러 발생
 
 ---
 

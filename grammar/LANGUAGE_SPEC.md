@@ -1,7 +1,7 @@
 # ProperTee Language Specification
 
-Version: 1.0  
-Last Updated: 2026-01-25
+Version: 1.1  
+Last Updated: 2026-01-31
 
 ## 1. Type System
 
@@ -14,6 +14,9 @@ Last Updated: 2026-01-25
 ### 1.2 Complex Types
 - **Object**: Key-value pairs `{key: value, ...}`
 - **Array**: Ordered collections `[item1, item2, ...]`
+  - **Indexing**: ProperTee uses **1-based indexing** for arrays
+  - First element is at index `1`, not `0`
+  - Example: `arr = [10, 20, 30]` → `arr.1` is `10`, `arr.2` is `20`, `arr.3` is `30`
 
 ### 1.3 No Undefined
 ⚠️ **ProperTee does NOT have an `undefined` type.**
@@ -258,6 +261,67 @@ key = "name"
 obj = {name: "Alice"}
 PRINT(obj.$key)        // ✅ "Alice" (shorthand for .$(key))
 PRINT(obj.$(key))      // ✅ "Alice" (full form)
+```
+
+### 4.4 Array Indexing (1-Based)
+
+⚠️ **Important:** ProperTee uses **1-based indexing** for arrays, unlike most programming languages.
+
+**Rationale:**
+- More intuitive for non-programmers
+- Consistent with natural language ("first element" = index 1)
+- Common in mathematical notation and some languages (Lua, MATLAB, R)
+
+**Syntax:**
+```javascript
+arr = [10, 20, 30, 40, 50]
+
+// 1-based indexing
+first = arr.1      // ✅ 10 (first element)
+second = arr.2     // ✅ 20 (second element)
+third = arr.3      // ✅ 30 (third element)
+
+// Common mistake (0-based thinking)
+zero = arr.0       // ❌ Runtime Error: Property '0' does not exist
+
+// Out of bounds
+invalid = arr.10   // ❌ Runtime Error: Property '10' does not exist
+```
+
+**Implementation Note:**
+When implementing ProperTee in a 0-based language (like JavaScript), the interpreter must convert:
+```javascript
+// User writes: arr.1
+// Interpreter translates to: internalArray[0]
+
+// User writes: arr.N
+// Interpreter translates to: internalArray[N-1]
+```
+
+**Dynamic Index Access:**
+```javascript
+arr = [100, 200, 300]
+idx = 2
+value = arr.$idx          // ✅ 200 (arr.2)
+
+// Expression-based index
+position = 1 + 1
+item = arr.$(position)    // ✅ 200 (arr.2)
+```
+
+**Loop Iteration with Indices:**
+```javascript
+items = ["a", "b", "c"]
+
+// Manual indexing (1-based)
+PRINT(items.1)   // "a"
+PRINT(items.2)   // "b"
+PRINT(items.3)   // "c"
+
+// Value iteration (no index needed)
+loop item in items do
+    PRINT(item)
+end
 ```
 
 ---
@@ -1007,7 +1071,145 @@ PRINT(LEN([1, 2, 3]))       // 3
 PRINT(LEN("hello"))         // 5
 ```
 
-### 9.4 String Functions
+#### `TO_NUMBER(string)`
+- **Returns**: Number
+- Converts string to number
+- Trims whitespace before conversion
+- Throws error if string cannot be converted
+
+**Examples:**
+```javascript
+num = TO_NUMBER("123")      // 123
+num = TO_NUMBER("45.67")    // 45.67
+num = TO_NUMBER("  89  ")   // 89 (whitespace trimmed)
+num = TO_NUMBER("-10")      // -10
+
+// Errors
+num = TO_NUMBER("")         // Runtime Error: cannot convert empty string
+num = TO_NUMBER("abc")      // Runtime Error: cannot convert 'abc' to number
+num = TO_NUMBER(123)        // Runtime Error: requires a string argument
+```
+
+#### `TO_STRING(value)`
+- **Returns**: String
+- Converts any value to string representation
+- Works with all types: null, boolean, number, string, array, object
+
+**Examples:**
+```javascript
+str = TO_STRING(123)        // "123"
+str = TO_STRING(45.67)      // "45.67"
+str = TO_STRING(true)       // "true"
+str = TO_STRING(false)      // "false"
+str = TO_STRING(null)       // "null"
+str = TO_STRING("hello")    // "hello" (already string)
+str = TO_STRING([1, 2, 3])  // "[1,2,3]"
+str = TO_STRING({x: 10})    // "{\"x\":10}"
+```
+
+#### `SLEEP(milliseconds)`
+- **Returns**: null (after delay completes)
+- Pauses execution for specified milliseconds
+- **Async function**: Automatically awaited in async contexts
+- Useful for delays, rate limiting, or simulating I/O operations
+
+**Examples:**
+```javascript
+PRINT("Starting...")
+SLEEP(1000)              // Wait 1 second
+PRINT("After 1 second")
+
+// In parallel blocks - each thread sleeps independently
+parallel
+    r1 = task1()
+    SLEEP(500)           // This thread sleeps
+    r2 = task2()
+end
+
+// With user functions
+function delayedTask(ms) do
+    SLEEP(ms)
+    return "Done"
+end
+
+result = delayedTask(2000)  // Waits 2 seconds
+PRINT(result)            // "Done"
+```
+
+**Error cases:**
+```javascript
+SLEEP(-100)              // Runtime Error: duration cannot be negative
+SLEEP("1000")            // Runtime Error: requires a number argument
+```
+
+### 9.4 Array Functions
+
+#### `PUSH(array, ...values)`
+- **Returns**: New array with values appended
+- Original array is not modified (immutable)
+- Can append multiple values at once
+
+**Examples:**
+```javascript
+arr = [1, 2, 3]
+arr = PUSH(arr, 4)          // [1, 2, 3, 4]
+arr = PUSH(arr, 5, 6)       // [1, 2, 3, 4, 5, 6]
+
+// Error: first argument must be an array
+result = PUSH("not array", 1)  // Runtime Error
+```
+
+#### `POP(array)`
+- **Returns**: New array with last element removed
+- Original array is not modified (immutable)
+- Throws error if array is empty
+
+**Examples:**
+```javascript
+arr = [1, 2, 3, 4]
+arr = POP(arr)              // [1, 2, 3]
+arr = POP(arr)              // [1, 2]
+
+// Error: cannot pop from empty array
+empty = []
+result = POP(empty)         // Runtime Error
+```
+
+#### `CONCAT(...arrays)`
+- **Returns**: New array with all arrays concatenated
+- All arguments must be arrays
+- Original arrays are not modified (immutable)
+
+**Examples:**
+```javascript
+arr1 = [1, 2]
+arr2 = [3, 4]
+arr3 = [5]
+result = CONCAT(arr1, arr2, arr3)  // [1, 2, 3, 4, 5]
+
+// Error: all arguments must be arrays
+result = CONCAT([1, 2], "not array")  // Runtime Error
+```
+
+#### `SLICE(array, start, end?)`
+- **Returns**: New array containing elements from start to end
+- **start**: 1-based index (required)
+- **end**: 1-based index (optional, defaults to array length)
+- Original array is not modified (immutable)
+- Uses 1-based indexing like rest of ProperTee
+
+**Examples:**
+```javascript
+arr = [10, 20, 30, 40, 50]
+result = SLICE(arr, 2, 4)   // [20, 30, 40]
+result = SLICE(arr, 3)      // [30, 40, 50]
+result = SLICE(arr, 1, 1)   // [10]
+
+// Empty result if start > end
+result = SLICE(arr, 4, 2)   // []
+```
+
+### 9.5 String Functions
 
 #### `CHARS(string)`
 - **Returns**: Array of strings (each character as a string)
@@ -1165,7 +1367,7 @@ cleaned = TRIM(input)
 PRINT(cleaned)              // "test"
 ```
 
-### 9.5 Custom Functions
+### 9.6 Custom Functions
 
 Custom functions can be injected via constructor:
 
@@ -1380,7 +1582,92 @@ const ioStreams = {
 };
 ```
 
-### 12.3 Error Handling in JavaScript
+### 12.3 1-Based Array Indexing Implementation
+
+⚠️ **Critical:** ProperTee uses 1-based indexing, but JavaScript uses 0-based indexing.
+
+The interpreter must convert indices when accessing arrays:
+
+```javascript
+// Property access visitor
+visitMemberAccessExpr(ctx) {
+    const object = this.visit(ctx.expression());
+    const accessCtx = ctx.access();
+    
+    if (accessCtx.NUMBER()) {
+        // 1-based to 0-based conversion
+        const index = parseInt(accessCtx.NUMBER().getText());
+        
+        if (index < 1) {
+            throw new Error(`Invalid array index: ${index}. Indices start at 1.`);
+        }
+        
+        const jsIndex = index - 1;  // Convert to 0-based
+        
+        if (Array.isArray(object)) {
+            if (jsIndex >= object.length) {
+                throw new Error(`Property '${index}' does not exist`);
+            }
+            return object[jsIndex];
+        } else {
+            // For objects, use the numeric key as-is (rare case)
+            if (!(index in object)) {
+                throw new Error(`Property '${index}' does not exist`);
+            }
+            return object[index];
+        }
+    }
+    
+    // ... other access types (ID, STRING, $VAR, etc.)
+}
+```
+
+**Assignment with 1-based indexing:**
+```javascript
+// Property assignment
+visitPropLValue(ctx) {
+    const object = this.visit(ctx.lvalue());
+    const accessCtx = ctx.access();
+    
+    if (accessCtx.NUMBER()) {
+        const index = parseInt(accessCtx.NUMBER().getText());
+        
+        if (index < 1) {
+            throw new Error(`Invalid array index: ${index}. Indices start at 1.`);
+        }
+        
+        const jsIndex = index - 1;  // Convert to 0-based
+        
+        if (Array.isArray(object)) {
+            // Allow extending array
+            object[jsIndex] = value;
+        } else {
+            // For objects, use numeric key
+            object[index] = value;
+        }
+    }
+    
+    // ... other access types
+}
+```
+
+**Built-in function adaptation:**
+```javascript
+// SLICE function with 1-based indexing
+'SLICE': (array, start, end) => {
+    if (!Array.isArray(array)) {
+        throw new Error('SLICE requires an array');
+    }
+    
+    // Convert 1-based to 0-based
+    const jsStart = start - 1;
+    const jsEnd = end !== undefined ? end : array.length;
+    
+    return array.slice(jsStart, jsEnd);
+}
+```
+
+### 12.4 Error Handling in JavaScript
 
 ProperTee runtime errors throw JavaScript `Error` objects:
 
@@ -1392,7 +1679,7 @@ try {
 }
 ```
 
-### 12.4 Return Statement Implementation
+### 12.5 Return Statement Implementation
 
 The `return` statement can exit both functions and top-level scripts. Implementation should use an exception mechanism:
 
@@ -1806,7 +2093,486 @@ PRINT("Counter after loop:", counter)  // ✅ Prints: Counter after loop: 1001
 
 ---
 
-## 15. Reserved Keywords
+## 15. Concurrency and Threading
+
+ProperTee provides structured concurrency primitives for parallel execution, designed for I/O-bound tasks with emphasis on safety and simplicity over performance.
+
+### 15.1 Core Concepts
+
+#### Thread Safety Philosophy
+- **Explicit over implicit**: All shared resources must be declared
+- **Safety over performance**: Automatic deadlock prevention through alphabetical lock ordering
+- **Simplicity over flexibility**: Fixed thread count, no dynamic parallelism
+- **Clarity over brevity**: No nested function calls in parallel blocks
+
+---
+
+### 15.2 SHARED Declaration
+
+**Syntax:**
+```javascript
+shared var1, var2, ...
+shared var3 = initialValue
+```
+
+**Rules:**
+- ✅ Only allowed in **global scope** (not inside functions)
+- ✅ Can include optional initialization with `=` operator
+- ✅ Variables without initialization default to `null`
+- ✅ Multiple variables can be declared on separate lines
+- ❌ Cannot declare multiple variables with initialization on same line
+- ❌ Cannot be declared inside functions or blocks
+
+**Important Notes:**
+- Initialization expressions are evaluated at declaration time
+- Each `shared` statement declares one or more variables
+- Variables can be initialized with any valid expression (literals, arrays, objects, etc.)
+
+**Examples:**
+```javascript
+// ✅ Valid - single declaration with initialization
+shared counter = 0
+shared accounts = []
+shared data = {total: 0, count: 0}
+
+// ✅ Valid - without initialization (defaults to null)
+shared temp
+shared cache
+
+// ✅ Valid - multiple uninitialized variables
+shared temp, cache, buffer
+
+// ✅ Valid - separate declarations
+shared counter = 0
+shared results = []
+
+// ❌ Invalid - multiple initializations on same line
+shared counter = 0, results = []  // Parser Error
+
+// ❌ Invalid - inside function
+function worker() do
+    shared local = 0  // Runtime Error: SHARED only allowed in global scope
+end
+```
+
+**Error cases:**
+- Declaring SHARED inside a function → **Runtime Error**
+- Accessing non-SHARED variable from multiple threads → Race condition (undefined behavior)
+
+---
+
+### 15.3 USES Clause
+
+**Syntax:**
+```javascript
+function name(params) uses resource1, resource2 do
+    // function body
+end
+```
+
+**Rules:**
+- ✅ Declares which SHARED resources the function will access
+- ✅ Only resources listed in USES can be accessed
+- ✅ All listed resources must be declared with `shared`
+- ✅ Function acquires **all locks in alphabetical order** before entry
+- ✅ All locks released on function exit (normal or error)
+
+**Lock Acquisition:**
+1. Sort USES resources alphabetically
+2. Acquire locks in sorted order (prevents deadlock)
+3. Execute function body
+4. Release all locks
+
+**Examples:**
+```javascript
+shared counter, data
+
+// ✅ Valid - declares USES
+function increment(n) uses counter do
+    counter = counter + n
+    return counter
+end
+
+// ✅ Valid - multiple resources
+function update(value) uses counter, data do
+    counter = counter + 1
+    data.values = data.values + [value]
+end
+
+// ✅ Valid - no USES (thread-local only)
+function calculate(n) do
+    result = n * 2
+    return result
+end
+
+// ❌ Runtime Error - accessing SHARED without USES
+function bad() do
+    counter = counter + 1  // Runtime Error: 'counter' is SHARED but not in USES clause
+end
+```
+
+**Validation:**
+- USES validation occurs at **function definition time**
+- Runtime Error if USES references non-SHARED variable
+- Runtime Error if function accesses SHARED variable not in USES
+
+**Deadlock Prevention:**
+```javascript
+shared account1, account2
+
+// Both functions acquire locks in same order: account1 → account2
+function transferAtoB() uses account1, account2 do
+    // Locks: account1 first, then account2
+    // ...
+end
+
+function transferBtoA() uses account2, account1 do
+    // Automatically sorted: account1 first, then account2
+    // No deadlock possible!
+end
+```
+
+---
+
+### 15.4 PARALLEL...END Blocks
+
+**Syntax:**
+```javascript
+parallel
+    result1 = function1(args)
+    result2 = function2(args)
+    function3(args)  // no return value
+end
+```
+
+**Execution Model:**
+1. Enter PARALLEL block
+2. Spawn thread for each function call
+3. All threads execute in parallel
+4. END waits for all threads to complete (join)
+5. Collect results and assign to variables
+6. Continue to next statement
+
+**Rules:**
+
+#### ✅ Allowed in PARALLEL block:
+- Function calls with assignment: `r = func(args)`
+- Function calls without assignment: `func(args)`
+- Reading variables defined **before** PARALLEL block
+
+#### ❌ Prohibited in PARALLEL block:
+- Control flow statements (`if`, `loop`)
+- Nested function calls: `r = func(helper())`
+- Arithmetic or logical operations
+- Variable references defined in PARALLEL block
+- Nested PARALLEL blocks
+- Any statement other than function calls
+
+**Examples:**
+
+**✅ Valid:**
+```javascript
+x = 10
+parallel
+    r1 = task1(x)        // reads x from before block
+    r2 = task2()         
+    task3()              // return value ignored
+end
+PRINT(r1, r2)            // use results after end
+```
+
+**❌ Invalid:**
+```javascript
+parallel
+    if condition then    // ❌ Syntax Error: control flow not allowed
+        r1 = task1()
+    end
+    
+    loop i in items do   // ❌ Syntax Error: loop not allowed
+        task(i)
+    end
+    
+    r2 = task2(helper()) // ❌ Syntax Error: nested function call
+    
+    PRINT(r1)            // ❌ Syntax Error: cannot use r1 inside PARALLEL
+    
+    r3 = task3()
+    r3 = task4()         // ❌ Syntax Error: duplicate variable assignment
+end
+```
+
+**Variable Scope:**
+```javascript
+x = 10               // defined before PARALLEL
+
+parallel
+    r1 = task1(x)    // ✅ can read x
+    r2 = task2()     // r2 declared but not yet assigned
+    // PRINT(r2)     // ❌ cannot use r2 here
+end
+
+// end performs: r1 = (result of task1), r2 = (result of task2)
+
+PRINT(r1, r2)        // ✅ can use r1, r2 after end
+```
+
+---
+
+### 15.5 Thread-Local Variables
+
+**Automatic Thread-Local Storage:**
+- Variables created inside a function are automatically thread-local
+- Each thread has its own copy
+- No sharing between threads
+- Variables destroyed when thread exits
+
+**Examples:**
+```javascript
+shared counter
+
+function worker(input) uses counter do
+    temp = input * 2      // thread-local (independent per thread)
+    result = temp + 10    // thread-local
+    counter = counter + result  // shared (synchronized)
+    return result
+end
+
+parallel
+    r1 = worker(5)   // r1's thread has temp=10, result=20
+    r2 = worker(10)  // r2's thread has temp=20, result=30
+end
+// Each thread's temp and result are independent
+```
+
+---
+
+### 15.6 Error Handling in Threads
+
+**Error Behavior:**
+- Error in one thread **does not stop other threads**
+- Failed thread returns `null`
+- Error logged to `stderr` with line number and thread info
+- END waits for all threads (including failed ones)
+
+**Examples:**
+```javascript
+function mayFail(n) do
+    if n == 0 then
+        x = 10 / 0  // Runtime Error
+    end
+    return n * 2
+end
+
+parallel
+    r1 = mayFail(5)   // ✅ succeeds, r1 = 10
+    r2 = mayFail(0)   // ❌ fails, r2 = null
+    r3 = mayFail(10)  // ✅ succeeds, r3 = 20
+end
+
+PRINT(r1, r2, r3)  // Output: 10, null, 20
+```
+
+**Error Log Format:**
+```
+Runtime Error at line 3:8: Division by zero
+  in function mayFail
+  in thread 2 of PARALLEL block at line 7
+```
+
+---
+
+### 15.7 Execution Outside PARALLEL
+
+**Normal function calls (without PARALLEL):**
+- Execute **synchronously** (not in a thread)
+- Caller waits for completion
+- Return value available immediately
+
+**Examples:**
+```javascript
+function task(n) do
+    return n * 2
+end
+
+// Synchronous execution
+r1 = task(10)     // waits for completion
+PRINT(r1)         // 20
+
+r2 = task(20)     // waits for completion
+PRINT(r2)         // 40
+
+// Parallel execution
+parallel
+    r3 = task(30)
+    r4 = task(40)
+end
+PRINT(r3, r4)     // 60, 80
+```
+
+---
+
+### 15.8 Complete Threading Example
+
+```javascript
+shared accounts, logs
+
+accounts = [
+    {id: 1, balance: 1000},
+    {id: 2, balance: 500},
+    {id: 3, balance: 750}
+]
+logs = []
+
+// Transfer money between accounts
+function transfer(fromIdx, toIdx, amount) uses accounts, logs do
+    // Locks acquired: accounts, logs (alphabetical order)
+    
+    fromAccount = accounts.$fromIdx
+    toAccount = accounts.$toIdx
+    
+    if fromAccount.balance < amount then
+        return false
+    end
+    
+    fromAccount.balance = fromAccount.balance - amount
+    toAccount.balance = toAccount.balance + amount
+    
+    logEntry = "Transfer " + amount + " from " + fromIdx + " to " + toIdx
+    logs = PUSH(logs, logEntry)
+    
+    return true
+end
+
+// Calculate and add interest
+function addInterest(accountIdx, rate) uses accounts do
+    // Lock acquired: accounts only
+    
+    account = accounts.$accountIdx
+    interest = account.balance * rate
+    account.balance = account.balance + interest
+    return interest
+end
+
+// Parallel execution
+parallel
+    t1 = transfer(1, 2, 100)      // Transfer $100 from account 1 to 2
+    t2 = transfer(2, 3, 50)       // Transfer $50 from account 2 to 3
+    i1 = addInterest(1, 0.05)     // 5% interest on account 1
+    i2 = addInterest(2, 0.05)     // 5% interest on account 2
+    i3 = addInterest(3, 0.05)     // 5% interest on account 3
+end
+
+// Results available after end
+PRINT("Transfers successful:", t1, t2)
+PRINT("Interest added:", i1, i2, i3)
+
+// Print logs
+loop log in logs do
+    PRINT(log)
+end
+
+// Print final balances
+loop account in accounts do
+    PRINT("Account", account.id, "balance:", account.balance)
+end
+```
+
+---
+
+### 15.9 Design Constraints and Rationale
+
+#### Why no conditional/loop parallelism?
+
+**Problem with conditionals:**
+```javascript
+// ❌ Not allowed - variable may not be defined
+parallel
+    if condition then
+        r1 = task1()
+    end
+end
+PRINT(r1)  // r1 might not exist!
+```
+
+**Problem with loops:**
+```javascript
+// ❌ Not allowed - variable collision, unpredictable thread count
+parallel
+    loop i in items do
+        r = task(i)  // which r? how many threads?
+    end
+end
+```
+
+**Solution:** Fixed, explicit thread count for clarity and safety.
+
+#### Why no nested function calls?
+
+**Problem with nested calls:**
+```javascript
+// ❌ Not allowed
+parallel
+    r = task(helper())  // When does helper() run? What locks?
+end
+```
+
+**Issues:**
+1. Execution timing ambiguous (before PARALLEL? inside thread?)
+2. Lock acquisition unpredictable
+3. Can break alphabetical lock ordering → deadlock risk
+4. Error tracking becomes complex
+
+**Solution:** Force explicit evaluation:
+```javascript
+// ✅ Correct approach
+temp = helper()
+parallel
+    r = task(temp)
+end
+```
+
+#### Why alphabetical lock ordering?
+
+**Prevents deadlock automatically:**
+- All threads acquire locks in same order
+- No circular wait possible
+- User doesn't need to think about lock ordering
+
+**Trade-off:**
+- Less granular control
+- May reduce parallelism in some cases
+- But: **guarantees safety** without user effort
+
+#### Why function-scope locks?
+
+**Simplicity over performance:**
+- Clear lock boundaries (function entry/exit)
+- No need for manual lock/unlock
+- Automatic cleanup on error
+- Prevents forget-to-unlock bugs
+
+**For fine-grained locking:**
+- Create small wrapper functions
+- Each wrapper has minimal lock scope
+
+---
+
+### 15.10 Threading Error Reference
+
+| Error | When | Example |
+|-------|------|---------|
+| SHARED in function | SHARED declared inside function | `function f() do shared x end` |
+| USES non-SHARED | USES references undeclared variable | `function f() uses x do` (x not SHARED) |
+| Access without USES | Function accesses SHARED not in USES | `counter = counter + 1` without `uses counter` |
+| Control flow in PARALLEL | if/loop in PARALLEL block | `parallel if c then task() end end` |
+| Nested call in PARALLEL | Function call in arguments | `parallel r = f(g()) end` |
+| Variable use in PARALLEL | Using result variable inside PARALLEL | `parallel r = f() PRINT(r) end` |
+| Duplicate assignment | Same variable assigned twice | `parallel r = f1() r = f2() end` |
+| Nested PARALLEL | PARALLEL inside PARALLEL | `parallel function f() parallel ... end end` |
+
+---
+
+## 16. Reserved Keywords
 
 The following keywords are reserved and cannot be used as variable names:
 
@@ -1816,12 +2582,13 @@ The following keywords are reserved and cannot be used as variable names:
 - `function`, `return`
 - `and`, `or`, `not`
 - `true`, `false`, `null`
+- `shared`, `uses`, `parallel` (for concurrency)
 
 **Note:** `infinite` is reserved for loop statements only (not for functions).
 
 ---
 
-## 16. Operator Precedence
+## 17. Operator Precedence
 
 From highest to lowest priority:
 
@@ -1837,12 +2604,12 @@ Use parentheses `()` to override precedence.
 
 ---
 
-## 17. Future Considerations
+## 18. Future Considerations
 
 Features that may be added in future versions:
 
 - [ ] Type conversion functions (`TO_NUMBER`, `TO_STRING`, etc.)
-- [ ] Array manipulation functions (`PUSH`, `POP`, `SLICE`, etc.)
+- [x] Array manipulation functions (`PUSH`, `POP`, `SLICE`, `CONCAT`) - ✅ Implemented
 - [x] String manipulation functions (`SPLIT`, `JOIN`, `SUBSTRING`, etc.) - ✅ Implemented
 - [ ] Optional chaining operator (`?.`)
 - [ ] Safe property check function (`HAS(obj, "property")`)
@@ -1855,6 +2622,14 @@ Features that may be added in future versions:
 - [ ] Default parameter values
 - [ ] Variable arguments (`...args`)
 - [ ] Import/Export system
+- [x] **Concurrency features** - ✅ Basic implementation added (v1.1)
+  - **Future enhancements:**
+    - [ ] `READONLY` access modifier for shared resources
+    - [ ] `SPAWN` keyword for async execution outside PARALLEL
+    - [ ] Thread introspection (THREAD_ID, THREAD_COUNT)
+    - [ ] Fine-grained locking (per-array-element)
+    - [ ] Channels for thread communication
+    - [ ] Thread pools and worker management
 
 ---
 
@@ -1864,21 +2639,61 @@ For the complete ANTLR4 grammar, see `ProperTee.g4`.
 
 Key grammar rules:
 - `root`: Top-level entry point
-- `statement`: Assignments, if, loop, function definitions, expressions
-- `functionDef`: User-defined functions with parameters
+- `statement`: Assignments, if, loop, function definitions, parallel blocks, shared declarations, expressions
+- `sharedDecl`: SHARED resource declarations (global scope only)
+- `functionDef`: User-defined functions with parameters and optional USES clause
+- `usesClause`: Declares which SHARED resources a function accesses
+- `parallelStmt`: PARALLEL...END blocks for concurrent execution
+- `parallelTask`: Function calls within PARALLEL blocks (with or without assignment)
 - `iterationStmt`: Loop with optional `infinite` keyword
 - `flowControl`: break, continue, return
 - `expression`: Operators, member access, atoms
 - `atom`: Literals (number, string, boolean, null, object, array), function calls
 
+**Threading Syntax:**
+```
+shared var1 = init1, var2 = init2       // Shared resource declaration
+function name(params) uses res1, res2   // Function with USES clause
+parallel                                 // Parallel execution block
+    result1 = func1(args)
+    result2 = func2(args)
+end
+```
+
 **Function Definition Syntax:**
 ```
-function name(params) do ... end  // User-defined functions
+function name(params) do ... end         // User-defined functions
+function name(params) uses res do ... end  // With USES clause
 ```
 
 ---
 
 ## Appendix B: Version History
+
+### Version 1.1 (2026-01-31)
+- **Added**: Concurrency and Threading (Section 15)
+  - `shared` declaration for shared resources
+  - `uses` clause for functions accessing shared resources
+  - `parallel...end` blocks for parallel execution
+  - Automatic deadlock prevention through alphabetical lock ordering
+  - Thread-local variables
+  - Error handling in parallel contexts
+- **Added**: Array manipulation functions (Section 9.4)
+  - `PUSH(array, ...values)` - Append values to array
+  - `POP(array)` - Remove last element from array
+  - `CONCAT(...arrays)` - Concatenate multiple arrays
+  - `SLICE(array, start, end?)` - Extract subarray
+- **Added**: Type conversion functions (Section 9.3)
+  - `TO_NUMBER(string)` - Convert string to number
+  - `TO_STRING(value)` - Convert any value to string
+- **Added**: Async functions (Section 9.3)
+  - `SLEEP(milliseconds)` - Pause execution with async/await support
+- **Added**: New reserved keywords: `shared`, `uses`, `parallel`
+- **Changed**: Array indexing to 1-based (arrays start at index 1)
+- **Changed**: Loop indices to 1-based
+- **Changed**: SUBSTRING function to 1-based indexing
+- **Added**: Runtime error messages now include line numbers
+- **Fixed**: async/await support for PARALLEL blocks in browser environment
 
 ### Version 1.0 (2026-01-25)
 - Initial specification

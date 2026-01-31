@@ -9,9 +9,11 @@
 - **간결한 문법**: Pascal/Lua 스타일의 `if-then-end`, `loop-do-end` 블록 구조
 - **동적 프로퍼티 접근**: `.$key`, `.$(expr)` 문법으로 런타임 키 평가 지원
 - **일급 자료구조**: 객체 리터럴 `{}`, 배열 리터럴 `[]` 내장
+- **1-based 인덱싱**: 배열 첫 번째 요소는 `.1`로 접근 (직관적!)
 - **표현식 중심 설계**: 모든 구문이 표현식으로 평가 가능
 - **통합 반복문**: `loop` 키워드로 조건, 반복, 무한 루프 통합
 - **사용자 정의 함수**: `function` 키워드로 재사용 가능한 함수 정의
+- **병렬 실행**: `parallel` 블록으로 안전한 동시 실행 지원
 - **주석 지원**: 한 줄 주석(`//`)과 블럭 주석(`/* */`) 지원
 
 ## 빠른 예제
@@ -50,6 +52,20 @@ function greet(name) do
 end
 
 message = greet("ProperTee")
+
+// 병렬 실행
+shared counter = 0
+
+function increment() uses counter do
+    counter = counter + 1
+end
+
+parallel
+    increment()
+    increment()
+end
+
+PRINT("Counter:", counter)  // 2
 ```
 
 ## 문서

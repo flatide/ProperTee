@@ -3,10 +3,12 @@ grammar ProperTee ;
 root : statement* EOF ;
 
 statement
-    : assignment    # AssignStmt
+    : sharedDecl    # SharedDeclStmt
+    | assignment    # AssignStmt
     | ifStatement   # IfStmt
     | iterationStmt # iterStmt
     | functionDef   # FuncDefStmt
+    | parallelStmt  # ParallelExecStmt
     | flowControl   # FlowStmt
     | expression    # ExprStmt
     ;
@@ -26,16 +28,37 @@ lvalue
 
 block : statement* ;
 
+sharedDecl
+    : K_SHARED sharedVar (',' sharedVar)*
+    ;
+
+sharedVar
+    : ID ('=' expression)?
+    ;
+
 ifStatement
     : K_IF condition=expression K_THEN thenBody=block (K_ELSE elseBody=block)? K_END
     ;
 
 functionDef
-    : K_FUNCTION funcName=ID '(' parameterList? ')' K_DO block K_END
+    : K_FUNCTION funcName=ID '(' parameterList? ')' usesClause? K_DO block K_END
     ;
 
 parameterList
     : ID (',' ID)*
+    ;
+
+usesClause
+    : K_USES ID (',' ID)*
+    ;
+
+parallelStmt
+    : K_PARALLEL parallelTask+ K_END
+    ;
+
+parallelTask
+    : ID '=' functionCall    # ParallelAssignTask
+    | functionCall           # ParallelCallTask
     ;
 
 iterationStmt
@@ -65,7 +88,7 @@ expression
 
 access
     : ID                                    # StaticAccess      // .width
-    | NUMBER                                # ArrayAccess       // .0
+    | NUMBER                                # ArrayAccess       // .1 (1-based indexing)
     | STRING                                # StringKeyAccess   // ."key"
     | '$' ID                                # VarEvalAccess     // .$key (축약형: .$(key))
     | '$' '(' expression ')'                # EvalAccess        // .$(expr) (완전형)
@@ -98,7 +121,7 @@ objectEntry
 objectKey
     : ID                     // member: value
     | STRING                 // "key-name": value
-    | NUMBER                 // 0: value
+    | NUMBER                 // 1: value (1-based indexing for array-like objects)
     ;
 
 arrayLiteral
@@ -127,6 +150,9 @@ K_TRUE      : 'true';
 K_FALSE     : 'false';
 K_NULL      : 'null';
 K_INFINITE  : 'infinite';
+K_SHARED    : 'shared';
+K_USES      : 'uses';
+K_PARALLEL  : 'parallel';
 
 ID : [a-zA-Z_][a-zA-Z0-9_]* ;          // 일반 식별자 (나중에 정의)
 NUMBER : [0-9]+ ('.' [0-9]+)? ;

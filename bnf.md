@@ -20,10 +20,12 @@
 <statement-list>    ::= <statement> <statement-list>
                       | ε
 
-<statement>         ::= <assignment>
+<statement>         ::= <shared-declaration>
+                      | <assignment>
                       | <if-statement>
                       | <loop-statement>
                       | <function-definition>
+                      | <parallel-statement>
                       | <flow-control>
                       | <expression>
 
@@ -42,9 +44,30 @@
 
 <function-definition> ::= "function" <identifier> "(" ")" "do" <statement-list> "end"
                         | "function" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
+                        | "function" <identifier> "(" ")" <uses-clause> "do" <statement-list> "end"
+                        | "function" <identifier> "(" <parameter-list> ")" <uses-clause> "do" <statement-list> "end"
 
 <parameter-list>    ::= <identifier>
                       | <parameter-list> "," <identifier>
+
+<uses-clause>       ::= "uses" <identifier>
+                      | <uses-clause> "," <identifier>
+
+<shared-declaration> ::= "shared" <shared-var-list>
+
+<shared-var-list>   ::= <shared-var>
+                      | <shared-var-list> "," <shared-var>
+
+<shared-var>        ::= <identifier>
+                      | <identifier> "=" <expression>
+
+<parallel-statement> ::= "parallel" <parallel-task-list> "end"
+
+<parallel-task-list> ::= <parallel-task>
+                       | <parallel-task-list> <parallel-task>
+
+<parallel-task>     ::= <function-call>
+                      | <identifier> "=" <function-call>
 
 <flow-control>      ::= "break"
                       | "continue"
@@ -169,6 +192,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function return
+shared   uses     parallel
 not      and      or
 true     false    null
 ```
