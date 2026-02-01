@@ -133,19 +133,28 @@ flow_control = "break" | "continue" | "return" [ expression ] ;
 ### 3.4 함수 정의
 
 ```ebnf
-function_def   = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
+function_def   = [ "thread" ] "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
 parameter_list = ID { "," ID } ;
+uses_clause    = "uses" ID { "," ID } ;
 ```
 
 **예시:**
 ```propertee
-// 함수 정의
+// 일반 함수 정의
 function add(a, b) do
     return a + b
 end
 
 // 함수 호출
 result = add(10, 20)
+
+// 쓰레드 함수 (병렬 실행 가능)
+shared counter
+
+thread function increment(n) uses counter do
+    counter = counter + n
+    return counter
+end
 
 // 재귀 함수
 function factorial(n) do
@@ -168,23 +177,29 @@ shared_var     = ID [ "=" expression ] ;
 
 **예시:**
 ```propertee
-// 공유 변수 선언
+// 공유 변수 선언 (전역 스코프만 가능)
 shared counter = 0
 shared data, cache
 
-// 함수에서 uses 절로 접근
-function increment() uses counter do
+// 쓰레드 함수에서 uses 절로 접근
+thread function increment() uses counter do
     counter = counter + 1
+    return counter
 end
 ```
 
-**주의**: `shared` 선언은 전역 스코프에서만 가능합니다.
+**주의**: 
+- `shared` 선언은 전역 스코프에서만 가능합니다.
+- 다중 변수 초기화는 불가능합니다 (각각 선언해야 함)
+  - ✅ `shared counter = 0`
+  - ✅ `shared data, cache` (초기화 없이)
+  - ❌ `shared counter = 0, data = []` (문법 오류)
 
 ### 3.6 병렬 실행 (PARALLEL)
 
 ```ebnf
 parallel_stmt  = "parallel" { parallel_task } "end" ;
-parallel_task  = ID "=" function_call
+parallel_task  = function_call "->" ID
                | function_call ;
 ```
 
@@ -192,24 +207,28 @@ parallel_task  = ID "=" function_call
 ```propertee
 shared total = 0
 
-function work1() uses total do
+thread function work1() uses total do
     total = total + 10
+    return total
 end
 
-function work2() uses total do
+thread function work2() uses total do
     total = total + 20
+    return total
 end
 
 parallel
-    work1()
-    work2()
+    work1() -> r1
+    work2() -> r2
 end
 
 PRINT(total)  // 30
+PRINT("Results:", r1, r2)
 ```
 
 **주의**: 
-- `parallel` 블록 내에서는 함수 호출만 가능합니다
+- `parallel` 블록 내에서는 `thread function`만 호출 가능합니다
+- 결과 할당 시 `->` 연산자를 사용합니다 (이전: `=`)
 - 공유 변수에 접근하는 함수는 `uses` 절을 명시해야 합니다
 - 자동 데드락 방지 (알파벳 순 잠금)
 
@@ -217,18 +236,23 @@ PRINT(total)  // 30
 
 ```ebnf
 uses_clause    = "uses" ID { "," ID } ;
-function_def   = "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
+function_def   = [ "thread" ] "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
 ```
 
 **예시:**
 ```propertee
 shared account1, account2
 
-function transfer(amount) uses account1, account2 do
+thread function transfer(amount) uses account1, account2 do
     account1 = account1 - amount
     account2 = account2 + amount
+    return account2
 end
 ```
+
+**주의**:
+- `uses`에 나열된 리소스는 반드시 `shared`로 선언되어야 합니다.
+- 함수 내에서 `shared` 리소스를 사용하려면 반드시 `uses`에 명시해야 합니다.
 
 ---
 
@@ -425,7 +449,7 @@ escape_seq  = '\' <any character> ;
 if       then     else      end
 loop     in       do        infinite
 break    continue
-function return
+function thread   return
 shared   uses     parallel
 not      and      or
 true     false    null

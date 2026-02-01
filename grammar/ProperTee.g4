@@ -41,7 +41,7 @@ ifStatement
     ;
 
 functionDef
-    : K_FUNCTION funcName=ID '(' parameterList? ')' usesClause? K_DO block K_END
+    : K_THREAD? K_FUNCTION funcName=ID '(' parameterList? ')' usesClause? K_DO block K_END
     ;
 
 parameterList
@@ -57,8 +57,8 @@ parallelStmt
     ;
 
 parallelTask
-    : ID '=' functionCall    # ParallelAssignTask
-    | functionCall           # ParallelCallTask
+    : functionCall '->' ID    # ParallelAssignTask
+    | functionCall            # ParallelCallTask
     ;
 
 iterationStmt
@@ -142,6 +142,7 @@ K_DO        : 'do';
 K_BREAK     : 'break';
 K_CONTINUE  : 'continue';
 K_FUNCTION  : 'function';
+K_THREAD    : 'thread';
 K_RETURN    : 'return';
 K_NOT       : 'not';
 K_AND       : 'and';

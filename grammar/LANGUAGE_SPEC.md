@@ -14,9 +14,6 @@ Last Updated: 2026-01-31
 ### 1.2 Complex Types
 - **Object**: Key-value pairs `{key: value, ...}`
 - **Array**: Ordered collections `[item1, item2, ...]`
-  - **Indexing**: ProperTee uses **1-based indexing** for arrays
-  - First element is at index `1`, not `0`
-  - Example: `arr = [10, 20, 30]` → `arr.1` is `10`, `arr.2` is `20`, `arr.3` is `30`
 
 ### 1.3 No Undefined
 ⚠️ **ProperTee does NOT have an `undefined` type.**
@@ -263,67 +260,6 @@ PRINT(obj.$key)        // ✅ "Alice" (shorthand for .$(key))
 PRINT(obj.$(key))      // ✅ "Alice" (full form)
 ```
 
-### 4.4 Array Indexing (1-Based)
-
-⚠️ **Important:** ProperTee uses **1-based indexing** for arrays, unlike most programming languages.
-
-**Rationale:**
-- More intuitive for non-programmers
-- Consistent with natural language ("first element" = index 1)
-- Common in mathematical notation and some languages (Lua, MATLAB, R)
-
-**Syntax:**
-```javascript
-arr = [10, 20, 30, 40, 50]
-
-// 1-based indexing
-first = arr.1      // ✅ 10 (first element)
-second = arr.2     // ✅ 20 (second element)
-third = arr.3      // ✅ 30 (third element)
-
-// Common mistake (0-based thinking)
-zero = arr.0       // ❌ Runtime Error: Property '0' does not exist
-
-// Out of bounds
-invalid = arr.10   // ❌ Runtime Error: Property '10' does not exist
-```
-
-**Implementation Note:**
-When implementing ProperTee in a 0-based language (like JavaScript), the interpreter must convert:
-```javascript
-// User writes: arr.1
-// Interpreter translates to: internalArray[0]
-
-// User writes: arr.N
-// Interpreter translates to: internalArray[N-1]
-```
-
-**Dynamic Index Access:**
-```javascript
-arr = [100, 200, 300]
-idx = 2
-value = arr.$idx          // ✅ 200 (arr.2)
-
-// Expression-based index
-position = 1 + 1
-item = arr.$(position)    // ✅ 200 (arr.2)
-```
-
-**Loop Iteration with Indices:**
-```javascript
-items = ["a", "b", "c"]
-
-// Manual indexing (1-based)
-PRINT(items.1)   // "a"
-PRINT(items.2)   // "b"
-PRINT(items.3)   // "c"
-
-// Value iteration (no index needed)
-loop item in items do
-    PRINT(item)
-end
-```
-
 ---
 
 ## 5. Control Flow
@@ -538,6 +474,11 @@ return result
 function name(param1, param2, ...) do
     statements
 end
+
+// Thread function (can be called in parallel blocks)
+thread function name(param1, param2, ...) uses resources do
+    statements
+end
 ```
 
 **Function Definition:**
@@ -545,6 +486,13 @@ end
 - Parameters are comma-separated identifiers
 - Functions create a new local scope
 - Return value can be explicit (`return expression`) or implicit (last evaluated expression)
+- **Thread functions**: Marked with `thread` keyword, can be called in `parallel` blocks
+
+**Thread Functions:**
+- Must be declared with `thread` keyword
+- Typically use `uses` clause to access SHARED resources
+- Can only be called inside `parallel...end` blocks
+- Designed for safe concurrent execution
 
 **Return Behavior:**
 1. **Explicit return**: `return expression` exits function and returns the value
@@ -1582,92 +1530,7 @@ const ioStreams = {
 };
 ```
 
-### 12.3 1-Based Array Indexing Implementation
-
-⚠️ **Critical:** ProperTee uses 1-based indexing, but JavaScript uses 0-based indexing.
-
-The interpreter must convert indices when accessing arrays:
-
-```javascript
-// Property access visitor
-visitMemberAccessExpr(ctx) {
-    const object = this.visit(ctx.expression());
-    const accessCtx = ctx.access();
-    
-    if (accessCtx.NUMBER()) {
-        // 1-based to 0-based conversion
-        const index = parseInt(accessCtx.NUMBER().getText());
-        
-        if (index < 1) {
-            throw new Error(`Invalid array index: ${index}. Indices start at 1.`);
-        }
-        
-        const jsIndex = index - 1;  // Convert to 0-based
-        
-        if (Array.isArray(object)) {
-            if (jsIndex >= object.length) {
-                throw new Error(`Property '${index}' does not exist`);
-            }
-            return object[jsIndex];
-        } else {
-            // For objects, use the numeric key as-is (rare case)
-            if (!(index in object)) {
-                throw new Error(`Property '${index}' does not exist`);
-            }
-            return object[index];
-        }
-    }
-    
-    // ... other access types (ID, STRING, $VAR, etc.)
-}
-```
-
-**Assignment with 1-based indexing:**
-```javascript
-// Property assignment
-visitPropLValue(ctx) {
-    const object = this.visit(ctx.lvalue());
-    const accessCtx = ctx.access();
-    
-    if (accessCtx.NUMBER()) {
-        const index = parseInt(accessCtx.NUMBER().getText());
-        
-        if (index < 1) {
-            throw new Error(`Invalid array index: ${index}. Indices start at 1.`);
-        }
-        
-        const jsIndex = index - 1;  // Convert to 0-based
-        
-        if (Array.isArray(object)) {
-            // Allow extending array
-            object[jsIndex] = value;
-        } else {
-            // For objects, use numeric key
-            object[index] = value;
-        }
-    }
-    
-    // ... other access types
-}
-```
-
-**Built-in function adaptation:**
-```javascript
-// SLICE function with 1-based indexing
-'SLICE': (array, start, end) => {
-    if (!Array.isArray(array)) {
-        throw new Error('SLICE requires an array');
-    }
-    
-    // Convert 1-based to 0-based
-    const jsStart = start - 1;
-    const jsEnd = end !== undefined ? end : array.length;
-    
-    return array.slice(jsStart, jsEnd);
-}
-```
-
-### 12.4 Error Handling in JavaScript
+### 12.3 Error Handling in JavaScript
 
 ProperTee runtime errors throw JavaScript `Error` objects:
 
@@ -1679,7 +1542,7 @@ try {
 }
 ```
 
-### 12.5 Return Statement Implementation
+### 12.4 Return Statement Implementation
 
 The `return` statement can exit both functions and top-level scripts. Implementation should use an exception mechanism:
 
@@ -2239,9 +2102,9 @@ end
 **Syntax:**
 ```javascript
 parallel
-    result1 = function1(args)
-    result2 = function2(args)
-    function3(args)  // no return value
+    functionCall() -> result1
+    functionCall() -> result2
+    functionCall()  // no return value
 end
 ```
 
@@ -2250,23 +2113,44 @@ end
 2. Spawn thread for each function call
 3. All threads execute in parallel
 4. END waits for all threads to complete (join)
-5. Collect results and assign to variables
+5. Collect results and assign to variables (using `->`)
 6. Continue to next statement
 
 **Rules:**
 
 #### ✅ Allowed in PARALLEL block:
-- Function calls with assignment: `r = func(args)`
-- Function calls without assignment: `func(args)`
+- **Thread function calls** with result assignment: `threadFunc(args) -> r`
+- Thread function calls without assignment: `threadFunc(args)`
 - Reading variables defined **before** PARALLEL block
+- Built-in async functions (e.g., `SLEEP`)
 
 #### ❌ Prohibited in PARALLEL block:
+- **Regular functions** (only thread functions allowed)
+- Result variable usage: `work2(r1) -> r2` where `r1` is a result variable
 - Control flow statements (`if`, `loop`)
-- Nested function calls: `r = func(helper())`
+- Nested function calls: `func(helper()) -> r`
 - Arithmetic or logical operations
-- Variable references defined in PARALLEL block
+- Variable assignments other than via `->`
 - Nested PARALLEL blocks
-- Any statement other than function calls
+
+**Thread Function Declaration:**
+```javascript
+// ✅ Thread function - can be called in parallel
+thread function worker(n) uses counter do
+    counter = counter + n
+    return counter
+end
+
+// ❌ Regular function - cannot be called in parallel
+function helper(x) do
+    return x * 2
+end
+
+parallel
+    worker(10) -> r1     // ✅ OK
+    helper(20) -> r2     // ❌ Runtime Error: not a thread function
+end
+```
 
 **Examples:**
 
@@ -2274,8 +2158,8 @@ end
 ```javascript
 x = 10
 parallel
-    r1 = task1(x)        // reads x from before block
-    r2 = task2()         
+    task1(x) -> r1       // reads x from before block
+    task2() -> r2         
     task3()              // return value ignored
 end
 PRINT(r1, r2)            // use results after end
@@ -2285,20 +2169,35 @@ PRINT(r1, r2)            // use results after end
 ```javascript
 parallel
     if condition then    // ❌ Syntax Error: control flow not allowed
-        r1 = task1()
+        task1() -> r1
     end
     
     loop i in items do   // ❌ Syntax Error: loop not allowed
         task(i)
     end
     
-    r2 = task2(helper()) // ❌ Syntax Error: nested function call
+    task2(helper()) -> r2  // ❌ Syntax Error: nested function call
     
     PRINT(r1)            // ❌ Syntax Error: cannot use r1 inside PARALLEL
     
-    r3 = task3()
-    r3 = task4()         // ❌ Syntax Error: duplicate variable assignment
+    task3() -> r3
+    task4() -> r3        // ❌ Syntax Error: duplicate variable assignment
 end
+```
+
+**Result Variable Protection:**
+```javascript
+parallel
+    work1() -> r1
+    work2(r1) -> r2      // ❌ Runtime Error: r1 is not available yet
+end
+
+// ✅ Correct: use results after end
+parallel
+    work1() -> r1
+    work2() -> r2
+end
+process(r1, r2)          // ✅ OK - after end
 ```
 
 **Variable Scope:**
@@ -2306,8 +2205,8 @@ end
 x = 10               // defined before PARALLEL
 
 parallel
-    r1 = task1(x)    // ✅ can read x
-    r2 = task2()     // r2 declared but not yet assigned
+    task1(x) -> r1   // ✅ can read x
+    task2() -> r2    // r2 declared but not yet assigned
     // PRINT(r2)     // ❌ cannot use r2 here
 end
 
@@ -2330,7 +2229,7 @@ PRINT(r1, r2)        // ✅ can use r1, r2 after end
 ```javascript
 shared counter
 
-function worker(input) uses counter do
+thread function worker(input) uses counter do
     temp = input * 2      // thread-local (independent per thread)
     result = temp + 10    // thread-local
     counter = counter + result  // shared (synchronized)
@@ -2338,8 +2237,8 @@ function worker(input) uses counter do
 end
 
 parallel
-    r1 = worker(5)   // r1's thread has temp=10, result=20
-    r2 = worker(10)  // r2's thread has temp=20, result=30
+    worker(5) -> r1   // r1's thread has temp=10, result=20
+    worker(10) -> r2  // r2's thread has temp=20, result=30
 end
 // Each thread's temp and result are independent
 ```
@@ -2356,7 +2255,7 @@ end
 
 **Examples:**
 ```javascript
-function mayFail(n) do
+thread function mayFail(n) do
     if n == 0 then
         x = 10 / 0  // Runtime Error
     end
@@ -2364,9 +2263,9 @@ function mayFail(n) do
 end
 
 parallel
-    r1 = mayFail(5)   // ✅ succeeds, r1 = 10
-    r2 = mayFail(0)   // ❌ fails, r2 = null
-    r3 = mayFail(10)  // ✅ succeeds, r3 = 20
+    mayFail(5) -> r1   // ✅ succeeds, r1 = 10
+    mayFail(0) -> r2   // ❌ fails, r2 = null
+    mayFail(10) -> r3  // ✅ succeeds, r3 = 20
 end
 
 PRINT(r1, r2, r3)  // Output: 10, null, 20
@@ -2423,8 +2322,8 @@ accounts = [
 ]
 logs = []
 
-// Transfer money between accounts
-function transfer(fromIdx, toIdx, amount) uses accounts, logs do
+// Transfer money between accounts (thread function)
+thread function transfer(fromIdx, toIdx, amount) uses accounts, logs do
     // Locks acquired: accounts, logs (alphabetical order)
     
     fromAccount = accounts.$fromIdx
@@ -2443,8 +2342,8 @@ function transfer(fromIdx, toIdx, amount) uses accounts, logs do
     return true
 end
 
-// Calculate and add interest
-function addInterest(accountIdx, rate) uses accounts do
+// Calculate and add interest (thread function)
+thread function addInterest(accountIdx, rate) uses accounts do
     // Lock acquired: accounts only
     
     account = accounts.$accountIdx
@@ -2455,11 +2354,11 @@ end
 
 // Parallel execution
 parallel
-    t1 = transfer(1, 2, 100)      // Transfer $100 from account 1 to 2
-    t2 = transfer(2, 3, 50)       // Transfer $50 from account 2 to 3
-    i1 = addInterest(1, 0.05)     // 5% interest on account 1
-    i2 = addInterest(2, 0.05)     // 5% interest on account 2
-    i3 = addInterest(3, 0.05)     // 5% interest on account 3
+    transfer(1, 2, 100) -> t1      // Transfer $100 from account 1 to 2
+    transfer(2, 3, 50) -> t2       // Transfer $50 from account 2 to 3
+    addInterest(1, 0.05) -> i1     // 5% interest on account 1
+    addInterest(2, 0.05) -> i2     // 5% interest on account 2
+    addInterest(3, 0.05) -> i3     // 5% interest on account 3
 end
 
 // Results available after end
@@ -2487,9 +2386,7 @@ end
 ```javascript
 // ❌ Not allowed - variable may not be defined
 parallel
-    if condition then
-        r1 = task1()
-    end
+    task1() -> r1
 end
 PRINT(r1)  // r1 might not exist!
 ```
@@ -2499,7 +2396,7 @@ PRINT(r1)  // r1 might not exist!
 // ❌ Not allowed - variable collision, unpredictable thread count
 parallel
     loop i in items do
-        r = task(i)  // which r? how many threads?
+        task(i) -> r  // which r? how many threads?
     end
 end
 ```
@@ -2512,7 +2409,7 @@ end
 ```javascript
 // ❌ Not allowed
 parallel
-    r = task(helper())  // When does helper() run? What locks?
+    task(helper()) -> r  // When does helper() run? What locks?
 end
 ```
 
@@ -2527,7 +2424,7 @@ end
 // ✅ Correct approach
 temp = helper()
 parallel
-    r = task(temp)
+    task(temp) -> r
 end
 ```
 
@@ -2579,7 +2476,7 @@ The following keywords are reserved and cannot be used as variable names:
 - `if`, `then`, `else`, `end`
 - `loop`, `in`, `do`, `infinite`
 - `break`, `continue`
-- `function`, `return`
+- `function`, `thread`, `return`
 - `and`, `or`, `not`
 - `true`, `false`, `null`
 - `shared`, `uses`, `parallel` (for concurrency)
@@ -2662,8 +2559,8 @@ end
 
 **Function Definition Syntax:**
 ```
-function name(params) do ... end         // User-defined functions
-function name(params) uses res do ... end  // With USES clause
+function name(params) do ... end                    // Regular functions
+thread function name(params) uses res do ... end    // Thread functions
 ```
 
 ---
@@ -2674,10 +2571,12 @@ function name(params) uses res do ... end  // With USES clause
 - **Added**: Concurrency and Threading (Section 15)
   - `shared` declaration for shared resources
   - `uses` clause for functions accessing shared resources
-  - `parallel...end` blocks for parallel execution
+  - `thread` keyword for functions that can run in parallel
+  - `parallel...end` blocks with `->` operator for result assignment
   - Automatic deadlock prevention through alphabetical lock ordering
   - Thread-local variables
   - Error handling in parallel contexts
+  - Result variable usage validation in PARALLEL blocks
 - **Added**: Array manipulation functions (Section 9.4)
   - `PUSH(array, ...values)` - Append values to array
   - `POP(array)` - Remove last element from array
@@ -2688,7 +2587,8 @@ function name(params) uses res do ... end  // With USES clause
   - `TO_STRING(value)` - Convert any value to string
 - **Added**: Async functions (Section 9.3)
   - `SLEEP(milliseconds)` - Pause execution with async/await support
-- **Added**: New reserved keywords: `shared`, `uses`, `parallel`
+- **Added**: New reserved keywords: `shared`, `uses`, `parallel`, `thread`
+- **Changed**: PARALLEL syntax from `r = func()` to `func() -> r`
 - **Changed**: Array indexing to 1-based (arrays start at index 1)
 - **Changed**: Loop indices to 1-based
 - **Changed**: SUBSTRING function to 1-based indexing

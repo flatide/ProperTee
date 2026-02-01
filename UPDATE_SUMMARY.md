@@ -1,6 +1,62 @@
-# ProperTee v2.0 업데이트 완료
+# ProperTee v2.1 업데이트 완료
 
-**최종 업데이트**: 병렬 실행 및 쓰레딩 기능 추가 (2026-01-31)
+**최종 업데이트**: 쓰레드 함수 및 병렬 문법 개선 (2026-01-31)
+
+## ✅ 최신 변경사항 (v2.1)
+
+### 주요 문법 변경
+1. **`thread` 키워드 추가**: 병렬 실행 가능한 함수를 명시적으로 선언
+   - `thread function name(params) uses resources do ... end`
+   - `parallel` 블록 내에서는 `thread function`만 호출 가능
+   
+2. **PARALLEL 문법 변경**: 결과 할당 연산자 변경
+   - 이전: `result = function_call()`
+   - 현재: `function_call() -> result`
+   
+3. **SHARED 선언 제약**: 다중 초기화 금지
+   - ✅ `shared counter = 0`
+   - ✅ `shared data, cache` (초기화 없이)
+   - ❌ `shared counter = 0, data = []` (문법 오류)
+
+4. **USES 절 검증 강화**: SHARED로 선언된 리소스만 접근 가능
+   - 함수 내에서 SHARED 리소스 사용 시 반드시 `uses`에 명시
+   - 런타임에서 명시되지 않은 SHARED 접근 시 에러
+
+### 업데이트된 예제
+
+#### 병렬 실행 (v2.1)
+```propertee
+shared counter = 0
+
+thread function increment() uses counter do
+    counter = counter + 1
+    return counter
+end
+
+parallel
+    increment() -> r1
+    increment() -> r2
+end
+
+PRINT("Results:", r1, r2)  // 1, 2
+PRINT("Counter:", counter)  // 2
+```
+
+#### 병렬 실행 (이전 v2.0)
+```propertee
+shared counter = 0
+
+function increment() uses counter do
+    counter = counter + 1
+end
+
+parallel
+    increment()
+    increment()
+end
+
+PRINT("Counter:", counter)  // 2
+```
 
 ## ✅ 완료된 모든 작업
 
@@ -157,8 +213,8 @@
 if then else end
 loop in do infinite
 break continue
-function return
-shared uses parallel    ← 병렬 실행 추가!
+function thread return
+shared uses parallel    ← 병렬 실행 (thread 키워드 추가!)
 not and or
 true false null
 ```
@@ -211,31 +267,36 @@ end
 shared counter = 0
 shared data = []
 
-// 공유 자원을 사용하는 함수
-function increment() uses counter do
+// 쓰레드 함수 (병렬 실행 가능)
+thread function increment() uses counter do
     counter = counter + 1
+    return counter
 end
 
-function addData(value) uses data do
-    PUSH(data, value)
+thread function addData(value) uses data do
+    data = PUSH(data, value)
+    return data
 end
 
 // 병렬 실행 블록
 parallel
-    increment()
-    increment()
+    increment() -> r1
+    increment() -> r2
     addData(10)
     addData(20)
 end
 
 PRINT("Counter:", counter)  // 2
-PRINT("Data:", data)         // [10, 20]
+PRINT("Results:", r1, r2)   // 1, 2
+PRINT("Data:", data)        // [10, 20]
 ```
 
 **특징**:
+- `thread`: 병렬 실행 가능한 함수 선언
 - `shared`: 전역 스코프에서 공유 변수 선언
 - `uses`: 함수가 접근하는 공유 자원 명시
-- `parallel...end`: 함수 호출을 병렬로 실행
+- `parallel...end`: 쓰레드 함수 호출을 병렬로 실행
+- `->` 연산자: 병렬 실행 결과를 변수에 할당
 - **자동 데드락 방지**: 자원을 알파벳 순으로 잠금
 - **쓰레드 안전**: 명시적 선언으로 안전한 동시 실행
 

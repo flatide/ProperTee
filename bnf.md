@@ -42,7 +42,11 @@
                       | "loop" <identifier> "in" <expression> "do" <statement-list> "end"
                       | "loop" <identifier> "," <identifier> "in" <expression> "do" <statement-list> "end"
 
-<function-definition> ::= "function" <identifier> "(" ")" "do" <statement-list> "end"
+<function-definition> ::= "thread" "function" <identifier> "(" ")" "do" <statement-list> "end"
+                        | "thread" "function" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
+                        | "thread" "function" <identifier> "(" ")" <uses-clause> "do" <statement-list> "end"
+                        | "thread" "function" <identifier> "(" <parameter-list> ")" <uses-clause> "do" <statement-list> "end"
+                        | "function" <identifier> "(" ")" "do" <statement-list> "end"
                         | "function" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
                         | "function" <identifier> "(" ")" <uses-clause> "do" <statement-list> "end"
                         | "function" <identifier> "(" <parameter-list> ")" <uses-clause> "do" <statement-list> "end"
@@ -66,8 +70,8 @@
 <parallel-task-list> ::= <parallel-task>
                        | <parallel-task-list> <parallel-task>
 
-<parallel-task>     ::= <function-call>
-                      | <identifier> "=" <function-call>
+<parallel-task>     ::= <function-call> "->" <identifier>
+                      | <function-call>
 
 <flow-control>      ::= "break"
                       | "continue"
@@ -191,7 +195,7 @@
 if       then     else      end
 loop     in       do        infinite
 break    continue
-function return
+function thread   return
 shared   uses     parallel
 not      and      or
 true     false    null

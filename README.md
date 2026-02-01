@@ -56,13 +56,14 @@ message = greet("ProperTee")
 // 병렬 실행
 shared counter = 0
 
-function increment() uses counter do
+thread function increment() uses counter do
     counter = counter + 1
+    return counter
 end
 
 parallel
-    increment()
-    increment()
+    increment() -> r1
+    increment() -> r2
 end
 
 PRINT("Counter:", counter)  // 2
