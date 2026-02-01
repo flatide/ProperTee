@@ -509,6 +509,9 @@ end
 
 *Functions cannot access SHARED variables at all, even outside multi blocks.
 
+**Note on Parameters:**
+User-defined functions and threads currently have **fixed parameter count**. Variadic arguments (like `...args`) are not yet supported. Built-in functions like `PRINT`, `PUSH`, and `CONCAT` do support variable arguments. See [Section 18.1](#181-current-limitations) for details and future plans.
+
 **Return Behavior:**
 1. **Explicit return**: `return expression` exits function/thread and returns the value
 2. **Implicit return**: Last expression evaluated in the body is returned
@@ -983,6 +986,14 @@ If needed in the future, consider adding:
 
 ## 9. Built-in Functions
 
+**Note on Variadic Arguments:**
+Built-in functions support variable number of arguments (e.g., `PRINT`, `PUSH`, `CONCAT`). User-defined functions currently have fixed parameters only. See [Section 18.1](#181-current-limitations) for details and planned enhancements.
+
+**Note on Async Functions:**
+`SLEEP` is asynchronous and automatically awaited by the runtime. User functions calling `SLEEP` also become asynchronous implicitly, with no explicit `async` keyword needed. See [Section 18.1](#181-current-limitations) for details.
+
+---
+
 ### 9.1 I/O Functions
 
 #### `PRINT(...args)`
@@ -1090,6 +1101,13 @@ str = TO_STRING({x: 10})    // "{\"x\":10}"
 - Pauses execution for specified milliseconds
 - **Async function**: Automatically awaited in async contexts
 - Useful for delays, rate limiting, or simulating I/O operations
+
+**Important Notes:**
+- `SLEEP` is the only async built-in function currently
+- User functions calling `SLEEP` become asynchronous automatically
+- No explicit `async`/`await` keywords needed in user code
+- The runtime handles Promise resolution transparently
+- See [Section 18.1](#181-current-limitations) for async function details
 
 **Examples:**
 ```javascript
@@ -2670,30 +2688,166 @@ Use parentheses `()` to override precedence.
 
 ## 18. Future Considerations
 
+### 18.1 Current Limitations
+
+#### Variadic Functions (가변 인자 함수)
+
+**Status:** Not yet implemented for user-defined functions
+
+**Current State:**
+- ✅ Built-in functions support variadic arguments (`PUSH`, `CONCAT`, `PRINT`)
+- ❌ User-defined functions have fixed parameter count
+
+**Examples:**
+```javascript
+// ✅ Built-in - Works
+PRINT("Value:", 1, 2, 3)          // Variable arguments
+result = PUSH(arr, 10, 20, 30)    // Variable arguments
+combined = CONCAT(arr1, arr2, arr3) // Variable arguments
+
+// ❌ User function - Not supported yet
+function sum(...numbers) do       // Syntax not available
+    total = 0
+    loop n in numbers do
+        total = total + n
+    end
+    return total
+end
+```
+
+**Current Workaround:**
+```javascript
+// Use arrays to pass multiple values
+function sum(numbers) do
+    total = 0
+    loop n in numbers do
+        total = total + n
+    end
+    return total
+end
+
+result = sum([1, 2, 3, 4, 5])  // Pass as array
+```
+
+**Planned Syntax:**
+```javascript
+function sum(...numbers) do
+    // numbers is an array
+end
+
+function format(template, ...values) do
+    // template is required, values is variadic
+end
+```
+
+---
+
+#### Async Function Declaration
+
+**Status:** Not yet implemented (but implicitly supported)
+
+**Current State:**
+- ✅ Built-in `SLEEP` is async and properly awaited
+- ✅ User functions can call async built-ins (implicitly handled)
+- ❌ No explicit `async` keyword for user functions
+- ❌ No explicit `await` keyword in user code
+
+**Examples:**
+```javascript
+// ✅ Works now (implicitly async)
+function delayedTask() do
+    SLEEP(1000)      // Automatically awaited by runtime
+    return "Done"
+end
+
+result = delayedTask()  // Blocks until complete
+PRINT(result)           // "Done"
+
+// ❌ Cannot explicitly declare async (future syntax)
+async function fetchData() do
+    data = await FETCH(url)  // await keyword not available
+    return data
+end
+```
+
+**Current Behavior:**
+- All function calls are automatically awaited if they return Promises
+- No explicit async/await syntax needed
+- This is handled internally by the visitor
+- Functions calling `SLEEP` or other async built-ins become async automatically
+
+**Why No Explicit Async?**
+1. **Simplicity**: Users don't need to think about async/await
+2. **Consistency**: All functions behave the same way
+3. **Future-proof**: Can add explicit async later without breaking changes
+
+**Planned Enhancement:**
+```javascript
+// Future: Explicit async declarations
+async function fetchData() do
+    data = await FETCH(url)
+    return data
+end
+
+// Future: Parallel async calls
+async function loadAll() do
+    // Run in sequence
+    data1 = await fetch1()
+    data2 = await fetch2()
+    
+    // Or use MULTI for parallel
+    multi
+        fetch1() -> data1
+        fetch2() -> data2
+    end
+end
+```
+
+---
+
+### 18.2 Other Planned Features
+
 Features that may be added in future versions:
 
-- [ ] Type conversion functions (`TO_NUMBER`, `TO_STRING`, etc.)
-- [x] Array manipulation functions (`PUSH`, `POP`, `SLICE`, `CONCAT`) - ✅ Implemented
-- [x] String manipulation functions (`SPLIT`, `JOIN`, `SUBSTRING`, etc.) - ✅ Implemented
+**Type System:**
+- [ ] Type conversion functions (`TO_NUMBER`, `TO_STRING`, etc.) - Partially implemented
 - [ ] Optional chaining operator (`?.`)
 - [ ] Safe property check function (`HAS(obj, "property")`)
-- [x] Comments in code - ✅ Implemented (single-line `//` and block `/* */`)
+
+**Functions:**
 - [x] Function definitions (user-defined functions) - ✅ Implemented
 - [ ] Anonymous functions / Lambdas
 - [ ] First-class functions (functions as values)
 - [ ] Closures (capturing local variables)
 - [ ] Function overloading
 - [ ] Default parameter values
-- [ ] Variable arguments (`...args`)
+- [ ] **Variadic arguments** (`...args`) - See Section 18.1
+- [ ] **Explicit async/await** - See Section 18.1
+
+**Data Structures:**
+- [x] Array manipulation functions (`PUSH`, `POP`, `SLICE`, `CONCAT`) - ✅ Implemented
+- [x] String manipulation functions (`SPLIT`, `JOIN`, `SUBSTRING`, etc.) - ✅ Implemented
+
+**Language Features:**
+- [x] Comments in code - ✅ Implemented (single-line `//` and block `/* */`)
 - [ ] Import/Export system
-- [x] **Concurrency features** - ✅ Basic implementation added (v1.1)
-  - **Future enhancements:**
-    - [ ] `READONLY` access modifier for shared resources
-    - [ ] `SPAWN` keyword for async execution outside MULTI
-    - [ ] Thread introspection (THREAD_ID, THREAD_COUNT)
-    - [ ] Fine-grained locking (per-array-element)
-    - [ ] Channels for thread communication
-    - [ ] Thread pools and worker management
+- [ ] Exception handling (`try/catch/finally`)
+
+**Concurrency:**
+- [x] **Basic concurrency features** - ✅ Implemented (v1.1)
+  - [x] `shared` variables
+  - [x] `thread` functions
+  - [x] `multi` blocks
+  - [x] `monitor` blocks
+  - [x] Automatic deadlock prevention
+  
+- **Future concurrency enhancements:**
+  - [ ] `READONLY` access modifier for shared resources
+  - [ ] `SPAWN` keyword for async execution outside MULTI
+  - [ ] Thread introspection (THREAD_ID, THREAD_COUNT)
+  - [ ] Fine-grained locking (per-array-element)
+  - [ ] Channels for thread communication
+  - [ ] Thread pools and worker management
 
 ---
 

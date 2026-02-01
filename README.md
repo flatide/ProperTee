@@ -87,8 +87,10 @@ PRINT("Counter:", counter)    // 2
 ## 문서
 
 - [언어 명세 (공식)](grammar/LANGUAGE_SPEC.md)
+  - [함수 제약사항 (가변 인자, 비동기)](grammar/LANGUAGE_SPEC.md#181-current-limitations)
 - [문법 파일 (ANTLR4)](grammar/ProperTee.g4)
 - [문법 명세 (EBNF)](grammar.md)
+- [BNF 명세](bnf.md)
 - [언어 가이드](guide.md)
 - [예제 모음](examples/)
 

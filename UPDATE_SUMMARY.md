@@ -1,8 +1,69 @@
-# ProperTee v2.3 업데이트 완료
+# ProperTee v2.4 업데이트 완료
 
-**최종 업데이트**: MONITOR 블록 추가 (2026-01-31)
+**최종 업데이트**: 함수 제약사항 문서화 (2026-01-31)
 
-## ✅ 최신 변경사항 (v2.3)
+## ✅ 최신 변경사항 (v2.4)
+
+### 주요 문서 업데이트
+1. **함수 제약사항 명시**: 가변 인자와 비동기 함수의 현재 제약사항 문서화
+   - 가변 인자(`...args`): 현재 사용자 정의 함수에서 미지원
+   - 비동기 함수(`async`/`await`): 명시적 키워드 미지원 (암묵적으로만 지원)
+   - LANGUAGE_SPEC.md Section 18.1에 상세 설명 추가
+   - grammar.md, bnf.md에 제약사항 및 회피 방법 추가
+
+### 가변 인자 함수 제약
+
+**현재:**
+```propertee
+// ❌ 지원하지 않음
+function sum(...numbers) do
+    return total
+end
+```
+
+**회피 방법:**
+```propertee
+// ✅ 배열로 전달
+function sum(numbers) do
+    total = 0
+    loop n in numbers do
+        total = total + n
+    end
+    return total
+end
+
+result = sum([1, 2, 3, 4, 5])
+```
+
+**참고:** 내장 함수(`PRINT`, `PUSH`, `CONCAT` 등)는 가변 인자를 지원합니다.
+
+### 비동기 함수 제약
+
+**현재:**
+```propertee
+// ✅ 암묵적으로 작동
+function delayedTask() do
+    SLEEP(1000)      // 자동으로 await 됨
+    return "Done"
+end
+
+result = delayedTask()  // 완료될 때까지 대기
+```
+
+**계획된 문법:**
+```propertee
+// ❌ 아직 지원하지 않음
+async function fetchData() do
+    data = await FETCH(url)
+    return data
+end
+```
+
+**참고:** 모든 함수 호출은 Promise를 반환하면 자동으로 await 됩니다.
+
+---
+
+## 이전 변경사항 (v2.3)
 
 ### 주요 기능 추가
 1. **`monitor` 블록 추가**: 병렬 실행 중 진행 상황 실시간 모니터링
@@ -263,7 +324,13 @@ if config == null then
 end
 ```
 
-**주의**: 함수는 호스트 언어의 스택 제한을 받습니다. 함수에는 `infinite` 키워드를 사용할 수 없습니다.
+**제약사항**:
+- **고정 매개변수**: 가변 인자(`...args`) 미지원 → 배열로 전달
+- **암묵적 비동기**: `async`/`await` 키워드 없음 → 자동 처리
+- **스택 제한**: 호스트 언어(JavaScript) 스택 제한을 받음
+- **infinite 불가**: 함수에는 `infinite` 키워드 사용 불가
+
+**참고**: 내장 함수(`PRINT`, `PUSH`, `CONCAT` 등)는 가변 인자를 지원합니다.
 
 ### 병렬 실행
 ```propertee

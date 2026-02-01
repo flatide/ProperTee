@@ -231,3 +231,61 @@ ProperTee는 두 가지 형태의 주석을 지원합니다:
 | 5 | `*` `/` `%` | 좌결합 |
 | 6 | `-` (단항) `not` | 우결합 |
 | 7 | `.` (멤버 접근) | 좌결합 |
+
+---
+
+## 함수 제약사항
+
+### 가변 인자 (Variadic Arguments)
+
+**현재 상태:**
+- ❌ 사용자 정의 함수는 고정된 매개변수 개수만 지원
+- ✅ 내장 함수(`PRINT`, `PUSH`, `CONCAT` 등)는 가변 인자 지원
+
+**회피 방법:**
+```
+function sum(numbers) do
+    total = 0
+    loop n in numbers do
+        total = total + n
+    end
+    return total
+end
+
+result = sum([1, 2, 3, 4, 5])  // 배열로 전달
+```
+
+**계획된 문법:**
+```
+function sum(...numbers) do
+    // numbers는 배열로 전달됨
+end
+```
+
+### 비동기 함수 (Async Functions)
+
+**현재 상태:**
+- ❌ 명시적 `async`/`await` 키워드 없음
+- ✅ 비동기 내장 함수(`SLEEP`) 자동 처리
+- ✅ 비동기 함수 호출 시 자동으로 await 됨
+
+**현재 동작:**
+```
+function delayedTask() do
+    SLEEP(1000)      // 자동으로 await 됨
+    return "Done"
+end
+
+result = delayedTask()  // 완료될 때까지 대기
+PRINT(result)           // "Done"
+```
+
+**계획된 문법:**
+```
+async function fetchData() do
+    data = await FETCH(url)
+    return data
+end
+```
+
+**참고:** 자세한 내용은 [LANGUAGE_SPEC.md의 Section 18.1](grammar/LANGUAGE_SPEC.md#181-current-limitations)을 참조하세요.
