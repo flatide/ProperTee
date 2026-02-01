@@ -1,32 +1,30 @@
-# ProperTee v2.2 업데이트 완료
+# ProperTee v2.3 업데이트 완료
 
-**최종 업데이트**: 문법 간소화 - thread 및 multi 키워드 (2026-01-31)
+**최종 업데이트**: MONITOR 블록 추가 (2026-01-31)
 
-## ✅ 최신 변경사항 (v2.2)
+## ✅ 최신 변경사항 (v2.3)
 
-### 주요 문법 변경
-1. **`thread function` → `thread`**: 쓰레드 선언 간소화
-   - 이전: `thread function name(params) uses resources do ... end`
-   - 현재: `thread name(params) uses resources do ... end`
-   - `thread`는 이제 독립적인 정의 구문
+### 주요 기능 추가
+1. **`monitor` 블록 추가**: 병렬 실행 중 진행 상황 실시간 모니터링
+   - 문법: `multi ... monitor INTERVAL ... end`
+   - 밀리초 단위 주기적 실행
+   - 공유 변수와 전역 변수 읽기 전용 접근
+   - 모든 작업 완료 후 최종 실행 보장
    
-2. **`parallel` → `multi`**: 병렬 실행 블록 키워드 변경
-   - 이전: `parallel ... end`
-   - 현재: `multi ... end`
-   - 더 짧고 명확한 키워드
+2. **monitor 블록 특징**
+   - 더티 리드(dirty read): 잠금 없이 변수 읽기
+   - 비차단(non-blocking): 메인 작업에 영향 없음
+   - 읽기 전용: 변수 수정 불가, 출력 및 계산만 가능
+   - 결과 변수(r1, r2 등) 접근 불가
    
-3. **문법 구조 개선**
-   - `functionDef`: 일반 함수 정의 (`function`)
-   - `threadDef`: 쓰레드 정의 (`thread`, 병렬 실행 가능)
-   - 두 정의가 명확히 분리됨
-
 ### 업데이트된 예제
 
-#### 병렬 실행 (v2.2)
+#### 병렬 실행 + 모니터링 (v2.3)
 ```propertee
 shared counter = 0
 
 thread increment() uses counter do
+    SLEEP(1000)
     counter = counter + 1
     return counter
 end
@@ -34,28 +32,34 @@ end
 multi
     increment() -> r1
     increment() -> r2
+monitor 500
+    PRINT("진행 중... counter =", counter)
 end
 
 PRINT("Results:", r1, r2)  // 1, 2
 PRINT("Counter:", counter)  // 2
 ```
 
-#### 병렬 실행 (이전 v2.1)
+#### 진행률 추적 예제
 ```propertee
-shared counter = 0
+shared processed = 0
+shared total = 100
 
-thread function increment() uses counter do
-    counter = counter + 1
-    return counter
+thread process(item) uses processed do
+    doWork(item)
+    processed = processed + 1
 end
 
-parallel
-    increment() -> r1
-    increment() -> r2
+multi
+    loop i in items do
+        process(i)
+    end
+monitor 1000
+    percent = (processed / total) * 100
+    PRINT("Progress:", percent, "%")
 end
-
-PRINT("Results:", r1, r2)  // 1, 2
-PRINT("Counter:", counter)  // 2
+// 1초마다 진행률 출력
+// 모든 작업 완료 후 "Progress: 100%" 출력 보장
 ```
 
 ## ✅ 완료된 모든 작업
@@ -214,7 +218,7 @@ if then else end
 loop in do infinite
 break continue
 function thread return
-shared uses multi    ← 병렬 실행 (thread, multi 키워드!)
+shared uses multi monitor    ← 병렬 실행 + 모니터링
 not and or
 true false null
 ```
@@ -278,12 +282,14 @@ thread addData(value) uses data do
     return data
 end
 
-// 병렬 실행 블록
+// 병렬 실행 블록 + 모니터링
 multi
     increment() -> r1
     increment() -> r2
     addData(10)
     addData(20)
+monitor 500
+    PRINT("진행 중... counter =", counter, "data size =", LEN(data))
 end
 
 PRINT("Counter:", counter)  // 2
@@ -296,9 +302,11 @@ PRINT("Data:", data)        // [10, 20]
 - `shared`: 전역 스코프에서 공유 변수 선언
 - `uses`: 쓰레드가 접근하는 공유 자원 명시
 - `multi...end`: 쓰레드 호출을 병렬로 실행
+- `monitor INTERVAL`: 밀리초 단위로 실행 중 상태 모니터링 (읽기 전용)
 - `->` 연산자: 병렬 실행 결과를 변수에 할당
 - **자동 데드락 방지**: 자원을 알파벳 순으로 잠금
 - **쓰레드 안전**: 명시적 선언으로 안전한 동시 실행
+- **비차단 모니터링**: 메인 작업에 영향 없이 진행 상황 관찰
 
 ### 반복문
 ```propertee

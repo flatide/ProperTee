@@ -66,6 +66,9 @@
                       | <identifier> "=" <expression>
 
 <parallel-statement> ::= "multi" <parallel-task-list> "end"
+                       | "multi" <parallel-task-list> <monitor-clause> "end"
+
+<monitor-clause>    ::= "monitor" <number> <statement-list>
 
 <parallel-task-list> ::= <parallel-task>
                        | <parallel-task-list> <parallel-task>
@@ -196,7 +199,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function thread   return
-shared   uses     multi
+shared   uses     multi     monitor
 not      and      or
 true     false    null
 ```

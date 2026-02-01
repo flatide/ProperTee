@@ -2275,7 +2275,144 @@ end
 
 ---
 
-### 15.6 Error Handling in Threads
+### 15.6 MONITOR Blocks
+
+**Purpose:**
+Monitor blocks allow real-time observation of SHARED variables and global variables during multi-threaded execution without blocking the main tasks.
+
+**Syntax:**
+```javascript
+multi
+    work1() -> r1
+    work2() -> r2
+monitor INTERVAL
+    // monitoring statements
+end
+```
+
+**Execution Model:**
+1. Monitor block executes periodically at specified interval (milliseconds)
+2. Runs independently without blocking multi tasks
+3. Executes one final time after all tasks complete
+4. Provides dirty read access to SHARED variables (no locks)
+
+**Rules:**
+
+#### ✅ Allowed in MONITOR block:
+- **Read SHARED variables** (dirty read - no lock)
+- **Read global variables** (snapshot)
+- **Print statements** (PRINT, etc.)
+- **Pure computations** (no side effects)
+
+#### ❌ Prohibited in MONITOR block:
+- **Variable assignments** (read-only context)
+- **Access result variables** (r1, r2, etc.)
+- **Access thread-local variables**
+- **Modify any state**
+
+**Examples:**
+
+**Progress Tracking:**
+```javascript
+shared processed = 0
+shared total = 100
+
+thread process(item) uses processed do
+    doWork(item)
+    processed = processed + 1
+end
+
+multi
+    loop i in 1..100 do
+        process(i)
+    end
+monitor 1000
+    percent = (processed / total) * 100
+    PRINT("Progress:", percent, "%")
+end
+// Output every 1 second
+// Final output guaranteed: "Progress: 100%"
+```
+
+**Error Tracking:**
+```javascript
+shared errors = []
+shared completed = 0
+
+thread task(id) uses errors, completed do
+    if validateTask(id) == false then
+        errors = PUSH(errors, "Task " + id + " failed")
+    end
+    completed = completed + 1
+end
+
+multi
+    task(1) -> r1
+    task(2) -> r2
+    task(3) -> r3
+monitor 500
+    PRINT("Completed:", completed, "Errors:", LEN(errors))
+end
+// Monitors progress every 500ms
+// Final status printed after all tasks complete
+```
+
+**Global + SHARED Variables:**
+```javascript
+startTime = NOW()  // Global variable
+shared counter = 0
+
+thread work(n) uses counter do
+    SLEEP(1000)
+    counter = counter + n
+end
+
+multi
+    work(10) -> r1
+    work(20) -> r2
+monitor 500
+    elapsed = NOW() - startTime  // Read global
+    PRINT("Time:", elapsed, "Counter:", counter)
+end
+```
+
+**Read-Only Enforcement:**
+```javascript
+shared counter = 0
+
+multi
+    work() -> r1
+monitor 500
+    // ❌ Error: Cannot assign in monitor
+    counter = counter + 1
+    
+    // ❌ Error: Cannot access result variable
+    PRINT(r1)
+    
+    // ✅ OK: Read-only access
+    temp = counter
+    PRINT("Counter:", temp)
+end
+```
+
+**Key Characteristics:**
+
+1. **Non-blocking**: Monitor does not acquire locks on SHARED variables
+2. **Dirty Read**: May see inconsistent intermediate states
+3. **Final Execution**: Always runs once more after all tasks complete
+4. **Error Isolation**: Monitor errors don't stop main tasks
+5. **Read-Only**: Cannot modify any variables
+
+**Use Cases:**
+- Real-time progress tracking
+- Performance monitoring
+- Error count tracking
+- Debugging concurrent execution
+- Live status dashboards
+
+---
+
+### 15.7 Error Handling in Threads
 
 **Error Behavior:**
 - Error in one thread **does not stop other threads**
@@ -2509,7 +2646,7 @@ The following keywords are reserved and cannot be used as variable names:
 - `function`, `thread`, `return`
 - `and`, `or`, `not`
 - `true`, `false`, `null`
-- `shared`, `uses`, `multi` (for concurrency)
+- `shared`, `uses`, `multi`, `monitor` (for concurrency)
 
 **Note:** `infinite` is reserved for loop statements only (not for functions).
 
@@ -2603,6 +2740,7 @@ thread name(params) uses res do ... end         // Threads (for parallel)
   - `uses` clause for threads accessing shared resources
   - `thread` keyword for functions that can run in multi blocks (changed from `thread function`)
   - `multi...end` blocks with `->` operator for result assignment (changed from `parallel`)
+  - `monitor` blocks for real-time progress tracking (dirty read, read-only)
   - Automatic deadlock prevention through alphabetical lock ordering
   - Thread-local variables
   - Error handling in multi contexts
@@ -2617,7 +2755,7 @@ thread name(params) uses res do ... end         // Threads (for parallel)
   - `TO_STRING(value)` - Convert any value to string
 - **Added**: Async functions (Section 9.3)
   - `SLEEP(milliseconds)` - Pause execution with async/await support
-- **Added**: New reserved keywords: `shared`, `uses`, `multi`, `thread`
+- **Added**: New reserved keywords: `shared`, `uses`, `multi`, `thread`, `monitor`
 - **Changed**: Thread declaration from `thread function` to `thread` (more concise)
 - **Changed**: Multi-threading block from `parallel` to `multi` (more concise)
 - **Changed**: Result assignment syntax from `r = func()` to `func() -> r`

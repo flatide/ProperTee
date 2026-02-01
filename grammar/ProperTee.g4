@@ -58,7 +58,11 @@ usesClause
     ;
 
 parallelStmt
-    : K_MULTI parallelTask+ K_END
+    : K_MULTI parallelTask+ monitorClause? K_END
+    ;
+
+monitorClause
+    : K_MONITOR NUMBER block
     ;
 
 parallelTask
@@ -159,6 +163,7 @@ K_INFINITE  : 'infinite';
 K_SHARED    : 'shared';
 K_USES      : 'uses';
 K_MULTI     : 'multi';
+K_MONITOR   : 'monitor';
 
 ID : [a-zA-Z_][a-zA-Z0-9_]* ;          // 일반 식별자 (나중에 정의)
 NUMBER : [0-9]+ ('.' [0-9]+)? ;

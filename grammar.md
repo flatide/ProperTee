@@ -199,9 +199,10 @@ end
 ### 3.6 병렬 실행 (MULTI)
 
 ```ebnf
-parallel_stmt  = "multi" { parallel_task } "end" ;
+parallel_stmt  = "multi" { parallel_task } [ monitor_clause ] "end" ;
 parallel_task  = function_call "->" ID
                | function_call ;
+monitor_clause = "monitor" NUMBER block ;
 ```
 
 **예시:**
@@ -221,6 +222,8 @@ end
 multi
     work1() -> r1
     work2() -> r2
+monitor 1000
+    PRINT("Progress: total =", total)
 end
 
 PRINT(total)  // 30
@@ -232,8 +235,64 @@ PRINT("Results:", r1, r2)
 - 결과 할당 시 `->` 연산자를 사용합니다 (이전: `=`)
 - 공유 변수에 접근하는 쓰레드는 `uses` 절을 명시해야 합니다
 - 자동 데드락 방지 (알파벳 순 잠금)
+- `monitor` 절로 실행 중 진행 상황을 실시간으로 관찰할 수 있습니다 (읽기 전용)
 
-### 3.7 USES 절
+### 3.7 MONITOR 블록
+
+```ebnf
+monitor_clause = "monitor" NUMBER block ;
+```
+
+`monitor` 절은 `multi` 블록 내에서 쓰레드 실행 중 공유 변수와 전역 변수의 상태를 실시간으로 관찰할 수 있게 합니다.
+
+**예시:**
+```propertee
+shared processed = 0
+shared total = 100
+
+thread process(item) uses processed do
+    doWork(item)
+    processed = processed + 1
+end
+
+multi
+    loop i in items do
+        process(i)
+    end
+monitor 1000
+    percent = (processed / total) * 100
+    PRINT("Progress:", percent, "%")
+end
+// 1초마다 진행률 출력
+// 모든 작업 완료 후 최종 출력 보장
+```
+
+**규칙**:
+- `monitor` 다음의 숫자는 밀리초 단위 간격
+- 모니터 블록은 주기적으로 실행됨 (메인 작업을 차단하지 않음)
+- 모든 작업 완료 후 1회 더 실행됨 (최종 상태 출력)
+- **읽기 전용**: SHARED/전역 변수 읽기 가능, 수정 불가
+- 더티 리드(dirty read): 잠금 없이 변수를 읽으므로 중간 상태 볼 수 있음
+- 결과 변수(r1, r2 등)나 쓰레드 로컬 변수는 접근 불가
+
+**주의**:
+```propertee
+multi
+    work() -> r1
+monitor 500
+    // ❌ 오류: monitor 내에서 할당 불가
+    counter = counter + 1
+    
+    // ❌ 오류: 결과 변수 접근 불가
+    PRINT(r1)
+    
+    // ✅ OK: 읽기 전용 접근
+    temp = counter
+    PRINT("Counter:", temp)
+end
+```
+
+### 3.8 USES 절
 
 ```ebnf
 uses_clause    = "uses" ID { "," ID } ;
@@ -452,7 +511,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function thread   return
-shared   uses     multi
+shared   uses     multi     monitor
 not      and      or
 true     false    null
 ```

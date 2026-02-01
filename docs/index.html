@@ -411,6 +411,7 @@
                                 <span class="reference-item keyword" onclick="insertText('shared')">shared</span>
                                 <span class="reference-item keyword" onclick="insertText('uses')">uses</span>
                                 <span class="reference-item keyword" onclick="insertText('multi')">multi</span>
+                                <span class="reference-item keyword" onclick="insertText('monitor')">monitor</span>
                                 <span class="reference-item keyword" onclick="insertText('and')">and</span>
                                 <span class="reference-item keyword" onclick="insertText('or')">or</span>
                                 <span class="reference-item keyword" onclick="insertText('not')">not</span>
@@ -604,11 +605,13 @@ shared counter = 0
 shared results = []
 
 thread work1() uses counter do
+    SLEEP(1000)
     counter = counter + 10
     return counter
 end
 
 thread work2() uses counter do
+    SLEEP(1500)
     counter = counter + 20
     return counter
 end
@@ -618,10 +621,12 @@ thread collect(value) uses results do
     return results
 end
 
-// 병렬로 실행 - 작업만 수행
+// 병렬로 실행 - monitor로 진행 상황 관찰
 multi
     work1() -> r1
     work2() -> r2
+monitor 500
+    PRINT("진행 중... counter =", counter)
 end
 
 // multi 블록 후에 결과 사용

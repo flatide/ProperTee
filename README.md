@@ -76,6 +76,8 @@ end
 multi
     increment() -> r1
     increment() -> r2
+monitor 500
+    PRINT("진행 중... counter =", counter)
 end
 
 PRINT("Results:", r1, r2)    // 1, 2

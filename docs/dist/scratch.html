@@ -53,47 +53,36 @@
     <textarea id="properties" rows="5" cols="50">{"user": {"name": "Test", "score": 100}}</textarea>
     
     <h3>Script:</h3>
-        <textarea id="script" rows="10" cols="50">/* Threading Test with multi keyword */
+        <textarea id="script" rows="10" cols="50">/* Monitor Error Test */
 
 // shared 자원 선언
 shared counter = 0
-shared results = []
+shared completed = 0
 
 // thread 선언
-thread work1() uses counter do
-    PRINT("work1 starting")
-    SLEEP(500)
+thread work(id, duration) uses counter, completed do
+    PRINT("Work", id, "starting")
+    SLEEP(duration)
     counter = counter + 10
-    PRINT("work1 done")
+    completed = completed + 1
+    PRINT("Work", id, "done")
     return counter
 end
 
-thread work2() uses counter do
-    PRINT("work2 starting")
-    SLEEP(300)
-    counter = counter + 20
-    PRINT("work2 done")
-    return counter
-end
-
-thread collect(value) uses results do
-    results = PUSH(results, value)
-    return value
-end
-
-// 병렬 실행 (multi 키워드 사용)
+// 병렬 실행 with monitor
 multi
-    work1() -> r1
-    work2() -> r2
+    work(1, 1500) -> r1
+    work(2, 2500) -> r2
+    work(3, 3000) -> r3
+monitor 500
+    PRINT("[Monitor] Counter:", counter, "Completed:", completed)
+    // 다음 줄의 주석을 제거하면 에러 발생
+    // counter = 999
+    // PRINT("R1:", r1)
 end
 
-// END 후에 결과 사용
-collect(r1)
-collect(r2)
-
-PRINT("Counter:", counter)
-PRINT("Results:", results)
-PRINT("All tests passed!")
+PRINT("Final results:", r1, r2, r3)
+PRINT("Final counter:", counter)
 </textarea>
     
     <div class="button-group">
