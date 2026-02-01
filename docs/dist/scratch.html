@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ProperTee Scratch</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button-group {
+            margin: 15px 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #output {
+            min-height: 300px;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: #f9f9f9;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h1>ProperTee Scratch</h1>
+    
+    <h3>Properties (JSON):</h3>
+    <textarea id="properties" rows="5" cols="50">{"user": {"name": "Test", "score": 100}}</textarea>
+    
+    <h3>Script:</h3>
+        <textarea id="script" rows="10" cols="50">/* SLEEP Test */
+
+PRINT("Test 1: Basic SLEEP")
+PRINT("Before sleep...")
+SLEEP(1000)
+PRINT("After 1 second")
+
+PRINT("")
+PRINT("Test 2: SLEEP in function")
+function delayedGreeting(name, delay) do
+    SLEEP(delay)
+    return "Hello, " + name + "!"
+end
+
+result = delayedGreeting("World", 500)
+PRINT(result)
+
+PRINT("")
+PRINT("Test 3: Multiple SLEEPs")
+SLEEP(300)
+PRINT("Step 1")
+SLEEP(300)
+PRINT("Step 2")
+SLEEP(300)
+PRINT("All done!")
+</textarea>
+    
+    <div class="button-group">
+        <button class="btn btn-primary" id="runButton" onclick="run()">▶ Run</button>
+        <button class="btn btn-danger" onclick="clearOutput()">🗑️ Clear Output</button>
+    </div>
+    
+    <h3>Output:</h3>
+    <div id="output"></div>
+    
+    <!-- ProperTee 번들 로드 -->
+    <script src="./propertee-bundle.js"></script>
+    
+    <script>
+        // 에러 리스너
+        class ErrorListener extends antlr4.error.ErrorListener {
+            constructor() {
+                super();
+                this.errors = [];
+            }
+            syntaxError(recognizer, offendingSymbol, line, column, msg, err) {
+                this.errors.push(`Line ${line}:${column} - ${msg}`);
+            }
+        }
+        
+        // Clear 함수
+        function clearOutput() {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+        }
+        
+        // 실행 함수
+        async function run() {
+            const output = document.getElementById('output');
+            const runButton = document.getElementById('runButton');
+            const propertiesText = document.getElementById('properties').value;
+            const scriptText = document.getElementById('script').value;
+            
+            // Run 시작 시 output 자동 클리어
+            output.innerHTML = '';
+            
+            // 버튼 비활성화
+            runButton.disabled = true;
+            runButton.textContent = '⏳ Running...';
+            
+            const outputLines = [];
+            
+            try {
+                // 1. Properties 파싱
+                const properties = JSON.parse(propertiesText);
+                
+                // 2. Lexer & Parser
+                const chars = new antlr4.InputStream(scriptText);
+                const lexer = new ProperTeeLexer(chars);
+                const lexerErrors = new ErrorListener();
+                lexer.removeErrorListeners();
+                lexer.addErrorListener(lexerErrors);
+                
+                const tokens = new antlr4.CommonTokenStream(lexer);
+                const parser = new ProperTeeParser(tokens);
+                const parserErrors = new ErrorListener();
+                parser.removeErrorListeners();
+                parser.addErrorListener(parserErrors);
+                
+                const tree = parser.root();
+                
+                // 에러 체크
+                if (lexerErrors.errors.length > 0) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.color = 'red';
+                    errorDiv.textContent = 'Lexer Error:\n' + lexerErrors.errors.join('\n');
+                    output.appendChild(errorDiv);
+                    return;
+                }
+                if (parserErrors.errors.length > 0) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.color = 'red';
+                    errorDiv.textContent = 'Parser Error:\n' + parserErrors.errors.join('\n');
+                    output.appendChild(errorDiv);
+                    return;
+                }
+                
+                // 3. 실시간 출력 스트림 설정
+                const ioStreams = {
+                    stdout: (...args) => {
+                        const line = args.join(' ');
+                        outputLines.push(line);
+                        
+                        const div = document.createElement('div');
+                        div.textContent = line;
+                        output.appendChild(div);
+                        output.scrollTop = output.scrollHeight;
+                    },
+                    stderr: (...args) => {
+                        const line = '[ERROR] ' + args.join(' ');
+                        outputLines.push(line);
+                        
+                        const div = document.createElement('div');
+                        div.style.color = 'red';
+                        div.textContent = line;
+                        output.appendChild(div);
+                        output.scrollTop = output.scrollHeight;
+                    }
+                };
+                
+                
+                const options = {
+                    maxIterations: 1000,
+                    iterationLimitBehavior: 'error'
+                };
+                
+                // 5. Visitor 생성 및 실행 (await 추가!)
+                const visitor = new ProperTeeCustomVisitor(properties, {}, ioStreams, options);
+                const result = await visitor.visit(tree);
+                
+                // 6. 최종 요약 정보
+                const summary = document.createElement('div');
+                summary.style.marginTop = '20px';
+                summary.style.borderTop = '2px solid #ccc';
+                summary.style.paddingTop = '10px';
+                summary.style.fontFamily = 'monospace';
+                summary.style.fontSize = '12px';
+                summary.innerHTML = `
+                    <strong>--- Return Value ---</strong>
+                    <pre style="margin: 5px 0;">${JSON.stringify(result, null, 2)}</pre>
+                    
+                    <strong>--- Properties ---</strong>
+                    <pre style="margin: 5px 0;">${JSON.stringify(properties, null, 2)}</pre>
+                    
+                    <strong>--- Variables ---</strong>
+                    <pre style="margin: 5px 0;">${JSON.stringify(visitor.variables, null, 2)}</pre>
+                    
+                    <strong>--- Shared Variables ---</strong>
+                    <pre style="margin: 5px 0;">${JSON.stringify(visitor.sharedValues, null, 2)}</pre>
+                `;
+                output.appendChild(summary);
+                
+            } catch (e) {
+                // 런타임 에러 발생 시
+                const errorDiv = document.createElement('div');
+                errorDiv.style.marginTop = '20px';
+                errorDiv.style.borderTop = '2px solid red';
+                errorDiv.style.paddingTop = '10px';
+                errorDiv.style.color = 'red';
+                errorDiv.innerHTML = `
+                    <strong>--- Runtime Error ---</strong>
+                    <pre style="margin: 5px 0;">${e.message}\n\n${e.stack}</pre>
+                `;
+                output.appendChild(errorDiv);
+            } finally {
+                // 버튼 다시 활성화
+                runButton.disabled = false;
+                runButton.textContent = '▶ Run';
+            }
+        }
+    </script>
+</body>
+</html>
