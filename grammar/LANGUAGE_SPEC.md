@@ -1097,11 +1097,11 @@ PRINT("Starting...")
 SLEEP(1000)              // Wait 1 second
 PRINT("After 1 second")
 
-// In parallel blocks - each thread sleeps independently
-parallel
-    r1 = task1()
+// In multi blocks - each thread sleeps independently
+multi
+    task1() -> r1
     SLEEP(500)           // This thread sleeps
-    r2 = task2()
+    task2() -> r2
 end
 
 // With user functions
@@ -1996,7 +1996,7 @@ ProperTee provides structured concurrency primitives for multi-threaded executio
 - **Explicit over implicit**: All shared resources must be declared
 - **Safety over performance**: Automatic deadlock prevention through alphabetical lock ordering
 - **Simplicity over flexibility**: Fixed thread count, no dynamic parallelism
-- **Clarity over brevity**: No nested function calls in parallel blocks
+- **Clarity over brevity**: No nested function calls in multi blocks
 
 ---
 
@@ -2442,14 +2442,14 @@ PRINT(r1, r2, r3)  // Output: 10, null, 20
 ```
 Runtime Error at line 3:8: Division by zero
   in function mayFail
-  in thread 2 of PARALLEL block at line 7
+  in thread 2 of MULTI block at line 7
 ```
 
 ---
 
-### 15.7 Execution Outside PARALLEL
+### 15.7 Execution Outside MULTI
 
-**Normal function calls (without PARALLEL):**
+**Normal function calls (without MULTI):**
 - Execute **synchronously** (not in a thread)
 - Caller waits for completion
 - Return value available immediately
@@ -2467,10 +2467,10 @@ PRINT(r1)         // 20
 r2 = task(20)     // waits for completion
 PRINT(r2)         // 40
 
-// Parallel execution
-parallel
-    r3 = task(30)
-    r4 = task(40)
+// Multi-threaded execution
+multi
+    task(30) -> r3
+    task(40) -> r4
 end
 PRINT(r3, r4)     // 60, 80
 ```
@@ -2519,7 +2519,7 @@ thread addInterest(accountIdx, rate) uses accounts do
     return interest
 end
 
-// Parallel execution
+// Multi-threaded execution
 multi
     transfer(1, 2, 100) -> t1      // Transfer $100 from account 1 to 2
     transfer(2, 3, 50) -> t2       // Transfer $50 from account 2 to 3
@@ -2552,7 +2552,7 @@ end
 **Problem with conditionals:**
 ```javascript
 // ❌ Not allowed - variable may not be defined
-parallel
+multi
     task1() -> r1
 end
 PRINT(r1)  // r1 might not exist!
@@ -2581,7 +2581,7 @@ end
 ```
 
 **Issues:**
-1. Execution timing ambiguous (before PARALLEL? inside thread?)
+1. Execution timing ambiguous (before MULTI? inside thread?)
 2. Lock acquisition unpredictable
 3. Can break alphabetical lock ordering → deadlock risk
 4. Error tracking becomes complex
@@ -2590,7 +2590,7 @@ end
 ```javascript
 // ✅ Correct approach
 temp = helper()
-parallel
+multi
     task(temp) -> r
 end
 ```
@@ -2628,11 +2628,11 @@ end
 | SHARED in function | SHARED declared inside function | `function f() do shared x end` |
 | USES non-SHARED | USES references undeclared variable | `function f() uses x do` (x not SHARED) |
 | Access without USES | Function accesses SHARED not in USES | `counter = counter + 1` without `uses counter` |
-| Control flow in PARALLEL | if/loop in PARALLEL block | `parallel if c then task() end end` |
-| Nested call in PARALLEL | Function call in arguments | `parallel r = f(g()) end` |
-| Variable use in PARALLEL | Using result variable inside PARALLEL | `parallel r = f() PRINT(r) end` |
-| Duplicate assignment | Same variable assigned twice | `parallel r = f1() r = f2() end` |
-| Nested PARALLEL | PARALLEL inside PARALLEL | `parallel function f() parallel ... end end` |
+| Control flow in MULTI | if/loop in MULTI block | `multi if c then task() end end` |
+| Nested call in MULTI | Function call in arguments | `multi f(g()) -> r end` |
+| Variable use in MULTI | Using result variable inside MULTI | `multi f() -> r PRINT(r) end` |
+| Duplicate assignment | Same variable assigned twice | `multi f1() -> r f2() -> r end` |
+| Nested MULTI | MULTI inside MULTI | `multi function f() multi ... end end` |
 
 ---
 
@@ -2689,7 +2689,7 @@ Features that may be added in future versions:
 - [x] **Concurrency features** - ✅ Basic implementation added (v1.1)
   - **Future enhancements:**
     - [ ] `READONLY` access modifier for shared resources
-    - [ ] `SPAWN` keyword for async execution outside PARALLEL
+    - [ ] `SPAWN` keyword for async execution outside MULTI
     - [ ] Thread introspection (THREAD_ID, THREAD_COUNT)
     - [ ] Fine-grained locking (per-array-element)
     - [ ] Channels for thread communication
@@ -2703,12 +2703,14 @@ For the complete ANTLR4 grammar, see `ProperTee.g4`.
 
 Key grammar rules:
 - `root`: Top-level entry point
-- `statement`: Assignments, if, loop, function definitions, parallel blocks, shared declarations, expressions
+- `statement`: Assignments, if, loop, function definitions, multi blocks, shared declarations, expressions
 - `sharedDecl`: SHARED resource declarations (global scope only)
-- `functionDef`: User-defined functions with parameters and optional USES clause
-- `usesClause`: Declares which SHARED resources a function accesses
-- `parallelStmt`: PARALLEL...END blocks for concurrent execution
-- `parallelTask`: Function calls within PARALLEL blocks (with or without assignment)
+- `functionDef`: Regular user-defined functions with parameters
+- `threadDef`: Thread functions with parameters and optional USES clause
+- `usesClause`: Declares which SHARED resources a thread accesses
+- `parallelStmt`: MULTI...END blocks for concurrent execution
+- `parallelTask`: Function calls within MULTI blocks (with or without assignment)
+- `monitorClause`: MONITOR block for real-time observation
 - `iterationStmt`: Loop with optional `infinite` keyword
 - `flowControl`: break, continue, return
 - `expression`: Operators, member access, atoms
@@ -2717,17 +2719,20 @@ Key grammar rules:
 **Threading Syntax:**
 ```
 shared var1 = init1, var2 = init2       // Shared resource declaration
-function name(params) uses res1, res2   // Function with USES clause
-parallel                                 // Parallel execution block
-    result1 = func1(args)
-    result2 = func2(args)
+function name(params) do ... end        // Regular function
+thread name(params) uses res1, res2 do ... end  // Thread function
+multi                                   // Multi-threaded execution block
+    func1(args) -> result1
+    func2(args) -> result2
+monitor interval
+    // monitoring statements
 end
 ```
 
 **Function Definition Syntax:**
 ```
 function name(params) do ... end                // Regular functions
-thread name(params) uses res do ... end         // Threads (for parallel)
+thread name(params) uses res do ... end         // Threads (for multi)
 ```
 
 ---
