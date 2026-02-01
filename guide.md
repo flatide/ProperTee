@@ -525,7 +525,136 @@ arr_len = LEN([1, 2, 3])          // 3
 count = LEN(users)                // users 배열의 길이
 ```
 
-#### 6.2.4 정규표현식 함수
+**`TO_NUMBER(string)`**
+- 문자열을 숫자로 변환합니다
+- 공백을 제거한 후 변환합니다
+
+```propertee
+num = TO_NUMBER("123")            // 123
+price = TO_NUMBER("45.67")        // 45.67
+value = TO_NUMBER("  89  ")       // 89
+```
+
+**`TO_STRING(value)`**
+- 모든 값을 문자열로 변환합니다
+
+```propertee
+str = TO_STRING(123)              // "123"
+text = TO_STRING(true)            // "true"
+json = TO_STRING({x: 10})         // "{\"x\":10}"
+```
+
+**`SLEEP(milliseconds)`**
+- 지정된 밀리초 동안 실행을 일시 중지합니다
+
+```propertee
+PRINT("시작")
+SLEEP(1000)                       // 1초 대기
+PRINT("1초 후")
+```
+
+#### 6.2.4 배열 함수
+
+**`PUSH(array, ...values)`**
+- 배열 끝에 값을 추가합니다 (불변, 새 배열 반환)
+
+```propertee
+arr = [1, 2, 3]
+arr = PUSH(arr, 4)                // [1, 2, 3, 4]
+arr = PUSH(arr, 5, 6)             // [1, 2, 3, 4, 5, 6]
+```
+
+**`POP(array)`**
+- 배열의 마지막 요소를 제거합니다 (불변, 새 배열 반환)
+
+```propertee
+arr = [1, 2, 3, 4]
+arr = POP(arr)                    // [1, 2, 3]
+```
+
+**`CONCAT(...arrays)`**
+- 여러 배열을 하나로 결합합니다
+
+```propertee
+arr1 = [1, 2]
+arr2 = [3, 4]
+result = CONCAT(arr1, arr2)       // [1, 2, 3, 4]
+```
+
+**`SLICE(array, start, end?)`**
+- 배열의 일부를 추출합니다 (1-based 인덱싱)
+
+```propertee
+arr = [10, 20, 30, 40, 50]
+result = SLICE(arr, 2, 4)         // [20, 30, 40]
+result = SLICE(arr, 3)            // [30, 40, 50]
+```
+
+#### 6.2.5 문자열 함수
+
+**`CHARS(string)`**
+- 문자열을 문자 배열로 변환합니다
+
+```propertee
+chars = CHARS("Hello")            // ["H", "e", "l", "l", "o"]
+loop char in CHARS("ProperTee") do
+    PRINT(char)
+end
+```
+
+**`SPLIT(string, delimiter)`**
+- 구분자로 문자열을 분할합니다
+
+```propertee
+csv = "apple,banana,cherry"
+items = SPLIT(csv, ",")           // ["apple", "banana", "cherry"]
+
+text = "Hello World"
+words = SPLIT(text, " ")          // ["Hello", "World"]
+```
+
+**`JOIN(array, separator)`**
+- 배열 요소를 문자열로 결합합니다
+
+```propertee
+words = ["Hello", "World"]
+text = JOIN(words, " ")           // "Hello World"
+
+items = ["a", "b", "c"]
+result = JOIN(items, ",")         // "a,b,c"
+```
+
+**`SUBSTRING(string, start, length?)`**
+- 문자열의 일부를 추출합니다 (1-based 인덱싱)
+
+```propertee
+text = "ProperTee"
+sub = SUBSTRING(text, 1, 6)       // "Proper"
+rest = SUBSTRING(text, 7)         // "Tee"
+```
+
+**`UPPERCASE(string)`**
+- 문자열을 대문자로 변환합니다
+
+```propertee
+upper = UPPERCASE("hello")        // "HELLO"
+```
+
+**`LOWERCASE(string)`**
+- 문자열을 소문자로 변환합니다
+
+```propertee
+lower = LOWERCASE("HELLO")        // "hello"
+```
+
+**`TRIM(string)`**
+- 문자열 양 끝의 공백을 제거합니다
+
+```propertee
+cleaned = TRIM("  hello  ")       // "hello"
+```
+
+#### 6.2.6 정규표현식 함수
 
 **`REGEX(pattern, text, mode)`**
 - 정규표현식을 사용하여 텍스트를 처리합니다
@@ -554,7 +683,7 @@ url = "https://www.example.com/path"
 domain = REGEX("https?://([^/]+)", url, "match")
 ```
 
-#### 6.2.5 시스템 함수
+#### 6.2.7 시스템 함수
 
 **`RUN(command, ...args)`**
 - 외부 명령이나 스크립트를 실행합니다
@@ -589,7 +718,7 @@ end
 - 브라우저 환경에서는 사용할 수 없습니다
 - 사용자 입력을 직접 전달하지 마세요 (보안 위험)
 
-### 6.3 커스텀 함수
+### 6.8 커스텀 함수
 
 호스트 애플리케이션은 추가 함수를 주입할 수 있습니다:
 
@@ -618,7 +747,7 @@ now = timestamp()
 result = customFunc(5, 3)  // 25
 ```
 
-### 6.4 함수 사용 패턴
+### 6.9 함수 사용 패턴
 
 #### 데이터 검증
 
