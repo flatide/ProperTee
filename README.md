@@ -23,12 +23,16 @@
 name = "ProperTee"
 version = 1.0
 
-// 객체와 배열
+// 객체와 배열 (1-based 인덱싱)
 config = {
     debug: true,
-    ports: [8080, 8443],
+    ports: [8080, 8443, 3000],
     "api-key": "secret123"
 }
+
+// 배열 접근 (1-based)
+firstPort = config.ports.1    // 8080
+secondPort = config.ports.2   // 8443
 
 // 동적 프로퍼티 접근
 key = "debug"
@@ -36,22 +40,30 @@ isDebug = config.$key          // config.debug와 동일
 
 // 조건문
 if isDebug then
-    log("Debug mode enabled")
+    PRINT("Debug mode enabled")
 else
-    log("Production mode")
+    PRINT("Production mode")
 end
 
-// 반복문
+// 반복문 (값 반복)
+PRINT("Available ports:")
 loop port in config.ports do
-    listen(port)
+    PRINT("  Port:", port)
+end
+
+// 반복문 (키-값 반복, 1-based 인덱스)
+loop idx, port in config.ports do
+    PRINT("  Index:", idx, "Port:", port)
 end
 
 // 함수 정의
 function greet(name) do
-    return "Hello, " + name
+    greeting = "Hello, " + name + "!"
+    return greeting
 end
 
 message = greet("ProperTee")
+PRINT(message)
 
 // 병렬 실행
 shared counter = 0
@@ -66,7 +78,8 @@ parallel
     increment() -> r2
 end
 
-PRINT("Counter:", counter)  // 2
+PRINT("Results:", r1, r2)    // 1, 2
+PRINT("Counter:", counter)    // 2
 ```
 
 ## 문서
