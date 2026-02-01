@@ -8,6 +8,7 @@ statement
     | ifStatement   # IfStmt
     | iterationStmt # iterStmt
     | functionDef   # FuncDefStmt
+    | threadDef     # ThreadDefStmt
     | parallelStmt  # ParallelExecStmt
     | flowControl   # FlowStmt
     | expression    # ExprStmt
@@ -41,7 +42,11 @@ ifStatement
     ;
 
 functionDef
-    : K_THREAD? K_FUNCTION funcName=ID '(' parameterList? ')' usesClause? K_DO block K_END
+    : K_FUNCTION funcName=ID '(' parameterList? ')' K_DO block K_END
+    ;
+
+threadDef
+    : K_THREAD funcName=ID '(' parameterList? ')' usesClause? K_DO block K_END
     ;
 
 parameterList
@@ -53,7 +58,7 @@ usesClause
     ;
 
 parallelStmt
-    : K_PARALLEL parallelTask+ K_END
+    : K_MULTI parallelTask+ K_END
     ;
 
 parallelTask
@@ -153,7 +158,7 @@ K_NULL      : 'null';
 K_INFINITE  : 'infinite';
 K_SHARED    : 'shared';
 K_USES      : 'uses';
-K_PARALLEL  : 'parallel';
+K_MULTI     : 'multi';
 
 ID : [a-zA-Z_][a-zA-Z0-9_]* ;          // 일반 식별자 (나중에 정의)
 NUMBER : [0-9]+ ('.' [0-9]+)? ;

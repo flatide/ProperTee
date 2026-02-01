@@ -53,14 +53,14 @@
     <textarea id="properties" rows="5" cols="50">{"user": {"name": "Test", "score": 100}}</textarea>
     
     <h3>Script:</h3>
-        <textarea id="script" rows="10" cols="50">/* Threading Test with thread keyword */
+        <textarea id="script" rows="10" cols="50">/* Threading Test with multi keyword */
 
 // shared 자원 선언
 shared counter = 0
 shared results = []
 
-// thread 함수 선언
-thread function work1() uses counter do
+// thread 선언
+thread work1() uses counter do
     PRINT("work1 starting")
     SLEEP(500)
     counter = counter + 10
@@ -68,7 +68,7 @@ thread function work1() uses counter do
     return counter
 end
 
-thread function work2() uses counter do
+thread work2() uses counter do
     PRINT("work2 starting")
     SLEEP(300)
     counter = counter + 20
@@ -76,13 +76,13 @@ thread function work2() uses counter do
     return counter
 end
 
-thread function collect(value) uses results do
+thread collect(value) uses results do
     results = PUSH(results, value)
     return value
 end
 
-// 병렬 실행 (-> 문법 사용)
-parallel
+// 병렬 실행 (multi 키워드 사용)
+multi
     work1() -> r1
     work2() -> r2
 end

@@ -25,6 +25,7 @@
                       | <if-statement>
                       | <loop-statement>
                       | <function-definition>
+                      | <thread-definition>
                       | <parallel-statement>
                       | <flow-control>
                       | <expression>
@@ -42,14 +43,13 @@
                       | "loop" <identifier> "in" <expression> "do" <statement-list> "end"
                       | "loop" <identifier> "," <identifier> "in" <expression> "do" <statement-list> "end"
 
-<function-definition> ::= "thread" "function" <identifier> "(" ")" "do" <statement-list> "end"
-                        | "thread" "function" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
-                        | "thread" "function" <identifier> "(" ")" <uses-clause> "do" <statement-list> "end"
-                        | "thread" "function" <identifier> "(" <parameter-list> ")" <uses-clause> "do" <statement-list> "end"
-                        | "function" <identifier> "(" ")" "do" <statement-list> "end"
+<function-definition> ::= "function" <identifier> "(" ")" "do" <statement-list> "end"
                         | "function" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
-                        | "function" <identifier> "(" ")" <uses-clause> "do" <statement-list> "end"
-                        | "function" <identifier> "(" <parameter-list> ")" <uses-clause> "do" <statement-list> "end"
+
+<thread-definition> ::= "thread" <identifier> "(" ")" "do" <statement-list> "end"
+                      | "thread" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
+                      | "thread" <identifier> "(" ")" <uses-clause> "do" <statement-list> "end"
+                      | "thread" <identifier> "(" <parameter-list> ")" <uses-clause> "do" <statement-list> "end"
 
 <parameter-list>    ::= <identifier>
                       | <parameter-list> "," <identifier>
@@ -65,7 +65,7 @@
 <shared-var>        ::= <identifier>
                       | <identifier> "=" <expression>
 
-<parallel-statement> ::= "parallel" <parallel-task-list> "end"
+<parallel-statement> ::= "multi" <parallel-task-list> "end"
 
 <parallel-task-list> ::= <parallel-task>
                        | <parallel-task-list> <parallel-task>
@@ -196,7 +196,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function thread   return
-shared   uses     parallel
+shared   uses     multi
 not      and      or
 true     false    null
 ```

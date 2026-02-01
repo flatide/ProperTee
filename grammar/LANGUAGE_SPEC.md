@@ -467,16 +467,20 @@ result = performTask(config)
 return result
 ```
 
-### 5.5 User-Defined Functions
+### 5.5 User-Defined Functions and Threads
 
-**Syntax:**
+ProperTee has two types of callable constructs:
+
+**1. Functions (function keyword):**
 ```
 function name(param1, param2, ...) do
     statements
 end
+```
 
-// Thread function (can be called in parallel blocks)
-thread function name(param1, param2, ...) uses resources do
+**2. Threads (thread keyword):**
+```
+thread name(param1, param2, ...) uses resources do
     statements
 end
 ```
@@ -486,25 +490,37 @@ end
 - Parameters are comma-separated identifiers
 - Functions create a new local scope
 - Return value can be explicit (`return expression`) or implicit (last evaluated expression)
-- **Thread functions**: Marked with `thread` keyword, can be called in `parallel` blocks
 
-**Thread Functions:**
+**Thread Definition:**
+- Threads are special functions that can run in `multi` blocks
 - Must be declared with `thread` keyword
-- Typically use `uses` clause to access SHARED resources
-- Can only be called inside `parallel...end` blocks
+- May use `uses` clause to access SHARED resources
+- Can be called both synchronously (outside multi) and asynchronously (inside multi)
 - Designed for safe concurrent execution
 
+**Key Differences:**
+
+| Feature | function | thread |
+|---------|----------|--------|
+| Can be called normally | ✅ | ✅ |
+| Can be used in multi | ❌ | ✅ |
+| Can use `uses` clause | ❌ | ✅ |
+| Access SHARED variables | ❌* | ✅ (with uses) |
+
+*Functions cannot access SHARED variables at all, even outside multi blocks.
+
 **Return Behavior:**
-1. **Explicit return**: `return expression` exits function and returns the value
-2. **Implicit return**: Last expression evaluated in the function body is returned
+1. **Explicit return**: `return expression` exits function/thread and returns the value
+2. **Implicit return**: Last expression evaluated in the body is returned
 3. **No return**: If no statements or only non-expression statements, returns `null`
 
 #### Scoping Rules
 
-1. **Local Scope**: Variables assigned inside a function are local to that function
+1. **Local Scope**: Variables assigned inside a function/thread are local to that function/thread
 2. **Global Access**: Functions can **read** variables from outer (global) scope
 3. **Global Modification**: To modify a global variable, it must exist before function call
 4. **Shadowing**: Local variables with same name as global variables shadow the global ones
+5. **SHARED Access**: Only threads with `uses` clause can access SHARED variables
 
 **Example - Local vs Global:**
 ```javascript
@@ -518,6 +534,20 @@ end
 
 result = test()      // 30
 PRINT(x)            // 100 (global unchanged)
+```
+
+**Example - Thread with SHARED:**
+```javascript
+shared counter = 0
+
+thread work() uses counter do
+    counter = counter + 10  // ✅ OK - declared in uses
+    return counter
+end
+
+function helper() do
+    counter = counter + 5   // ❌ Error - functions cannot access SHARED
+end
 ```
 
 **Example - Accessing Global:**
@@ -1958,7 +1988,7 @@ PRINT("Counter after loop:", counter)  // ✅ Prints: Counter after loop: 1001
 
 ## 15. Concurrency and Threading
 
-ProperTee provides structured concurrency primitives for parallel execution, designed for I/O-bound tasks with emphasis on safety and simplicity over performance.
+ProperTee provides structured concurrency primitives for multi-threaded execution, designed for I/O-bound tasks with emphasis on safety and simplicity over performance.
 
 ### 15.1 Core Concepts
 
@@ -2097,11 +2127,11 @@ end
 
 ---
 
-### 15.4 PARALLEL...END Blocks
+### 15.4 MULTI...END Blocks
 
 **Syntax:**
 ```javascript
-parallel
+multi
     functionCall() -> result1
     functionCall() -> result2
     functionCall()  // no return value
@@ -2109,7 +2139,7 @@ end
 ```
 
 **Execution Model:**
-1. Enter PARALLEL block
+1. Enter MULTI block
 2. Spawn thread for each function call
 3. All threads execute in parallel
 4. END waits for all threads to complete (join)
@@ -2118,37 +2148,37 @@ end
 
 **Rules:**
 
-#### ✅ Allowed in PARALLEL block:
+#### ✅ Allowed in MULTI block:
 - **Thread function calls** with result assignment: `threadFunc(args) -> r`
 - Thread function calls without assignment: `threadFunc(args)`
-- Reading variables defined **before** PARALLEL block
+- Reading variables defined **before** MULTI block
 - Built-in async functions (e.g., `SLEEP`)
 
-#### ❌ Prohibited in PARALLEL block:
-- **Regular functions** (only thread functions allowed)
+#### ❌ Prohibited in MULTI block:
+- **Regular functions** (only threads allowed)
 - Result variable usage: `work2(r1) -> r2` where `r1` is a result variable
 - Control flow statements (`if`, `loop`)
 - Nested function calls: `func(helper()) -> r`
 - Arithmetic or logical operations
 - Variable assignments other than via `->`
-- Nested PARALLEL blocks
+- Nested MULTI blocks
 
-**Thread Function Declaration:**
+**Thread Declaration:**
 ```javascript
-// ✅ Thread function - can be called in parallel
-thread function worker(n) uses counter do
+// ✅ Thread - can be called in multi
+thread worker(n) uses counter do
     counter = counter + n
     return counter
 end
 
-// ❌ Regular function - cannot be called in parallel
+// ❌ Regular function - cannot be called in multi
 function helper(x) do
     return x * 2
 end
 
-parallel
+multi
     worker(10) -> r1     // ✅ OK
-    helper(20) -> r2     // ❌ Runtime Error: not a thread function
+    helper(20) -> r2     // ❌ Runtime Error: not a thread
 end
 ```
 
@@ -2157,7 +2187,7 @@ end
 **✅ Valid:**
 ```javascript
 x = 10
-parallel
+multi
     task1(x) -> r1       // reads x from before block
     task2() -> r2         
     task3()              // return value ignored
@@ -2167,7 +2197,7 @@ PRINT(r1, r2)            // use results after end
 
 **❌ Invalid:**
 ```javascript
-parallel
+multi
     if condition then    // ❌ Syntax Error: control flow not allowed
         task1() -> r1
     end
@@ -2178,7 +2208,7 @@ parallel
     
     task2(helper()) -> r2  // ❌ Syntax Error: nested function call
     
-    PRINT(r1)            // ❌ Syntax Error: cannot use r1 inside PARALLEL
+    PRINT(r1)            // ❌ Syntax Error: cannot use r1 inside MULTI
     
     task3() -> r3
     task4() -> r3        // ❌ Syntax Error: duplicate variable assignment
@@ -2187,13 +2217,13 @@ end
 
 **Result Variable Protection:**
 ```javascript
-parallel
+multi
     work1() -> r1
     work2(r1) -> r2      // ❌ Runtime Error: r1 is not available yet
 end
 
 // ✅ Correct: use results after end
-parallel
+multi
     work1() -> r1
     work2() -> r2
 end
@@ -2202,9 +2232,9 @@ process(r1, r2)          // ✅ OK - after end
 
 **Variable Scope:**
 ```javascript
-x = 10               // defined before PARALLEL
+x = 10               // defined before MULTI
 
-parallel
+multi
     task1(x) -> r1   // ✅ can read x
     task2() -> r2    // r2 declared but not yet assigned
     // PRINT(r2)     // ❌ cannot use r2 here
@@ -2229,14 +2259,14 @@ PRINT(r1, r2)        // ✅ can use r1, r2 after end
 ```javascript
 shared counter
 
-thread function worker(input) uses counter do
+thread worker(input) uses counter do
     temp = input * 2      // thread-local (independent per thread)
     result = temp + 10    // thread-local
     counter = counter + result  // shared (synchronized)
     return result
 end
 
-parallel
+multi
     worker(5) -> r1   // r1's thread has temp=10, result=20
     worker(10) -> r2  // r2's thread has temp=20, result=30
 end
@@ -2255,14 +2285,14 @@ end
 
 **Examples:**
 ```javascript
-thread function mayFail(n) do
+thread mayFail(n) do
     if n == 0 then
         x = 10 / 0  // Runtime Error
     end
     return n * 2
 end
 
-parallel
+multi
     mayFail(5) -> r1   // ✅ succeeds, r1 = 10
     mayFail(0) -> r2   // ❌ fails, r2 = null
     mayFail(10) -> r3  // ✅ succeeds, r3 = 20
@@ -2322,8 +2352,8 @@ accounts = [
 ]
 logs = []
 
-// Transfer money between accounts (thread function)
-thread function transfer(fromIdx, toIdx, amount) uses accounts, logs do
+// Transfer money between accounts (thread)
+thread transfer(fromIdx, toIdx, amount) uses accounts, logs do
     // Locks acquired: accounts, logs (alphabetical order)
     
     fromAccount = accounts.$fromIdx
@@ -2342,8 +2372,8 @@ thread function transfer(fromIdx, toIdx, amount) uses accounts, logs do
     return true
 end
 
-// Calculate and add interest (thread function)
-thread function addInterest(accountIdx, rate) uses accounts do
+// Calculate and add interest (thread)
+thread addInterest(accountIdx, rate) uses accounts do
     // Lock acquired: accounts only
     
     account = accounts.$accountIdx
@@ -2353,7 +2383,7 @@ thread function addInterest(accountIdx, rate) uses accounts do
 end
 
 // Parallel execution
-parallel
+multi
     transfer(1, 2, 100) -> t1      // Transfer $100 from account 1 to 2
     transfer(2, 3, 50) -> t2       // Transfer $50 from account 2 to 3
     addInterest(1, 0.05) -> i1     // 5% interest on account 1
@@ -2394,7 +2424,7 @@ PRINT(r1)  // r1 might not exist!
 **Problem with loops:**
 ```javascript
 // ❌ Not allowed - variable collision, unpredictable thread count
-parallel
+multi
     loop i in items do
         task(i) -> r  // which r? how many threads?
     end
@@ -2408,7 +2438,7 @@ end
 **Problem with nested calls:**
 ```javascript
 // ❌ Not allowed
-parallel
+multi
     task(helper()) -> r  // When does helper() run? What locks?
 end
 ```
@@ -2479,7 +2509,7 @@ The following keywords are reserved and cannot be used as variable names:
 - `function`, `thread`, `return`
 - `and`, `or`, `not`
 - `true`, `false`, `null`
-- `shared`, `uses`, `parallel` (for concurrency)
+- `shared`, `uses`, `multi` (for concurrency)
 
 **Note:** `infinite` is reserved for loop statements only (not for functions).
 
@@ -2559,8 +2589,8 @@ end
 
 **Function Definition Syntax:**
 ```
-function name(params) do ... end                    // Regular functions
-thread function name(params) uses res do ... end    // Thread functions
+function name(params) do ... end                // Regular functions
+thread name(params) uses res do ... end         // Threads (for parallel)
 ```
 
 ---
@@ -2570,13 +2600,13 @@ thread function name(params) uses res do ... end    // Thread functions
 ### Version 1.1 (2026-01-31)
 - **Added**: Concurrency and Threading (Section 15)
   - `shared` declaration for shared resources
-  - `uses` clause for functions accessing shared resources
-  - `thread` keyword for functions that can run in parallel
-  - `parallel...end` blocks with `->` operator for result assignment
+  - `uses` clause for threads accessing shared resources
+  - `thread` keyword for functions that can run in multi blocks (changed from `thread function`)
+  - `multi...end` blocks with `->` operator for result assignment (changed from `parallel`)
   - Automatic deadlock prevention through alphabetical lock ordering
   - Thread-local variables
-  - Error handling in parallel contexts
-  - Result variable usage validation in PARALLEL blocks
+  - Error handling in multi contexts
+  - Result variable usage validation in MULTI blocks
 - **Added**: Array manipulation functions (Section 9.4)
   - `PUSH(array, ...values)` - Append values to array
   - `POP(array)` - Remove last element from array
@@ -2587,13 +2617,15 @@ thread function name(params) uses res do ... end    // Thread functions
   - `TO_STRING(value)` - Convert any value to string
 - **Added**: Async functions (Section 9.3)
   - `SLEEP(milliseconds)` - Pause execution with async/await support
-- **Added**: New reserved keywords: `shared`, `uses`, `parallel`, `thread`
-- **Changed**: PARALLEL syntax from `r = func()` to `func() -> r`
+- **Added**: New reserved keywords: `shared`, `uses`, `multi`, `thread`
+- **Changed**: Thread declaration from `thread function` to `thread` (more concise)
+- **Changed**: Multi-threading block from `parallel` to `multi` (more concise)
+- **Changed**: Result assignment syntax from `r = func()` to `func() -> r`
 - **Changed**: Array indexing to 1-based (arrays start at index 1)
 - **Changed**: Loop indices to 1-based
 - **Changed**: SUBSTRING function to 1-based indexing
 - **Added**: Runtime error messages now include line numbers
-- **Fixed**: async/await support for PARALLEL blocks in browser environment
+- **Fixed**: async/await support for MULTI blocks in browser environment
 
 ### Version 1.0 (2026-01-25)
 - Initial specification

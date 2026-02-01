@@ -1,30 +1,46 @@
-# ProperTee v2.1 업데이트 완료
+# ProperTee v2.2 업데이트 완료
 
-**최종 업데이트**: 쓰레드 함수 및 병렬 문법 개선 (2026-01-31)
+**최종 업데이트**: 문법 간소화 - thread 및 multi 키워드 (2026-01-31)
 
-## ✅ 최신 변경사항 (v2.1)
+## ✅ 최신 변경사항 (v2.2)
 
 ### 주요 문법 변경
-1. **`thread` 키워드 추가**: 병렬 실행 가능한 함수를 명시적으로 선언
-   - `thread function name(params) uses resources do ... end`
-   - `parallel` 블록 내에서는 `thread function`만 호출 가능
+1. **`thread function` → `thread`**: 쓰레드 선언 간소화
+   - 이전: `thread function name(params) uses resources do ... end`
+   - 현재: `thread name(params) uses resources do ... end`
+   - `thread`는 이제 독립적인 정의 구문
    
-2. **PARALLEL 문법 변경**: 결과 할당 연산자 변경
-   - 이전: `result = function_call()`
-   - 현재: `function_call() -> result`
+2. **`parallel` → `multi`**: 병렬 실행 블록 키워드 변경
+   - 이전: `parallel ... end`
+   - 현재: `multi ... end`
+   - 더 짧고 명확한 키워드
    
-3. **SHARED 선언 제약**: 다중 초기화 금지
-   - ✅ `shared counter = 0`
-   - ✅ `shared data, cache` (초기화 없이)
-   - ❌ `shared counter = 0, data = []` (문법 오류)
-
-4. **USES 절 검증 강화**: SHARED로 선언된 리소스만 접근 가능
-   - 함수 내에서 SHARED 리소스 사용 시 반드시 `uses`에 명시
-   - 런타임에서 명시되지 않은 SHARED 접근 시 에러
+3. **문법 구조 개선**
+   - `functionDef`: 일반 함수 정의 (`function`)
+   - `threadDef`: 쓰레드 정의 (`thread`, 병렬 실행 가능)
+   - 두 정의가 명확히 분리됨
 
 ### 업데이트된 예제
 
-#### 병렬 실행 (v2.1)
+#### 병렬 실행 (v2.2)
+```propertee
+shared counter = 0
+
+thread increment() uses counter do
+    counter = counter + 1
+    return counter
+end
+
+multi
+    increment() -> r1
+    increment() -> r2
+end
+
+PRINT("Results:", r1, r2)  // 1, 2
+PRINT("Counter:", counter)  // 2
+```
+
+#### 병렬 실행 (이전 v2.1)
 ```propertee
 shared counter = 0
 
@@ -39,22 +55,6 @@ parallel
 end
 
 PRINT("Results:", r1, r2)  // 1, 2
-PRINT("Counter:", counter)  // 2
-```
-
-#### 병렬 실행 (이전 v2.0)
-```propertee
-shared counter = 0
-
-function increment() uses counter do
-    counter = counter + 1
-end
-
-parallel
-    increment()
-    increment()
-end
-
 PRINT("Counter:", counter)  // 2
 ```
 
@@ -214,7 +214,7 @@ if then else end
 loop in do infinite
 break continue
 function thread return
-shared uses parallel    ← 병렬 실행 (thread 키워드 추가!)
+shared uses multi    ← 병렬 실행 (thread, multi 키워드!)
 not and or
 true false null
 ```
@@ -267,19 +267,19 @@ end
 shared counter = 0
 shared data = []
 
-// 쓰레드 함수 (병렬 실행 가능)
-thread function increment() uses counter do
+// 쓰레드 (병렬 실행 가능)
+thread increment() uses counter do
     counter = counter + 1
     return counter
 end
 
-thread function addData(value) uses data do
+thread addData(value) uses data do
     data = PUSH(data, value)
     return data
 end
 
 // 병렬 실행 블록
-parallel
+multi
     increment() -> r1
     increment() -> r2
     addData(10)
@@ -292,10 +292,10 @@ PRINT("Data:", data)        // [10, 20]
 ```
 
 **특징**:
-- `thread`: 병렬 실행 가능한 함수 선언
+- `thread`: 병렬 실행 가능한 쓰레드 선언 (`function`과 구분)
 - `shared`: 전역 스코프에서 공유 변수 선언
-- `uses`: 함수가 접근하는 공유 자원 명시
-- `parallel...end`: 쓰레드 함수 호출을 병렬로 실행
+- `uses`: 쓰레드가 접근하는 공유 자원 명시
+- `multi...end`: 쓰레드 호출을 병렬로 실행
 - `->` 연산자: 병렬 실행 결과를 변수에 할당
 - **자동 데드락 방지**: 자원을 알파벳 순으로 잠금
 - **쓰레드 안전**: 명시적 선언으로 안전한 동시 실행

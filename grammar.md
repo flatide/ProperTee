@@ -133,7 +133,8 @@ flow_control = "break" | "continue" | "return" [ expression ] ;
 ### 3.4 함수 정의
 
 ```ebnf
-function_def   = [ "thread" ] "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
+function_def   = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
+thread_def     = "thread" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
 parameter_list = ID { "," ID } ;
 uses_clause    = "uses" ID { "," ID } ;
 ```
@@ -148,10 +149,10 @@ end
 // 함수 호출
 result = add(10, 20)
 
-// 쓰레드 함수 (병렬 실행 가능)
+// 쓰레드 (병렬 실행 가능)
 shared counter
 
-thread function increment(n) uses counter do
+thread increment(n) uses counter do
     counter = counter + n
     return counter
 end
@@ -181,8 +182,8 @@ shared_var     = ID [ "=" expression ] ;
 shared counter = 0
 shared data, cache
 
-// 쓰레드 함수에서 uses 절로 접근
-thread function increment() uses counter do
+// 쓰레드에서 uses 절로 접근
+thread increment() uses counter do
     counter = counter + 1
     return counter
 end
@@ -195,10 +196,10 @@ end
   - ✅ `shared data, cache` (초기화 없이)
   - ❌ `shared counter = 0, data = []` (문법 오류)
 
-### 3.6 병렬 실행 (PARALLEL)
+### 3.6 병렬 실행 (MULTI)
 
 ```ebnf
-parallel_stmt  = "parallel" { parallel_task } "end" ;
+parallel_stmt  = "multi" { parallel_task } "end" ;
 parallel_task  = function_call "->" ID
                | function_call ;
 ```
@@ -207,17 +208,17 @@ parallel_task  = function_call "->" ID
 ```propertee
 shared total = 0
 
-thread function work1() uses total do
+thread work1() uses total do
     total = total + 10
     return total
 end
 
-thread function work2() uses total do
+thread work2() uses total do
     total = total + 20
     return total
 end
 
-parallel
+multi
     work1() -> r1
     work2() -> r2
 end
@@ -227,23 +228,24 @@ PRINT("Results:", r1, r2)
 ```
 
 **주의**: 
-- `parallel` 블록 내에서는 `thread function`만 호출 가능합니다
+- `multi` 블록 내에서는 `thread`만 호출 가능합니다
 - 결과 할당 시 `->` 연산자를 사용합니다 (이전: `=`)
-- 공유 변수에 접근하는 함수는 `uses` 절을 명시해야 합니다
+- 공유 변수에 접근하는 쓰레드는 `uses` 절을 명시해야 합니다
 - 자동 데드락 방지 (알파벳 순 잠금)
 
 ### 3.7 USES 절
 
 ```ebnf
 uses_clause    = "uses" ID { "," ID } ;
-function_def   = [ "thread" ] "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
+function_def   = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
+thread_def     = "thread" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
 ```
 
 **예시:**
 ```propertee
 shared account1, account2
 
-thread function transfer(amount) uses account1, account2 do
+thread transfer(amount) uses account1, account2 do
     account1 = account1 - amount
     account2 = account2 + amount
     return account2
@@ -450,7 +452,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function thread   return
-shared   uses     parallel
+shared   uses     multi
 not      and      or
 true     false    null
 ```

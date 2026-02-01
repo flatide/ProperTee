@@ -13,7 +13,7 @@
 - **표현식 중심 설계**: 모든 구문이 표현식으로 평가 가능
 - **통합 반복문**: `loop` 키워드로 조건, 반복, 무한 루프 통합
 - **사용자 정의 함수**: `function` 키워드로 재사용 가능한 함수 정의
-- **병렬 실행**: `parallel` 블록으로 안전한 동시 실행 지원
+- **병렬 실행**: `multi` 블록으로 안전한 동시 실행 지원
 - **주석 지원**: 한 줄 주석(`//`)과 블럭 주석(`/* */`) 지원
 
 ## 빠른 예제
@@ -68,12 +68,12 @@ PRINT(message)
 // 병렬 실행
 shared counter = 0
 
-thread function increment() uses counter do
+thread increment() uses counter do
     counter = counter + 1
     return counter
 end
 
-parallel
+multi
     increment() -> r1
     increment() -> r2
 end

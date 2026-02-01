@@ -410,7 +410,7 @@
                                 <span class="reference-item keyword" onclick="insertText('return')">return</span>
                                 <span class="reference-item keyword" onclick="insertText('shared')">shared</span>
                                 <span class="reference-item keyword" onclick="insertText('uses')">uses</span>
-                                <span class="reference-item keyword" onclick="insertText('parallel')">parallel</span>
+                                <span class="reference-item keyword" onclick="insertText('multi')">multi</span>
                                 <span class="reference-item keyword" onclick="insertText('and')">and</span>
                                 <span class="reference-item keyword" onclick="insertText('or')">or</span>
                                 <span class="reference-item keyword" onclick="insertText('not')">not</span>
@@ -603,28 +603,28 @@ data`
 shared counter = 0
 shared results = []
 
-thread function work1() uses counter do
+thread work1() uses counter do
     counter = counter + 10
     return counter
 end
 
-thread function work2() uses counter do
+thread work2() uses counter do
     counter = counter + 20
     return counter
 end
 
-thread function collect(value) uses results do
+thread collect(value) uses results do
     results = PUSH(results, value)
     return results
 end
 
 // 병렬로 실행 - 작업만 수행
-parallel
+multi
     work1() -> r1
     work2() -> r2
 end
 
-// parallel 블록 후에 결과 사용
+// multi 블록 후에 결과 사용
 PRINT("Results:", r1, r2)
 
 // 결과를 수집 (순차 실행)
