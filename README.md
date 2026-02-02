@@ -140,7 +140,7 @@ const result = visitor.visit(tree);
 </script>
 ```
 
-완전한 임베딩 예제는 [GitHub 저장소의 scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/dist/scratch.html)을 참조하세요.
+완전한 임베딩 예제는 [GitHub 저장소의 scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/docs/dist/scratch.html)을 참조하세요.
 
 ### 로컬 실행
 
@@ -156,8 +156,8 @@ python3 -m http.server 8000
 ProperTee는 [ANTLR4](https://www.antlr.org/)를 사용하여 구현되었습니다. 
 
 - **문법 파일**: [`grammar/ProperTee.g4`](grammar/ProperTee.g4)
-- **JavaScript 번들**: [propertee-bundle.js](https://github.com/flatide/propertee-js-concurrency/blob/main/dist/propertee-bundle.js)
-- **임베딩 샘플**: [scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/dist/scratch.html)
+- **JavaScript 번들**: [propertee-bundle.js](https://github.com/flatide/propertee-js-concurrency/blob/main/docs/dist/propertee-bundle.js)
+- **임베딩 샘플**: [scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/docs/dist/scratch.html)
 
 ANTLR4에서 렉서와 파서를 생성하고, 커스텀 비지터 패턴으로 인터프리터를 구현합니다.
 
