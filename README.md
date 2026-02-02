@@ -2,7 +2,7 @@
 
 **ProperTee**는 프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어입니다. 직관적인 문법과 강력한 동적 접근 기능을 제공하며, 설정 파일, 데이터 변환, 템플릿 처리 등 다양한 용도로 활용할 수 있습니다.
 
-🎯 **[온라인 플레이그라운드에서 바로 체험하기](https://flatide.github.io/ProperTee/)**
+🎯 **[온라인 플레이그라운드에서 바로 체험하기](https://flatide.github.io/propertee-js-concurrency/)**
 
 ## 특징
 
@@ -96,7 +96,7 @@ PRINT("Counter:", counter)    // 2
 
 ## 온라인 플레이그라운드
 
-🌐 **[https://flatide.github.io/ProperTee/](https://flatide.github.io/ProperTee/)**
+🌐 **[https://flatide.github.io/propertee-js-concurrency/](https://flatide.github.io/propertee-js-concurrency/)**
 
 브라우저에서 바로 ProperTee 코드를 실행해볼 수 있는 대화형 웹페이지입니다.
 
@@ -113,7 +113,7 @@ ProperTee를 자신의 웹페이지에 통합하려면 GitHub의 샘플을 참�
 
 ```html
 <!-- ProperTee 번들 로드 -->
-<script src="https://cdn.jsdelivr.net/gh/flatide/propertee-js@main/dist/propertee-bundle.js"></script>
+<script src="propertee-bundle.js"></script>
 
 <script>
 // Properties와 스크립트 준비
@@ -140,7 +140,7 @@ const result = visitor.visit(tree);
 </script>
 ```
 
-완전한 임베딩 예제는 [GitHub 저장소의 scratch.html](https://github.com/flatide/propertee-js/blob/main/dist/scratch.html)을 참조하세요.
+완전한 임베딩 예제는 [GitHub 저장소의 scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/dist/scratch.html)을 참조하세요.
 
 ### 로컬 실행
 
@@ -156,8 +156,8 @@ python3 -m http.server 8000
 ProperTee는 [ANTLR4](https://www.antlr.org/)를 사용하여 구현되었습니다. 
 
 - **문법 파일**: [`grammar/ProperTee.g4`](grammar/ProperTee.g4)
-- **JavaScript 번들**: [propertee-bundle.js](https://github.com/flatide/propertee-js/blob/main/dist/propertee-bundle.js)
-- **임베딩 샘플**: [scratch.html](https://github.com/flatide/propertee-js/blob/main/dist/scratch.html)
+- **JavaScript 번들**: [propertee-bundle.js](https://github.com/flatide/propertee-js-concurrency/blob/main/dist/propertee-bundle.js)
+- **임베딩 샘플**: [scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/dist/scratch.html)
 
 ANTLR4에서 렉서와 파서를 생성하고, 커스텀 비지터 패턴으로 인터프리터를 구현합니다.
 
