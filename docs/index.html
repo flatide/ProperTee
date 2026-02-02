@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProperTee Playground</title>
+    <title>ProperTee Concurrent - Playground</title>
     <style>
         * {
             margin: 0;
@@ -381,19 +381,19 @@
     
     <div class="container">
         <header>
-            <h1>🎯 ProperTee Playground</h1>
-            <p>프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어</p>
+            <h1>ProperTee Concurrent Playground</h1>
+            <p>Generator-based cooperative multithreading DSL</p>
         </header>
         
         <div class="playground">
-            <!-- 상단: 키워드 및 내장함수 참조 -->
+            <!-- Reference panel -->
             <div class="panel">
-                <div class="panel-header">📖 참조 (Reference)</div>
+                <div class="panel-header">Reference</div>
                 <div class="panel-content">
                     <div class="reference-box">
-                        <!-- 왼쪽: 키워드 -->
+                        <!-- Keywords -->
                         <div class="reference-column">
-                            <h4>🔤 키워드</h4>
+                            <h4>Keywords</h4>
                             <div class="reference-list">
                                 <span class="reference-item keyword" onclick="insertText('if')">if</span>
                                 <span class="reference-item keyword" onclick="insertText('then')">then</span>
@@ -421,9 +421,9 @@
                             </div>
                         </div>
                         
-                        <!-- 오른쪽: 내장 함수 -->
+                        <!-- Built-in functions -->
                         <div class="reference-column">
-                            <h4>⚡ 내장 함수 <small style="font-size: 0.75em; color: #888; font-weight: normal;">(가변 인자 지원)</small></h4>
+                            <h4>Built-in Functions</h4>
                             <div class="reference-list">
                                 <span class="reference-item function" onclick="insertText('PRINT()')">PRINT()</span>
                                 <span class="reference-item function" onclick="insertText('SUM()')">SUM()</span>
@@ -454,39 +454,38 @@
                 </div>
             </div>
             
-            <!-- 중단: Properties와 Script 좌우 분할 -->
+            <!-- Input panel -->
             <div class="panel">
-                <div class="panel-header">💻 입력 (Input)</div>
+                <div class="panel-header">Input</div>
                 <div class="panel-content">
                     <div class="input-layout">
-                        <!-- 왼쪽: Properties -->
+                        <!-- Properties -->
                         <div class="properties-area">
-                            <!-- 예제 버튼 (상단) -->
+                            <!-- Example buttons -->
                             <div class="examples">
                                 <div class="example-buttons">
-                                    <button class="example-btn" onclick="loadExample('basic')">기본 예제</button>
-                                    <button class="example-btn" onclick="loadExample('property')">프로퍼티 접근</button>
-                                    <button class="example-btn" onclick="loadExample('control')">제어 구조</button>
-                                    <button class="example-btn" onclick="loadExample('dynamic')">동적 접근</button>
-                                    <button class="example-btn" onclick="loadExample('parallel')">병렬 실행</button>
+                                    <button class="example-btn" onclick="loadExample('basic')">Basic</button>
+                                    <button class="example-btn" onclick="loadExample('property')">Properties</button>
+                                    <button class="example-btn" onclick="loadExample('control')">Control Flow</button>
+                                    <button class="example-btn" onclick="loadExample('dynamic')">Dynamic Access</button>
+                                    <button class="example-btn" onclick="loadExample('parallel')">Parallel</button>
                                 </div>
                             </div>
                             
-                            <h4 style="margin: 0;">📋 Properties (JSON)</h4>
+                            <h4 style="margin: 0;">Properties (JSON)</h4>
                             <textarea id="properties" placeholder='{"key": "value"}'>{"user": {"name": "Test", "score": 100}}</textarea>
                             
-                            <!-- RUN & CLEAR 버튼 (하단) -->
                             <div class="button-group">
-                                <button class="run-btn-small" onclick="run()">▶ Run</button>
-                                <button class="header-btn clear" onclick="clearOutput()" style="background: rgba(220, 53, 69, 0.8); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: all 0.3s;">🗑️ Clear</button>
+                                <button class="run-btn-small" id="runButton" onclick="run()">Run</button>
+                                <button class="header-btn clear" onclick="clearOutput()" style="background: rgba(220, 53, 69, 0.8); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: all 0.3s;">Clear</button>
                             </div>
                         </div>
                         
-                        <!-- 오른쪽: Script -->
+                        <!-- Script -->
                         <div class="script-area">
-                            <h4 style="margin: 0;">📝 ProperTee Script</h4>
-                            
-                            <textarea id="script" placeholder="// ProperTee 코드를 입력하세요...">PRINT("Hello, ProperTee!")
+                            <h4 style="margin: 0;">ProperTee Script</h4>
+
+                            <textarea id="script" placeholder="// Enter ProperTee code...">PRINT("Hello, ProperTee!")
 PRINT("User:", user.name)
 PRINT("Score:", user.score)
 
@@ -499,11 +498,11 @@ user.score</textarea>
                 </div>
             </div>
             
-            <!-- 하단: Output -->
+            <!-- Output -->
             <div class="panel">
-                <div class="panel-header">💻 Output</div>
+                <div class="panel-header">Output</div>
                 <div class="panel-content">
-                    <pre id="output">실행 결과가 여기에 표시됩니다...</pre>
+                    <pre id="output">Output will appear here...</pre>
                 </div>
             </div>
         </div>
@@ -560,11 +559,11 @@ user.score`
             },
             property: {
                 properties: '{"config": {"debug": true, "ports": [8080, 8443], "api-key": "secret123"}}',
-                script: `// 객체 프로퍼티 접근
+                script: `// Object property access
 PRINT("Debug mode:", config.debug)
 PRINT("API Key:", config."api-key")
 
-// 배열 접근 (1-based 인덱싱)
+// Array access (1-based indexing)
 PRINT("First port:", config.ports.1)
 PRINT("Second port:", config.ports.2)
 
@@ -572,14 +571,14 @@ config.ports`
             },
             control: {
                 properties: '{"users": [{"name": "Alice", "age": 25}, {"name": "Bob", "age": 30}]}',
-                script: `// 조건문
+                script: `// Conditionals
 if users.1.age > 20 then
     PRINT(users.1.name, "is adult")
 else
     PRINT(users.1.name, "is minor")
 end
 
-// 반복문
+// Loops
 loop user in users do
     PRINT("Name:", user.name, "Age:", user.age)
 end
@@ -588,11 +587,11 @@ users`
             },
             dynamic: {
                 properties: '{"data": {"username": "admin", "email": "admin@example.com"}}',
-                script: `// 동적 프로퍼티 접근
+                script: `// Dynamic property access
 key = "username"
 PRINT("Dynamic access:", data.$key)
 
-// 표현식을 통한 접근
+// Expression-based access
 field = "email"
 PRINT("Email:", data.$(field))
 
@@ -600,46 +599,28 @@ data`
             },
             parallel: {
                 properties: '{}',
-                script: `// 병렬 실행 예제
-shared counter = 0
-shared results = []
+                script: `// Parallel execution with cooperative scheduling
 
-thread work1() uses counter do
-    SLEEP(1000)
-    counter = counter + 10
-    return counter
+thread worker(name, count) do
+    i = 0
+    loop i < count infinite do
+        PRINT(name + ": step " + TO_STRING(i + 1))
+        i = i + 1
+    end
+    return count
 end
 
-thread work2() uses counter do
-    SLEEP(1500)
-    counter = counter + 20
-    return counter
-end
-
-thread collect(value) uses results do
-    results = PUSH(results, value)
-    return results
-end
-
-// 병렬로 실행 - monitor로 진행 상황 관찰
+// Threads interleave at statement boundaries
 multi
-    work1() -> r1
-    work2() -> r2
-monitor 500
-    PRINT("진행 중... counter =", counter)
+    worker("Alpha", 4) -> r1
+    worker("Beta", 4) -> r2
+monitor 50
+    PRINT("[monitor tick]")
 end
 
-// multi 블록 후에 결과 사용
-PRINT("Results:", r1, r2)
-
-// 결과를 수집 (순차 실행)
-collect(r1)
-collect(r2)
-
-PRINT("Counter:", counter)
-PRINT("Collected:", results)
-
-counter`
+PRINT("=== All threads done ===")
+PRINT("Alpha result:", r1)
+PRINT("Beta result:", r2)`
             }
         };
         
@@ -651,81 +632,83 @@ counter`
             }
         }
         
-        // 실행 함수
         async function run() {
             const output = document.getElementById('output');
+            const runButton = document.getElementById('runButton');
             const propertiesText = document.getElementById('properties').value;
             const scriptText = document.getElementById('script').value;
-            
-            output.textContent = ''; // 초기화
-            
+
+            output.textContent = '';
+            runButton.disabled = true;
+            runButton.textContent = 'Running...';
+
             try {
-                // 1. Properties 파싱
                 const properties = JSON.parse(propertiesText);
-                
-                // 2. Lexer & Parser
+
                 const chars = new antlr4.InputStream(scriptText);
                 const lexer = new ProperTeeLexer(chars);
                 const lexerErrors = new ErrorListener();
                 lexer.removeErrorListeners();
                 lexer.addErrorListener(lexerErrors);
-                
+
                 const tokens = new antlr4.CommonTokenStream(lexer);
                 const parser = new ProperTeeParser(tokens);
                 const parserErrors = new ErrorListener();
                 parser.removeErrorListeners();
                 parser.addErrorListener(parserErrors);
-                
+
                 const tree = parser.root();
-                
-                // 에러 체크
+
                 if (lexerErrors.errors.length > 0) {
-                    output.textContent = '❌ Lexer Error:\n' + lexerErrors.errors.join('\n');
+                    output.textContent = 'Lexer Error:\n' + lexerErrors.errors.join('\n');
                     return;
                 }
                 if (parserErrors.errors.length > 0) {
-                    output.textContent = '❌ Parser Error:\n' + parserErrors.errors.join('\n');
+                    output.textContent = 'Parser Error:\n' + parserErrors.errors.join('\n');
                     return;
                 }
-                
-                // 3. 실시간 출력 설정
+
                 const ioStreams = {
                     stdout: (...args) => {
                         output.textContent += args.join(' ') + '\n';
-                        output.scrollTop = output.scrollHeight; // 자동 스크롤
+                        output.scrollTop = output.scrollHeight;
                     },
                     stderr: (...args) => {
                         output.textContent += '[ERROR] ' + args.join(' ') + '\n';
                         output.scrollTop = output.scrollHeight;
                     }
                 };
-                
-                // 4. 실행
-                const visitor = new ProperTeeCustomVisitor(properties, {}, ioStreams);
-                const result = await visitor.visit(tree);
-                
-                // 5. 최종 결과 표시
-                output.textContent += '\n📊 Return Value:\n' + JSON.stringify(result, null, 2) + '\n\n';
-                output.textContent += '📋 Properties:\n' + JSON.stringify(properties, null, 2) + '\n\n';
-                output.textContent += '🔧 Variables:\n' + JSON.stringify(visitor.variables, null, 2);
-                
+
+                const options = {
+                    maxIterations: 1000,
+                    iterationLimitBehavior: 'error'
+                };
+
+                const visitor = new ProperTeeCustomVisitor(properties, {}, ioStreams, options);
+                const scheduler = new Scheduler(visitor);
+                const mainGenerator = visitor.visitRoot(tree);
+                const result = await scheduler.run(mainGenerator);
+
+                output.textContent += '\n--- Return Value ---\n' + JSON.stringify(result, null, 2) + '\n\n';
+                output.textContent += '--- Properties ---\n' + JSON.stringify(properties, null, 2) + '\n\n';
+                output.textContent += '--- Variables ---\n' + JSON.stringify(visitor.variables, null, 2);
+
             } catch (e) {
-                output.textContent += '\n\n❌ Runtime Error:\n' + e.message;
+                output.textContent += '\n\nRuntime Error:\n' + e.message;
                 console.error(e);
+            } finally {
+                runButton.disabled = false;
+                runButton.textContent = 'Run';
             }
         }
         
-        // Output 클리어 함수
         function clearOutput() {
             const output = document.getElementById('output');
-            output.textContent = '실행 결과가 여기에 표시됩니다...';
+            output.textContent = 'Output will appear here...';
         }
-        
-        // 페이지 로드시 첫 예제 자동 실행
+
         window.addEventListener('load', () => {
-            // 코드 에디터 기능 초기화
             initCodeEditor();
-            
             setTimeout(() => {
                 run();
             }, 500);
