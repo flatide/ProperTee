@@ -1,62 +1,63 @@
 # ProperTee
 
-**ProperTee**는 프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어입니다. 직관적인 문법과 강력한 동적 접근 기능을 제공하며, 설정 파일, 데이터 변환, 템플릿 처리 등 다양한 용도로 활용할 수 있습니다.
+**ProperTee** is a lightweight scripting language for property-based data processing. It features intuitive syntax, powerful dynamic access patterns, and cooperative multithreading — designed for configuration, data transformation, and embedding in host applications.
 
-🎯 **[온라인 플레이그라운드에서 바로 체험하기](https://flatide.github.io/propertee-js-concurrency/)**
+**[Try the Online Playground](https://flatide.github.io/propertee-js/)**
 
-## 특징
+## Features
 
-- **간결한 문법**: Pascal/Lua 스타일의 `if-then-end`, `loop-do-end` 블록 구조
-- **동적 프로퍼티 접근**: `.$key`, `.$(expr)` 문법으로 런타임 키 평가 지원
-- **일급 자료구조**: 객체 리터럴 `{}`, 배열 리터럴 `[]` 내장
-- **1-based 인덱싱**: 배열 첫 번째 요소는 `.1`로 접근 (직관적!)
-- **표현식 중심 설계**: 모든 구문이 표현식으로 평가 가능
-- **통합 반복문**: `loop` 키워드로 조건, 반복, 무한 루프 통합
-- **사용자 정의 함수**: `function` 키워드로 재사용 가능한 함수 정의
-- **병렬 실행**: `multi` 블록으로 안전한 동시 실행 지원
-- **주석 지원**: 한 줄 주석(`//`)과 블럭 주석(`/* */`) 지원
+- **Concise syntax**: Pascal/Lua-style `if-then-end`, `loop-do-end` block structure
+- **Dynamic property access**: `.$key`, `.$(expr)` syntax for runtime key evaluation
+- **First-class data structures**: Object literals `{}`, array literals `[]`
+- **1-based indexing**: First array element is `.1`
+- **Unified loop**: `loop` keyword covers condition, iteration, and infinite loops
+- **User-defined functions**: `function` keyword for reusable logic
+- **Cooperative multithreading**: `multi` blocks for safe parallel execution with thread purity
+- **Comments**: Single-line (`//`) and block (`/* */`) comments
+- **No null**: Empty object `{}` is the no-value sentinel
+- **External function integration**: `registerExternal()` with Result pattern for host I/O
 
-## 빠른 예제
+## Quick Example
 
 ```propertee
-// 변수 선언과 할당
+// Variables and assignment
 name = "ProperTee"
-version = 1.0
+version = 1.2
 
-// 객체와 배열 (1-based 인덱싱)
+// Objects and arrays (1-based indexing)
 config = {
     debug: true,
     ports: [8080, 8443, 3000],
     "api-key": "secret123"
 }
 
-// 배열 접근 (1-based)
+// Array access (1-based)
 firstPort = config.ports.1    // 8080
 secondPort = config.ports.2   // 8443
 
-// 동적 프로퍼티 접근
+// Dynamic property access
 key = "debug"
-isDebug = config.$key          // config.debug와 동일
+isDebug = config.$key          // same as config.debug
 
-// 조건문
+// Conditionals
 if isDebug then
     PRINT("Debug mode enabled")
 else
     PRINT("Production mode")
 end
 
-// 반복문 (값 반복)
+// Loops (value iteration)
 PRINT("Available ports:")
 loop port in config.ports do
     PRINT("  Port:", port)
 end
 
-// 반복문 (키-값 반복, 1-based 인덱스)
+// Loops (key-value iteration, 1-based index)
 loop idx, port in config.ports do
     PRINT("  Index:", idx, "Port:", port)
 end
 
-// 함수 정의
+// Functions
 function greet(name) do
     greeting = "Hello, " + name + "!"
     return greeting
@@ -65,58 +66,64 @@ end
 message = greet("ProperTee")
 PRINT(message)
 
-// 병렬 실행
-shared counter = 0
-
-thread increment() uses counter do
-    counter = counter + 1
-    return counter
+// Parallel execution
+thread worker(id) do
+    PRINT("Worker " + id + " running")
+    return 42
 end
 
 multi
-    increment() -> r1
-    increment() -> r2
+    worker("A") -> resultA
+    worker("B") -> resultB
 monitor 500
-    PRINT("진행 중... counter =", counter)
+    PRINT("waiting...")
 end
 
-PRINT("Results:", r1, r2)    // 1, 2
-PRINT("Counter:", counter)    // 2
+PRINT("Results:", resultA, resultB)
 ```
 
-## 문서
+## Documentation
 
-- [언어 명세 (공식)](grammar/LANGUAGE_SPEC.md)
-  - [함수 제약사항 (가변 인자, 비동기)](grammar/LANGUAGE_SPEC.md#181-current-limitations)
-- [문법 파일 (ANTLR4)](grammar/ProperTee.g4)
-- [문법 명세 (EBNF)](grammar.md)
-- [BNF 명세](bnf.md)
-- [언어 가이드](guide.md)
-- [예제 모음](examples/)
+- [Language Specification (Official)](grammar/LANGUAGE_SPEC.md)
+  - [Function Limitations (Variadic, Async)](grammar/LANGUAGE_SPEC.md#181-current-limitations)
+- [Grammar File (ANTLR4)](grammar/ProperTee.g4)
+- [Grammar Reference (EBNF)](grammar.md)
+- [BNF Reference](bnf.md)
+- [Language Guide](guide.md)
+- [Examples](examples/)
 
-## 온라인 플레이그라운드
+## Implementations
 
-🌐 **[https://flatide.github.io/propertee-js-concurrency/](https://flatide.github.io/propertee-js-concurrency/)**
+| Implementation | Repository | Runtime |
+|---|---|---|
+| **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js (ES modules, generator-based concurrency) |
+| **Java** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) |
 
-브라우저에서 바로 ProperTee 코드를 실행해볼 수 있는 대화형 웹페이지입니다.
+Both implementations share the same ANTLR4 grammar and pass the same 41-test suite.
 
-### 기능
+## Online Playground
 
-- 📋 JSON 형식으로 Properties 입력
-- 📝 ProperTee 스크립트 작성 및 실행
-- 💻 실시간 파싱 및 실행 결과 확인
-- 🎨 예제 코드 제공 (기본, 프로퍼티 접근, 제어 구조, 동적 접근)
+**[https://flatide.github.io/propertee-js/](https://flatide.github.io/propertee-js/)**
 
-### 웹페이지에 임베딩하기
+An interactive web page where you can run ProperTee code directly in the browser.
 
-ProperTee를 자신의 웹페이지에 통합하려면 GitHub의 샘플을 참고하세요.
+### Features
+
+- JSON properties input
+- Script editor with execution
+- Real-time parsing and results
+- Example code (basics, property access, control flow, dynamic access)
+
+### Embedding in a Web Page
+
+To integrate ProperTee into your own web page, refer to the sample on GitHub:
 
 ```html
-<!-- ProperTee 번들 로드 -->
+<!-- Load ProperTee bundle -->
 <script src="propertee-bundle.js"></script>
 
 <script>
-// Properties와 스크립트 준비
+// Prepare properties and script
 const properties = { user: { name: "Test", score: 100 } };
 const scriptText = `
 PRINT("Hello,", user.name)
@@ -124,14 +131,13 @@ user.score = user.score + 10
 user.score
 `;
 
-// 파싱 및 실행
+// Parse and execute
 const chars = new antlr4.InputStream(scriptText);
 const lexer = new ProperTeeLexer(chars);
 const tokens = new antlr4.CommonTokenStream(lexer);
 const parser = new ProperTeeParser(tokens);
 const tree = parser.root();
 
-// 실행
 const visitor = new ProperTeeCustomVisitor(properties, {}, {
     stdout: (...args) => console.log(...args),
     stderr: (...args) => console.error(...args)
@@ -140,27 +146,26 @@ const result = visitor.visit(tree);
 </script>
 ```
 
-완전한 임베딩 예제는 [GitHub 저장소의 scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/docs/dist/scratch.html)을 참조하세요.
+Full embedding example: [scratch.html](https://github.com/flatide/propertee-js/blob/main/docs/dist/scratch.html)
 
-### 로컬 실행
+### Running Locally
 
 ```bash
-# 플레이그라운드 로컬 실행
 cd docs
 python3 -m http.server 8000
-# 브라우저에서 http://localhost:8000 접속
+# Open http://localhost:8000 in browser
 ```
 
-## 구현
+## Implementation
 
-ProperTee는 [ANTLR4](https://www.antlr.org/)를 사용하여 구현되었습니다. 
+ProperTee is implemented using [ANTLR4](https://www.antlr.org/).
 
-- **문법 파일**: [`grammar/ProperTee.g4`](grammar/ProperTee.g4)
-- **JavaScript 번들**: [propertee-bundle.js](https://github.com/flatide/propertee-js-concurrency/blob/main/docs/dist/propertee-bundle.js)
-- **임베딩 샘플**: [scratch.html](https://github.com/flatide/propertee-js-concurrency/blob/main/docs/dist/scratch.html)
+- **Grammar file**: [`grammar/ProperTee.g4`](grammar/ProperTee.g4)
+- **JavaScript bundle**: [propertee-bundle.js](https://github.com/flatide/propertee-js/blob/main/docs/dist/propertee-bundle.js)
+- **Embedding sample**: [scratch.html](https://github.com/flatide/propertee-js/blob/main/docs/dist/scratch.html)
 
-ANTLR4에서 렉서와 파서를 생성하고, 커스텀 비지터 패턴으로 인터프리터를 구현합니다.
+ANTLR4 generates the lexer and parser; a custom visitor pattern implements the interpreter.
 
-## 라이선스
+## License
 
-BSD License
+BSD 3-Clause License. See [LICENSE](LICENSE).
