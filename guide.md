@@ -48,7 +48,7 @@ ProperTee는 동적 타입 언어입니다. 변수는 선언 없이 할당으로
 name = "Alice"      // 문자열
 age = 30            // 숫자
 active = true       // 불리언
-data = null         // null 값
+data = {}           // 빈 객체 (값 없음)
 ```
 
 ### 2.2 데이터 타입
@@ -60,7 +60,7 @@ data = null         // null 값
 | Boolean | `true`, `false` | 논리값 |
 | Object | `{a: 1, b: 2}` | 키-값 쌍 |
 | Array | `[1, 2, 3]` | 순서 있는 목록 |
-| Null | `null` | 값 없음 |
+| Empty Object | `{}` | 값 없음 (빈 객체) |
 
 ### 2.3 객체
 
@@ -103,7 +103,7 @@ config = {
 numbers = [1, 2, 3, 4, 5]
 
 // 혼합 타입
-mixed = [1, "two", true, null]
+mixed = [1, "two", true, {}]
 
 // 중첩 배열
 matrix = [
@@ -935,7 +935,7 @@ required_fields = ["name", "email", "age"]
 data = {name: "Alice", email: "alice@example.com"}
 
 loop field in required_fields do
-    if data.$field == null then
+    if data.$field == {} then
         errors = push(errors, "Missing field: " + field)
     end
 end

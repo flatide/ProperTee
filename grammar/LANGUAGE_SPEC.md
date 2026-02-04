@@ -1,7 +1,7 @@
 # ProperTee Language Specification
 
-Version: 1.1  
-Last Updated: 2026-01-31
+Version: 1.2
+Last Updated: 2026-02-04
 
 ## 1. Type System
 
@@ -9,16 +9,17 @@ Last Updated: 2026-01-31
 - **Number**: IEEE 754 floating-point numbers (e.g., `42`, `3.14`, `-7.5`)
 - **String**: UTF-16 encoded strings (e.g., `"hello"`, `"world"`)
 - **Boolean**: `true` or `false`
-- **Null**: `null` (represents intentional absence of value)
+
+**No Null:** ProperTee does not have a `null` keyword or null type. Where other languages use null, ProperTee uses the **empty object `{}`**. Functions without a `return` statement (or with a bare `return`) produce `{}`. Missing function arguments default to `{}`.
 
 ### 1.2 Complex Types
 - **Object**: Key-value pairs `{key: value, ...}`
 - **Array**: Ordered collections `[item1, item2, ...]`
 
-### 1.3 No Undefined
-⚠️ **ProperTee does NOT have an `undefined` type.**
+### 1.3 No Undefined, No Null
+⚠️ **ProperTee does NOT have `undefined` or `null` types.**
 
-Any attempt to access non-existent variables or properties results in a **runtime error**.
+Any attempt to access non-existent variables or properties results in a **runtime error**. The empty object `{}` serves as the "no value" sentinel throughout the language.
 
 ---
 
@@ -106,7 +107,7 @@ All comparison operators: `==`, `!=`, `>`, `<`, `>=`, `<=`
 ```javascript
 5 == 5         // ✅ true
 5 != 3         // ✅ true
-null == null   // ✅ true
+{} == {}       // ✅ true (empty objects are equal)
 5 == "5"       // ✅ false (no type coercion)
 true == 1      // ✅ false (different types)
 ```
@@ -210,7 +211,7 @@ If variable not found in either → Runtime Error
 ⚠️ **Array Indexing:** ProperTee uses **1-based indexing**. Arrays start at index `1`, not `0`.
 
 ⚠️ **Error cases:**
-- `null.property` → Runtime Error: "Cannot access property of null"
+- `{}.property` → Runtime Error: "Property does not exist on empty object"
 - `object.nonExistent` → Runtime Error: "Property does not exist"
 
 **Examples:**
@@ -225,8 +226,8 @@ PRINT(arr.2)           // ✅ 2 (두 번째 요소)
 PRINT(arr.3)           // ✅ 3 (세 번째 요소)
 PRINT(arr.10)          // ❌ Runtime Error: Property '10' does not exist
 
-obj2 = null
-PRINT(obj2.name)       // ❌ Runtime Error: Cannot access property 'name' of null
+obj2 = {}
+PRINT(obj2.name)       // ❌ Runtime Error: Property 'name' does not exist on empty object
 ```
 
 ### 4.2 Writing Properties
@@ -237,7 +238,6 @@ PRINT(obj2.name)       // ❌ Runtime Error: Cannot access property 'name' of nu
 - Updates existing property if it exists
 
 ⚠️ **Error cases:**
-- `null.property = value` → Runtime Error
 - Assigning to non-object (e.g., `5.property = 10`) → Runtime Error
 
 **Examples:**
@@ -433,8 +433,8 @@ Exits the entire script execution and returns a value:
 // Script execution
 x = loadConfig()
 
-if x == null then
-    return null      // Stop script, return null
+if x == {} then
+    return               // Stop script, return {}
 end
 
 // Continue processing...
@@ -444,7 +444,7 @@ return result       // End script, return result
 
 **Syntax:**
 ```
-return              // Returns null
+return              // Returns {} (empty object)
 return expression   // Returns the evaluated expression
 ```
 
@@ -453,6 +453,7 @@ return expression   // Returns the evaluated expression
 - **At top-level**: Immediately stops script execution and returns to the host
 - Can appear anywhere in code (inside functions, loops, conditionals, or top-level)
 - Multiple return statements allowed (early returns)
+- A bare `return` (no expression) produces `{}` (empty object)
 
 **Examples:**
 ```javascript
@@ -514,8 +515,8 @@ User-defined functions and threads currently have **fixed parameter count**. Var
 
 **Return Behavior:**
 1. **Explicit return**: `return expression` exits function/thread and returns the value
-2. **Implicit return**: Last expression evaluated in the body is returned
-3. **No return**: If no statements or only non-expression statements, returns `null`
+2. **Bare return**: `return` (no expression) exits and returns `{}` (empty object)
+3. **No return**: If no statements or only non-expression statements, returns `{}`
 
 #### Scoping Rules
 
@@ -584,20 +585,20 @@ PRINT(total)        // 10 (global modified)
 #### Parameter Handling
 
 **Argument Omission:**
-- If fewer arguments provided than parameters, missing ones are `null`
+- If fewer arguments provided than parameters, missing ones default to `{}` (empty object)
 - If more arguments provided than parameters, error is thrown
 
 **Examples:**
 ```javascript
 function greet(name, title) do
-    if title == null then
+    if title == {} then
         return "Hello, " + name
     else
         return "Hello, " + title + " " + name
     end
 end
 
-greet("Alice")              // "Hello, Alice" (title is null)
+greet("Alice")              // "Hello, Alice" (title is {})
 greet("Bob", "Dr.")         // "Hello, Dr. Bob"
 greet("Eve", "Ms.", "PhD")  // ❌ Error: Too many arguments
 ```
@@ -689,12 +690,13 @@ fib(5000, 0, 1) // ❌ Stack overflow
 
 **Syntax:**
 ```
-return              // Returns null
+return              // Returns {} (empty object)
 return expression   // Returns the evaluated expression
 ```
 
 **Behavior:**
 - Immediately exits the function (or script if at top-level)
+- A bare `return` produces `{}` (empty object)
 - Can appear anywhere in function body (or top-level script)
 - Multiple return statements allowed (early returns)
 
@@ -713,7 +715,7 @@ function findFirst(items, target) do
             return item    // Early return
         end
     end
-    return null           // Not found
+    return {}             // Not found
 end
 ```
 
@@ -735,14 +737,14 @@ result1 = add(5, 3)       // 8
 result2 = calculate(10)   // 30
 ```
 
-**Note:** If the last statement is not an expression (e.g., assignment, loop), `null` is returned:
+**Note:** If the last statement is not an expression (e.g., assignment, loop), `{}` (empty object) is returned:
 
 ```javascript
 function test() do
     x = 10             // Assignment, not an expression
 end
 
-result = test()        // null
+result = test()        // {} (empty object)
 ```
 
 #### Limitations
@@ -888,7 +890,7 @@ All runtime errors **immediately halt execution**. There is no try-catch mechani
    - Accessing non-existent variable
 
 3. **Property access errors**
-   - Null property access: `null.property`
+   - Empty object property access: `{}.property`
    - Non-existent property: `object.missingProperty`
 
 4. **Type errors**
@@ -1000,7 +1002,7 @@ Built-in functions support variable number of arguments (e.g., `PRINT`, `PUSH`, 
 - Outputs arguments to stdout
 - Multiple arguments are space-separated
 - Automatically adds newline
-- **Returns**: `null` (no meaningful return value)
+- **Returns**: `{}` (empty object, no meaningful return value)
 
 **Examples:**
 ```javascript
@@ -1008,7 +1010,7 @@ PRINT("Hello")              // Hello
 PRINT("Score:", 95)         // Score: 95
 PRINT(1, 2, 3)              // 1 2 3
 
-result = PRINT("Test")      // result is null
+result = PRINT("Test")      // result is {}
 ```
 
 ### 9.2 Math Functions
@@ -1082,7 +1084,7 @@ num = TO_NUMBER(123)        // Runtime Error: requires a string argument
 #### `TO_STRING(value)`
 - **Returns**: String
 - Converts any value to string representation
-- Works with all types: null, boolean, number, string, array, object
+- Works with all types: boolean, number, string, array, object
 
 **Examples:**
 ```javascript
@@ -1090,14 +1092,14 @@ str = TO_STRING(123)        // "123"
 str = TO_STRING(45.67)      // "45.67"
 str = TO_STRING(true)       // "true"
 str = TO_STRING(false)      // "false"
-str = TO_STRING(null)       // "null"
+str = TO_STRING({})         // "{}"
 str = TO_STRING("hello")    // "hello" (already string)
 str = TO_STRING([1, 2, 3])  // "[1,2,3]"
 str = TO_STRING({x: 10})    // "{\"x\":10}"
 ```
 
 #### `SLEEP(milliseconds)`
-- **Returns**: null (after delay completes)
+- **Returns**: `{}` (empty object, after delay completes)
 - Pauses execution for specified milliseconds
 - **Async function**: Automatically awaited in async contexts
 - Useful for delays, rate limiting, or simulating I/O operations
@@ -1401,9 +1403,9 @@ const visitor = new ProperTeeCustomVisitor(
 - `true`
 - `false`
 
-### 10.4 Null Literal
+### 10.4 Empty Object Literal
 
-- `null`
+- `{}` (used where other languages use null)
 
 ### 10.5 Object Literals
 
@@ -1429,7 +1431,7 @@ obj3 = {x: 1, y: 2, nested: {a: 10}}
 ```javascript
 arr1 = [1, 2, 3]
 arr2 = ["apple", "banana", "cherry"]
-arr3 = [1, "mixed", true, null]
+arr3 = [1, "mixed", true, {}]
 arr4 = [[1, 2], [3, 4]]  // Nested arrays
 ```
 
@@ -1541,11 +1543,11 @@ const visitor = new ProperTeeCustomVisitor({}, {}, {}, {
 
 ## 13. Implementation Notes
 
-### 12.1 Null vs Undefined
+### 12.1 Empty Object as No-Value Sentinel
 
-- `null` is a **valid value** in ProperTee
-- JavaScript `undefined` should **NEVER** be returned to ProperTee scripts
-- Internal implementation may use `undefined`, but runtime must convert to errors
+- ProperTee has **no null keyword**. The empty object `{}` is used wherever other languages use null.
+- JavaScript `undefined` and `null` should **NEVER** be returned to ProperTee scripts
+- Internal implementation may use host-language null/undefined, but the runtime must convert these to `{}` (empty object) or raise errors as appropriate
 
 ### 12.2 JavaScript Interop
 
@@ -1608,9 +1610,9 @@ class ReturnException extends Error {
 **Return Statement Handler:**
 ```javascript
 visitReturnStmt(ctx) {
-    const value = ctx.expression() 
-        ? this.visit(ctx.expression()) 
-        : null;
+    const value = ctx.expression()
+        ? this.visit(ctx.expression())
+        : {};  // bare return produces empty object
     throw new ReturnException(value);
 }
 ```
@@ -1625,7 +1627,7 @@ callUserFunction(funcName, args) {
     
     try {
         // Execute function body
-        let lastValue = null;
+        let lastValue = {};  // default: empty object
         for (let stmt of body.statement()) {
             lastValue = this.visit(stmt);
         }
@@ -1656,7 +1658,7 @@ visitFuncDefStmt(ctx) {
         infinite: hasInfinite  // Store infinite flag
     };
     
-    return null;
+    return {};  // empty object (no meaningful return)
 }
 ```
 
@@ -1682,7 +1684,7 @@ function executeScript(tree) {
     try {
         const visitor = new ProperTeeCustomVisitor(...);
         
-        let lastValue = null;
+        let lastValue = {};  // default: empty object
         const statements = tree.statement();
         
         for (let stmt of statements) {
@@ -1704,7 +1706,7 @@ function executeScript(tree) {
 // Script with early return
 const script = `
     config = loadConfig()
-    if config == null then
+    if config == {} then
         return "Config not found"
     end
     return processConfig(config)
@@ -1758,14 +1760,14 @@ end
 PRINT("Sum:", sum)          // Sum: 15
 ```
 
-#### Example 4: Conditional with Null Check
+#### Example 4: Conditional with Empty Object Check
 ```javascript
-obj = null
+obj = {}
 
-if obj != null then
+if obj != {} then
     PRINT(obj.value)
 else
-    PRINT("Object is null")  // This executes
+    PRINT("Object is empty")  // This executes
 end
 ```
 
@@ -1848,9 +1850,9 @@ PRINT(acronym)  // "PEE"
 // Early exit from script
 config = loadConfiguration()
 
-if config == null then
+if config == {} then
     PRINT("ERROR: Configuration not found")
-    return null              // Exit script, return null
+    return                   // Exit script, return {}
 end
 
 if config.disabled then
@@ -1870,7 +1872,7 @@ return result               // Normal script completion
 input = getInput()
 
 // Check empty
-if input == null or input == "" then
+if input == {} or input == "" then
     return {error: "Input required", code: 400}
 end
 
@@ -1925,11 +1927,11 @@ result = true / false
 // ❌ Runtime Error: Arithmetic operator '/' requires numeric operands
 ```
 
-#### Error 6: Null Access
+#### Error 6: Empty Object Property Access
 ```javascript
-obj = null
+obj = {}
 PRINT(obj.name)
-// ❌ Runtime Error: Cannot access property 'name' of null
+// ❌ Runtime Error: Property 'name' does not exist on empty object
 ```
 
 #### Error 7: Type Mismatch in Comparison
@@ -2029,7 +2031,7 @@ shared var3 = initialValue
 **Rules:**
 - ✅ Only allowed in **global scope** (not inside functions)
 - ✅ Can include optional initialization with `=` operator
-- ✅ Variables without initialization default to `null`
+- ✅ Variables without initialization default to `{}` (empty object)
 - ✅ Multiple variables can be declared on separate lines
 - ❌ Cannot declare multiple variables with initialization on same line
 - ❌ Cannot be declared inside functions or blocks
@@ -2046,7 +2048,7 @@ shared counter = 0
 shared accounts = []
 shared data = {total: 0, count: 0}
 
-// ✅ Valid - without initialization (defaults to null)
+// ✅ Valid - without initialization (defaults to {})
 shared temp
 shared cache
 
@@ -2434,7 +2436,7 @@ end
 
 **Error Behavior:**
 - Error in one thread **does not stop other threads**
-- Failed thread returns `null`
+- Failed thread returns `{}` (empty object)
 - Error logged to `stderr` with line number and thread info
 - END waits for all threads (including failed ones)
 
@@ -2449,11 +2451,11 @@ end
 
 multi
     mayFail(5) -> r1   // ✅ succeeds, r1 = 10
-    mayFail(0) -> r2   // ❌ fails, r2 = null
+    mayFail(0) -> r2   // ❌ fails, r2 = {}
     mayFail(10) -> r3  // ✅ succeeds, r3 = 20
 end
 
-PRINT(r1, r2, r3)  // Output: 10, null, 20
+PRINT(r1, r2, r3)  // Output: 10, {}, 20
 ```
 
 **Error Log Format:**
@@ -2663,7 +2665,7 @@ The following keywords are reserved and cannot be used as variable names:
 - `break`, `continue`
 - `function`, `thread`, `return`
 - `and`, `or`, `not`
-- `true`, `false`, `null`
+- `true`, `false`
 - `shared`, `uses`, `multi`, `monitor` (for concurrency)
 
 **Note:** `infinite` is reserved for loop statements only (not for functions).
@@ -2851,6 +2853,84 @@ Features that may be added in future versions:
 
 ---
 
+## 19. External Functions & Result Pattern
+
+### 19.1 Overview
+
+Host applications can register external built-in functions that return **result objects** instead of throwing errors on failure. This allows ProperTee scripts to handle errors gracefully without halting execution.
+
+### 19.2 Registration
+
+External functions are registered via `registerExternal(name, func)` on the built-in functions object. The `registerExternal` wrapper automatically catches any exceptions thrown by the function and converts them into error result objects.
+
+**Host-side registration (Java example):**
+```java
+interpreter.builtins.registerExternal("GET_BALANCE", new BuiltinFunction() {
+    public Object call(List<Object> args) {
+        String user = (String) args.get(0);
+        if (userExists(user)) return Result.ok(getBalance(user));
+        return Result.error("account not found");
+    }
+});
+```
+
+**Host-side registration (JavaScript example):**
+```javascript
+visitor.registerExternal("GET_BALANCE", function(user) {
+    if (userExists(user)) return Result.ok(getBalance(user));
+    return Result.error("account not found");
+});
+```
+
+### 19.3 Result Object
+
+The result pattern uses a simple object with two fields:
+
+- **`Result.ok(value)`** produces: `{ok: true, value: ...}`
+- **`Result.error(message)`** produces: `{ok: false, value: "..."}`
+
+If the registered function throws an exception, `registerExternal` automatically wraps it as:
+`{ok: false, value: "error message from exception"}`
+
+### 19.4 Usage in ProperTee Scripts
+
+```javascript
+// Call the external function
+res = GET_BALANCE("alice")
+
+// Check the result
+if res.ok == true then
+    PRINT("Balance:", res.value)
+else
+    PRINT("Error:", res.value)
+end
+```
+
+**Chaining multiple external calls:**
+```javascript
+res1 = GET_BALANCE("alice")
+if res1.ok == false then
+    PRINT("Failed to get balance:", res1.value)
+    return
+end
+
+res2 = TRANSFER("alice", "bob", 100)
+if res2.ok == true then
+    PRINT("Transfer complete. New balance:", res2.value)
+else
+    PRINT("Transfer failed:", res2.value)
+end
+```
+
+### 19.5 Key Points
+
+- **Core builtins** (PRINT, SUM, LEN, etc.) return values directly and are **not** wrapped in the result pattern
+- **External functions** registered via `registerExternal()` always return result objects
+- The result object is a regular ProperTee object -- access `.ok` and `.value` using standard property access
+- Thrown exceptions are automatically caught and converted to `{ok: false, value: "..."}`, so external functions never cause a script-halting runtime error
+
+---
+
 ## Appendix A: Grammar Summary
 
 For the complete ANTLR4 grammar, see `ProperTee.g4`.
@@ -2868,7 +2948,7 @@ Key grammar rules:
 - `iterationStmt`: Loop with optional `infinite` keyword
 - `flowControl`: break, continue, return
 - `expression`: Operators, member access, atoms
-- `atom`: Literals (number, string, boolean, null, object, array), function calls
+- `atom`: Literals (number, string, boolean, object, array), function calls
 
 **Threading Syntax:**
 ```
@@ -2892,6 +2972,21 @@ thread name(params) uses res do ... end         // Threads (for multi)
 ---
 
 ## Appendix B: Version History
+
+### Version 1.2 (2026-02-04)
+- **Removed**: `null` keyword and null type from the language
+  - Empty object `{}` is now used wherever null was previously used
+  - Functions without `return` or with bare `return` produce `{}` instead of `null`
+  - Missing function arguments default to `{}` instead of `null`
+  - Failed threads return `{}` instead of `null`
+  - SHARED variables without initialization default to `{}` instead of `null`
+  - `null` removed from reserved keywords list
+- **Added**: External Functions & Result Pattern (Section 19)
+  - `registerExternal(name, func)` for host-registered functions with error handling
+  - `Result.ok(value)` and `Result.error(message)` for structured error returns
+  - Automatic exception wrapping for registered external functions
+- **Changed**: Error messages for empty object property access updated
+  - "Cannot access property of null" replaced with "Property does not exist on empty object"
 
 ### Version 1.1 (2026-01-31)
 - **Added**: Concurrency and Threading (Section 15)
@@ -2941,7 +3036,7 @@ thread name(params) uses res do ... end         // Threads (for multi)
   - **Default call depth limit: 1000**
   - **`infinite` keyword**: Remove call depth limit per function
   - Prevents infinite recursion and stack overflow
-- **Argument omission**: Missing arguments default to `null`
+- **Argument omission**: Missing arguments default to `{}` (empty object)
 
 ---
 

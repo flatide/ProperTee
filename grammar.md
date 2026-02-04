@@ -425,7 +425,6 @@ atom    = function_call
         | NUMBER
         | STRING
         | boolean
-        | "null"
         | object_literal
         | array_literal
         | "(" expression ")" ;
@@ -519,7 +518,7 @@ break    continue
 function thread   return
 shared   uses     multi     monitor
 not      and      or
-true     false    null
+true     false
 ```
 
 ### 9.2 주석
@@ -622,6 +621,8 @@ atom            = function_call
                 | object_literal
                 | array_literal
                 | "(" expression ")" ;
+
+(* Note: ProperTee has no null keyword. Empty object {} is used as the no-value sentinel. *)
 
 function_call   = ID "(" [ expression { "," expression } ] ")" ;
 

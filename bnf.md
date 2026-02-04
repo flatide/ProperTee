@@ -126,7 +126,6 @@
                       | <number>
                       | <string>
                       | <boolean>
-                      | "null"
                       | <object-literal>
                       | <array-literal>
                       | "(" <expression> ")"
@@ -201,7 +200,7 @@ break    continue
 function thread   return
 shared   uses     multi     monitor
 not      and      or
-true     false    null
+true     false
 ```
 
 ---
