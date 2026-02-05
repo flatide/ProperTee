@@ -9,6 +9,15 @@ Syntax highlighting for the [ProperTee](https://github.com/flatide/ProperTee) sc
 - Comment formatting (`//` line comments, `/* */` block comments)
 - Basic indentation settings
 
+## Prerequisites
+
+Ensure your `~/.vimrc` includes:
+
+```vim
+filetype plugin on
+syntax on
+```
+
 ## Installation
 
 ### Manual
