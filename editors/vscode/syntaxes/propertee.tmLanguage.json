@@ -1,0 +1,159 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ProperTee",
+  "scopeName": "source.propertee",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#logical-operators" },
+    { "include": "#booleans" },
+    { "include": "#builtin-functions" },
+    { "include": "#operators" },
+    { "include": "#property-access" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.propertee",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.propertee",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.propertee",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.propertee",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.decimal.propertee",
+          "match": "\\b[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.propertee",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.propertee",
+          "match": "\\b(if|then|else|end|loop|in|do|infinite|break|continue|return)\\b"
+        },
+        {
+          "name": "keyword.other.function.propertee",
+          "match": "\\b(function)\\b"
+        },
+        {
+          "name": "keyword.other.thread.propertee",
+          "match": "\\b(thread)\\b"
+        },
+        {
+          "name": "keyword.other.concurrency.propertee",
+          "match": "\\b(shared|multi|monitor)\\b"
+        }
+      ]
+    },
+    "logical-operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.logical.propertee",
+          "match": "\\b(not|and|or)\\b"
+        }
+      ]
+    },
+    "booleans": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.propertee",
+          "match": "\\b(true|false)\\b"
+        }
+      ]
+    },
+    "builtin-functions": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.propertee",
+          "match": "\\b(PRINT|SLEEP|SUM|MAX|MIN|ABS|FLOOR|CEIL|ROUND|LEN|TO_NUMBER|TO_STRING|PUSH|POP|CONCAT|SLICE|CHARS|SPLIT|JOIN|SUBSTRING|UPPERCASE|LOWERCASE|TRIM)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arrow.propertee",
+          "match": "->"
+        },
+        {
+          "name": "keyword.operator.comparison.propertee",
+          "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.assignment.propertee",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.arithmetic.propertee",
+          "match": "[+\\-*/%]"
+        }
+      ]
+    },
+    "property-access": {
+      "patterns": [
+        {
+          "name": "keyword.operator.dynamic-access.propertee",
+          "match": "\\.\\$"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.comma.propertee",
+          "match": ","
+        },
+        {
+          "name": "punctuation.separator.colon.propertee",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.accessor.dot.propertee",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.definition.brace.propertee",
+          "match": "[{}]"
+        },
+        {
+          "name": "punctuation.definition.bracket.propertee",
+          "match": "[\\[\\]]"
+        },
+        {
+          "name": "punctuation.definition.paren.propertee",
+          "match": "[()]"
+        }
+      ]
+    }
+  }
+}

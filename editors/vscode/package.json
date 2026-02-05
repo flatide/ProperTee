@@ -1,0 +1,36 @@
+{
+  "name": "propertee",
+  "displayName": "ProperTee",
+  "description": "Syntax highlighting for the ProperTee scripting language",
+  "version": "0.1.0",
+  "publisher": "flatide",
+  "license": "BSD-3-Clause",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "propertee",
+        "aliases": [
+          "ProperTee",
+          "propertee"
+        ],
+        "extensions": [
+          ".pt"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "propertee",
+        "scopeName": "source.propertee",
+        "path": "./syntaxes/propertee.tmLanguage.json"
+      }
+    ]
+  }
+}
