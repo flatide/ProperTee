@@ -17,8 +17,9 @@ Syntax highlighting for the [ProperTee](https://github.com/flatide/ProperTee) sc
 npm install -g @vscode/vsce
 cd editors/vscode
 vsce package
-code --install-extension propertee-*.vsix
 ```
+
+Then in VS Code: **Extensions** sidebar > `...` menu > **Install from VSIX...** and select the generated `.vsix` file.
 
 ### Symlink (for development)
 
