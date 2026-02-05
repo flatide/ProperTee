@@ -6,19 +6,6 @@ if exists('b:current_syntax')
   finish
 endif
 
-" --- Comments ---
-syn keyword propertTodo TODO FIXME XXX NOTE contained
-syn match   propertLineComment  "\/\/.*$" contains=propertTodo
-syn region  propertBlockComment start="/\*" end="\*/" contains=propertTodo
-
-" --- Strings ---
-syn region propertString start=+"+ skip=+\\"+ end=+"+ contains=propertEscape
-syn match  propertEscape +\\.+ contained
-
-" --- Numbers ---
-syn match propertFloat  "\<\d\+\.\d\+\>"
-syn match propertNumber "\<\d\+\>"
-
 " --- Keywords ---
 syn keyword propertKeyword      if then else end
 syn keyword propertKeyword      loop in do infinite
@@ -40,6 +27,10 @@ syn keyword propertBuiltin      PUSH POP CONCAT SLICE CHARS
 syn keyword propertBuiltin      SPLIT JOIN SUBSTRING
 syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM
 
+" --- Numbers ---
+syn match propertFloat  "\<\d\+\.\d\+\>"
+syn match propertNumber "\<\d\+\>"
+
 " --- Operators ---
 syn match propertArrow    "->"
 syn match propertCompare  "==\|!=\|<=\|>=\|<\|>"
@@ -51,6 +42,15 @@ syn match propertDynAccess "\.\$"
 
 " --- Punctuation ---
 syn match propertPunct "[,:.{}\[\]()]"
+
+" --- Strings (defined after operators so they take priority) ---
+syn region propertString start=+"+ skip=+\\"+ end=+"+ contains=propertEscape
+syn match  propertEscape +\\.+ contained
+
+" --- Comments (defined last for highest priority) ---
+syn keyword propertTodo TODO FIXME XXX NOTE contained
+syn region  propertLineComment  start="//" end="$" contains=propertTodo
+syn region  propertBlockComment start="/\*" end="\*/" contains=propertTodo
 
 " --- Highlight links ---
 hi def link propertLineComment  Comment
