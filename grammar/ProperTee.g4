@@ -3,8 +3,7 @@ grammar ProperTee ;
 root : statement* EOF ;
 
 statement
-    : sharedDecl    # SharedDeclStmt
-    | assignment    # AssignStmt
+    : assignment    # AssignStmt
     | ifStatement   # IfStmt
     | iterationStmt # iterStmt
     | functionDef   # FuncDefStmt
@@ -14,28 +13,16 @@ statement
     | expression    # ExprStmt
     ;
 
-// 가능: myVar = 10, prop.width = 20, prop.$width = 30
-
-// 불가능: 10 = 20, (a+b) = 30
-
 assignment
     : lvalue '=' expression
     ;
 
 lvalue
-    : ID                                     # VarLValue       // 예: width = 10
-    | lvalue '.' access                      # PropLValue      // 예: obj.x = 10
+    : ID                                     # VarLValue
+    | lvalue '.' access                      # PropLValue
     ;
 
 block : statement* ;
-
-sharedDecl
-    : K_SHARED sharedVar (',' sharedVar)*
-    ;
-
-sharedVar
-    : ID ('=' expression)?
-    ;
 
 ifStatement
     : K_IF condition=expression K_THEN thenBody=block (K_ELSE elseBody=block)? K_END
@@ -58,7 +45,7 @@ parallelStmt
     ;
 
 monitorClause
-    : K_MONITOR NUMBER block
+    : K_MONITOR INTEGER block
     ;
 
 parallelTask
@@ -92,17 +79,18 @@ expression
 
 
 access
-    : ID                                    # StaticAccess      // .width
-    | NUMBER                                # ArrayAccess       // .1 (1-based indexing)
-    | STRING                                # StringKeyAccess   // ."key"
-    | '$' ID                                # VarEvalAccess     // .$key (축약형: .$(key))
-    | '$' '(' expression ')'                # EvalAccess        // .$(expr) (완전형)
+    : ID                                    # StaticAccess
+    | INTEGER                               # ArrayAccess
+    | STRING                                # StringKeyAccess
+    | '$' ID                                # VarEvalAccess
+    | '$' '(' expression ')'                # EvalAccess
     ;
 
 atom
     : functionCall           # FuncAtom
     | ID                     # VarReference
-    | NUMBER                 # NumberAtom
+    | INTEGER '.' INTEGER    # DecimalAtom
+    | INTEGER                # IntegerAtom
     | STRING                 # StringAtom
     | (K_TRUE | K_FALSE)     # BooleanAtom
     | objectLiteral          # ObjectAtom
@@ -123,9 +111,9 @@ objectEntry
     ;
 
 objectKey
-    : ID                     // member: value
-    | STRING                 // "key-name": value
-    | NUMBER                 // 1: value (1-based indexing for array-like objects)
+    : ID
+    | STRING
+    | INTEGER
     ;
 
 arrayLiteral
@@ -154,15 +142,13 @@ K_OR        : 'or';
 K_TRUE      : 'true';
 K_FALSE     : 'false';
 K_INFINITE  : 'infinite';
-K_SHARED    : 'shared';
 K_MULTI     : 'multi';
 K_MONITOR   : 'monitor';
 
-ID : [a-zA-Z_][a-zA-Z0-9_]* ;          // 일반 식별자 (나중에 정의)
-NUMBER : [0-9]+ ('.' [0-9]+)? ;
+ID : [a-zA-Z_][a-zA-Z0-9_]* ;
+INTEGER : [0-9]+ ;
 STRING : '"' ( '\\' . | ~["\\] )* '"' ;
 
-// 주석과 공백 처리
-COMMENT : '//' ~[\r\n]* -> skip ;           // 한 줄 주석
-BLOCK_COMMENT : '/*' .*? '*/' -> skip ;     // 블럭 주석
+COMMENT : '//' ~[\r\n]* -> skip ;
+BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
 WS : [ \t\r\n;]+ -> skip ;
