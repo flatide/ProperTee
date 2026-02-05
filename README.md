@@ -128,21 +128,24 @@ const properties = { user: { name: "Test", score: 100 } };
 const scriptText = `
 PRINT("Hello,", user.name)
 user.score = user.score + 10
-user.score
+PRINT("New score:", user.score)
 `;
 
-// Parse and execute
+// Parse
 const chars = new antlr4.InputStream(scriptText);
 const lexer = new ProperTeeLexer(chars);
 const tokens = new antlr4.CommonTokenStream(lexer);
 const parser = new ProperTeeParser(tokens);
 const tree = parser.root();
 
+// Execute with scheduler
 const visitor = new ProperTeeCustomVisitor(properties, {}, {
     stdout: (...args) => console.log(...args),
     stderr: (...args) => console.error(...args)
 });
-const result = visitor.visit(tree);
+const scheduler = new Scheduler(visitor);
+const mainGenerator = visitor.visitRoot(tree);
+const result = await scheduler.run(mainGenerator);
 </script>
 ```
 
