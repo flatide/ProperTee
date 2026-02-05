@@ -44,8 +44,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **Division by zero**: Runtime error, not Infinity.
 - **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`.
 - **Unified loop**: Single `loop` keyword for condition, value, key-value, and infinite iteration.
-- **Cooperative threading**: `thread`/`multi`/`shared`/`uses` keywords; simulated concurrency via async, not OS threads.
-- **Alphabetical lock ordering**: Deadlock prevention in `uses` clauses.
+- **Cooperative threading**: `thread`/`multi`/`shared` keywords; simulated concurrency via async, not OS threads.
 
 ## Keywords (complete set)
 
@@ -54,7 +53,7 @@ if then else end
 loop in do infinite
 break continue
 function thread return
-shared uses multi monitor
+shared multi monitor
 not and or
 true false
 ```
