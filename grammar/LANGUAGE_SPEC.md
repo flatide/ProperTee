@@ -481,7 +481,7 @@ end
 
 **2. Threads (thread keyword):**
 ```
-thread name(param1, param2, ...) uses resources do
+thread name(param1, param2, ...) do
     statements
 end
 ```
@@ -495,7 +495,7 @@ end
 **Thread Definition:**
 - Threads are special functions that can run in `multi` blocks
 - Must be declared with `thread` keyword
-- May use `uses` clause to access SHARED resources
+- Can access SHARED variables directly
 - Can be called both synchronously (outside multi) and asynchronously (inside multi)
 - Designed for safe concurrent execution
 
@@ -505,8 +505,7 @@ end
 |---------|----------|--------|
 | Can be called normally | ✅ | ✅ |
 | Can be used in multi | ❌ | ✅ |
-| Can use `uses` clause | ❌ | ✅ |
-| Access SHARED variables | ❌* | ✅ (with uses) |
+| Access SHARED variables | ❌* | ✅ |
 
 *Functions cannot access SHARED variables at all, even outside multi blocks.
 
@@ -524,7 +523,7 @@ User-defined functions and threads currently have **fixed parameter count**. Var
 2. **Global Access**: Functions can **read** variables from outer (global) scope
 3. **Global Modification**: To modify a global variable, it must exist before function call
 4. **Shadowing**: Local variables with same name as global variables shadow the global ones
-5. **SHARED Access**: Only threads with `uses` clause can access SHARED variables
+5. **SHARED Access**: Threads can access SHARED variables directly
 
 **Example - Local vs Global:**
 ```javascript
@@ -544,8 +543,8 @@ PRINT(x)            // 100 (global unchanged)
 ```javascript
 shared counter = 0
 
-thread work() uses counter do
-    counter = counter + 10  // ✅ OK - declared in uses
+thread work() do
+    counter = counter + 10  // ✅ OK - accessing shared variable
     return counter
 end
 
@@ -2074,80 +2073,7 @@ end
 
 ---
 
-### 15.3 USES Clause
-
-**Syntax:**
-```javascript
-function name(params) uses resource1, resource2 do
-    // function body
-end
-```
-
-**Rules:**
-- ✅ Declares which SHARED resources the function will access
-- ✅ Only resources listed in USES can be accessed
-- ✅ All listed resources must be declared with `shared`
-- ✅ Function acquires **all locks in alphabetical order** before entry
-- ✅ All locks released on function exit (normal or error)
-
-**Lock Acquisition:**
-1. Sort USES resources alphabetically
-2. Acquire locks in sorted order (prevents deadlock)
-3. Execute function body
-4. Release all locks
-
-**Examples:**
-```javascript
-shared counter, data
-
-// ✅ Valid - declares USES
-function increment(n) uses counter do
-    counter = counter + n
-    return counter
-end
-
-// ✅ Valid - multiple resources
-function update(value) uses counter, data do
-    counter = counter + 1
-    data.values = data.values + [value]
-end
-
-// ✅ Valid - no USES (thread-local only)
-function calculate(n) do
-    result = n * 2
-    return result
-end
-
-// ❌ Runtime Error - accessing SHARED without USES
-function bad() do
-    counter = counter + 1  // Runtime Error: 'counter' is SHARED but not in USES clause
-end
-```
-
-**Validation:**
-- USES validation occurs at **function definition time**
-- Runtime Error if USES references non-SHARED variable
-- Runtime Error if function accesses SHARED variable not in USES
-
-**Deadlock Prevention:**
-```javascript
-shared account1, account2
-
-// Both functions acquire locks in same order: account1 → account2
-function transferAtoB() uses account1, account2 do
-    // Locks: account1 first, then account2
-    // ...
-end
-
-function transferBtoA() uses account2, account1 do
-    // Automatically sorted: account1 first, then account2
-    // No deadlock possible!
-end
-```
-
----
-
-### 15.4 MULTI...END Blocks
+### 15.3 MULTI...END Blocks
 
 **Syntax:**
 ```javascript
@@ -2186,7 +2112,7 @@ end
 **Thread Declaration:**
 ```javascript
 // ✅ Thread - can be called in multi
-thread worker(n) uses counter do
+thread worker(n) do
     counter = counter + n
     return counter
 end
@@ -2267,7 +2193,7 @@ PRINT(r1, r2)        // ✅ can use r1, r2 after end
 
 ---
 
-### 15.5 Thread-Local Variables
+### 15.4 Thread-Local Variables
 
 **Automatic Thread-Local Storage:**
 - Variables created inside a function are automatically thread-local
@@ -2279,7 +2205,7 @@ PRINT(r1, r2)        // ✅ can use r1, r2 after end
 ```javascript
 shared counter
 
-thread worker(input) uses counter do
+thread worker(input) do
     temp = input * 2      // thread-local (independent per thread)
     result = temp + 10    // thread-local
     counter = counter + result  // shared (synchronized)
@@ -2295,7 +2221,7 @@ end
 
 ---
 
-### 15.6 MONITOR Blocks
+### 15.5 MONITOR Blocks
 
 **Purpose:**
 Monitor blocks allow real-time observation of SHARED variables and global variables during multi-threaded execution without blocking the main tasks.
@@ -2337,7 +2263,7 @@ end
 shared processed = 0
 shared total = 100
 
-thread process(item) uses processed do
+thread process(item) do
     doWork(item)
     processed = processed + 1
 end
@@ -2359,7 +2285,7 @@ end
 shared errors = []
 shared completed = 0
 
-thread task(id) uses errors, completed do
+thread task(id) do
     if validateTask(id) == false then
         errors = PUSH(errors, "Task " + id + " failed")
     end
@@ -2382,7 +2308,7 @@ end
 startTime = NOW()  // Global variable
 shared counter = 0
 
-thread work(n) uses counter do
+thread work(n) do
     SLEEP(1000)
     counter = counter + n
 end
@@ -2432,7 +2358,7 @@ end
 
 ---
 
-### 15.7 Error Handling in Threads
+### 15.6 Error Handling in Threads
 
 **Error Behavior:**
 - Error in one thread **does not stop other threads**
@@ -2510,8 +2436,7 @@ accounts = [
 logs = []
 
 // Transfer money between accounts (thread)
-thread transfer(fromIdx, toIdx, amount) uses accounts, logs do
-    // Locks acquired: accounts, logs (alphabetical order)
+thread transfer(fromIdx, toIdx, amount) do
     
     fromAccount = accounts.$fromIdx
     toAccount = accounts.$toIdx
@@ -2530,8 +2455,7 @@ thread transfer(fromIdx, toIdx, amount) uses accounts, logs do
 end
 
 // Calculate and add interest (thread)
-thread addInterest(accountIdx, rate) uses accounts do
-    // Lock acquired: accounts only
+thread addInterest(accountIdx, rate) do
     
     account = accounts.$accountIdx
     interest = account.balance * rate
@@ -2646,8 +2570,6 @@ end
 | Error | When | Example |
 |-------|------|---------|
 | SHARED in function | SHARED declared inside function | `function f() do shared x end` |
-| USES non-SHARED | USES references undeclared variable | `function f() uses x do` (x not SHARED) |
-| Access without USES | Function accesses SHARED not in USES | `counter = counter + 1` without `uses counter` |
 | Control flow in MULTI | if/loop in MULTI block | `multi if c then task() end end` |
 | Nested call in MULTI | Function call in arguments | `multi f(g()) -> r end` |
 | Variable use in MULTI | Using result variable inside MULTI | `multi f() -> r PRINT(r) end` |
@@ -2666,7 +2588,7 @@ The following keywords are reserved and cannot be used as variable names:
 - `function`, `thread`, `return`
 - `and`, `or`, `not`
 - `true`, `false`
-- `shared`, `uses`, `multi`, `monitor` (for concurrency)
+- `shared`, `multi`, `monitor` (for concurrency)
 
 **Note:** `infinite` is reserved for loop statements only (not for functions).
 
@@ -2940,8 +2862,7 @@ Key grammar rules:
 - `statement`: Assignments, if, loop, function definitions, multi blocks, shared declarations, expressions
 - `sharedDecl`: SHARED resource declarations (global scope only)
 - `functionDef`: Regular user-defined functions with parameters
-- `threadDef`: Thread functions with parameters and optional USES clause
-- `usesClause`: Declares which SHARED resources a thread accesses
+- `threadDef`: Thread functions with parameters
 - `parallelStmt`: MULTI...END blocks for concurrent execution
 - `parallelTask`: Function calls within MULTI blocks (with or without assignment)
 - `monitorClause`: MONITOR block for real-time observation
@@ -2954,7 +2875,7 @@ Key grammar rules:
 ```
 shared var1 = init1, var2 = init2       // Shared resource declaration
 function name(params) do ... end        // Regular function
-thread name(params) uses res1, res2 do ... end  // Thread function
+thread name(params) do ... end                 // Thread function
 multi                                   // Multi-threaded execution block
     func1(args) -> result1
     func2(args) -> result2
@@ -2966,7 +2887,7 @@ end
 **Function Definition Syntax:**
 ```
 function name(params) do ... end                // Regular functions
-thread name(params) uses res do ... end         // Threads (for multi)
+thread name(params) do ... end                 // Threads (for multi)
 ```
 
 ---
@@ -2991,7 +2912,6 @@ thread name(params) uses res do ... end         // Threads (for multi)
 ### Version 1.1 (2026-01-31)
 - **Added**: Concurrency and Threading (Section 15)
   - `shared` declaration for shared resources
-  - `uses` clause for threads accessing shared resources
   - `thread` keyword for functions that can run in multi blocks (changed from `thread function`)
   - `multi...end` blocks with `->` operator for result assignment (changed from `parallel`)
   - `monitor` blocks for real-time progress tracking (dirty read, read-only)
@@ -3009,7 +2929,7 @@ thread name(params) uses res do ... end         // Threads (for multi)
   - `TO_STRING(value)` - Convert any value to string
 - **Added**: Async functions (Section 9.3)
   - `SLEEP(milliseconds)` - Pause execution with async/await support
-- **Added**: New reserved keywords: `shared`, `uses`, `multi`, `thread`, `monitor`
+- **Added**: New reserved keywords: `shared`, `multi`, `thread`, `monitor`
 - **Changed**: Thread declaration from `thread function` to `thread` (more concise)
 - **Changed**: Multi-threading block from `parallel` to `multi` (more concise)
 - **Changed**: Result assignment syntax from `r = func()` to `func() -> r`

@@ -48,14 +48,9 @@
 
 <thread-definition> ::= "thread" <identifier> "(" ")" "do" <statement-list> "end"
                       | "thread" <identifier> "(" <parameter-list> ")" "do" <statement-list> "end"
-                      | "thread" <identifier> "(" ")" <uses-clause> "do" <statement-list> "end"
-                      | "thread" <identifier> "(" <parameter-list> ")" <uses-clause> "do" <statement-list> "end"
 
 <parameter-list>    ::= <identifier>
                       | <parameter-list> "," <identifier>
-
-<uses-clause>       ::= "uses" <identifier>
-                      | <uses-clause> "," <identifier>
 
 <shared-declaration> ::= "shared" <shared-var-list>
 
@@ -198,7 +193,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function thread   return
-shared   uses     multi     monitor
+shared   multi     monitor
 not      and      or
 true     false
 ```

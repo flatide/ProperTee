@@ -134,9 +134,8 @@ flow_control = "break" | "continue" | "return" [ expression ] ;
 
 ```ebnf
 function_def   = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
-thread_def     = "thread" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
+thread_def     = "thread" ID "(" [ parameter_list ] ")" "do" block "end" ;
 parameter_list = ID { "," ID } ;
-uses_clause    = "uses" ID { "," ID } ;
 ```
 
 **예시:**
@@ -152,7 +151,7 @@ result = add(10, 20)
 // 쓰레드 (병렬 실행 가능)
 shared counter
 
-thread increment(n) uses counter do
+thread increment(n) do
     counter = counter + n
     return counter
 end
@@ -188,8 +187,8 @@ shared_var     = ID [ "=" expression ] ;
 shared counter = 0
 shared data, cache
 
-// 쓰레드에서 uses 절로 접근
-thread increment() uses counter do
+// 쓰레드에서 공유 변수 접근
+thread increment() do
     counter = counter + 1
     return counter
 end
@@ -215,12 +214,12 @@ monitor_clause = "monitor" NUMBER block ;
 ```propertee
 shared total = 0
 
-thread work1() uses total do
+thread work1() do
     total = total + 10
     return total
 end
 
-thread work2() uses total do
+thread work2() do
     total = total + 20
     return total
 end
@@ -239,7 +238,7 @@ PRINT("Results:", r1, r2)
 **주의**: 
 - `multi` 블록 내에서는 `thread`만 호출 가능합니다
 - 결과 할당 시 `->` 연산자를 사용합니다 (이전: `=`)
-- 공유 변수에 접근하는 쓰레드는 `uses` 절을 명시해야 합니다
+- 공유 변수는 쓰레드에서 직접 접근할 수 있습니다
 - 자동 데드락 방지 (알파벳 순 잠금)
 - `monitor` 절로 실행 중 진행 상황을 실시간으로 관찰할 수 있습니다 (읽기 전용)
 
@@ -256,7 +255,7 @@ monitor_clause = "monitor" NUMBER block ;
 shared processed = 0
 shared total = 100
 
-thread process(item) uses processed do
+thread process(item) do
     doWork(item)
     processed = processed + 1
 end
@@ -297,29 +296,6 @@ monitor 500
     PRINT("Counter:", temp)
 end
 ```
-
-### 3.8 USES 절
-
-```ebnf
-uses_clause    = "uses" ID { "," ID } ;
-function_def   = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
-thread_def     = "thread" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
-```
-
-**예시:**
-```propertee
-shared account1, account2
-
-thread transfer(amount) uses account1, account2 do
-    account1 = account1 - amount
-    account2 = account2 + amount
-    return account2
-end
-```
-
-**주의**:
-- `uses`에 나열된 리소스는 반드시 `shared`로 선언되어야 합니다.
-- 함수 내에서 `shared` 리소스를 사용하려면 반드시 `uses`에 명시해야 합니다.
 
 ---
 
@@ -516,7 +492,7 @@ if       then     else      end
 loop     in       do        infinite
 break    continue
 function thread   return
-shared   uses     multi     monitor
+shared   multi     monitor
 not      and      or
 true     false
 ```
@@ -585,9 +561,9 @@ loop_iteration  = ID [ "," ID ] "in" expression ;
 shared_decl     = "shared" shared_var { "," shared_var } ;
 shared_var      = ID [ "=" expression ] ;
 
-function_def    = "function" ID "(" [ parameter_list ] ")" [ uses_clause ] "do" block "end" ;
+function_def    = "function" ID "(" [ parameter_list ] ")" "do" block "end" ;
+thread_def      = "thread" ID "(" [ parameter_list ] ")" "do" block "end" ;
 parameter_list  = ID { "," ID } ;
-uses_clause     = "uses" ID { "," ID } ;
 
 parallel_stmt   = "parallel" { parallel_task } "end" ;
 parallel_task   = ID "=" function_call | function_call ;

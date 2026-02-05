@@ -16,7 +16,7 @@ sharedValues: Map<string, any>     // Actual values of SHARED variables
 
 **Rules:**
 - SHARED variables stored separately from regular variables
-- Only accessible through USES clause in functions
+- Accessible directly by threads
 - Validated at both function definition and runtime
 
 ### 2.2 Lock Manager
@@ -33,14 +33,14 @@ locks: Map<string, {locked: boolean, queue: Array<Function>}>
 ### 2.3 Execution Context
 ```javascript
 inParallelContext: boolean         // Whether currently in PARALLEL block
-currentFunctionStack: Array        // Track function call stack for USES validation
+currentFunctionStack: Array        // Track function call stack
 ```
 
 ## 3. Lock Acquisition Algorithm
 
 ### 3.1 Alphabetical Ordering
 ```
-Input: usesResources = ["logs", "accounts", "counter"]
+Input: sharedResources = ["logs", "accounts", "counter"]
 Step 1: Sort alphabetically -> ["accounts", "counter", "logs"]
 Step 2: Acquire locks in order
 Step 3: Execute function
@@ -74,17 +74,10 @@ Timeline:
 - **Check**: Only in global scope (scopeStack.length === 0)
 - **Error**: "SHARED declaration is only allowed in global scope"
 
-### 4.2 USES Clause Validation
-- **When**: At function definition (visitFunctionDef)
-- **Check**: All USES resources must be declared as SHARED
-- **Error**: "USES references 'X' which is not declared as SHARED"
-
-### 4.3 SHARED Access Validation
+### 4.2 SHARED Access Validation
 - **When**: At variable access (visitVarReference, visitAssignment)
-- **Check**: 
-  - If accessing SHARED variable from function
-  - Must be listed in function's USES clause
-- **Error**: "Variable 'X' is SHARED but not declared in USES clause"
+- **Check**: If accessing SHARED variable, must be from a thread (not a regular function)
+- **Error**: "Variable 'X' is SHARED and can only be accessed from threads"
 
 ### 4.4 PARALLEL Block Validation
 - **Check 1**: No nested function calls (e.g., `func(helper())`)
@@ -116,15 +109,14 @@ Implementation:
 For each task:
 1. Validate function exists
 2. Evaluate arguments
-3. If USES clause exists:
-   a. Sort resources alphabetically
-   b. Acquire locks in order (await if needed)
-4. Create local scope
-5. Bind parameters
-6. Execute function body
-7. Catch errors (log to stderr, return null)
-8. Release locks (in finally block)
-9. Return result
+3. Sort accessed SHARED resources alphabetically
+4. Acquire locks in order (await if needed)
+5. Create local scope
+6. Bind parameters
+7. Execute function body
+8. Catch errors (log to stderr, return null)
+9. Release locks (in finally block)
+10. Return result
 ```
 
 ## 6. Error Handling
@@ -224,9 +216,9 @@ async acquireSingleLock(name) {
 ## 10. Performance Considerations
 
 ### 10.1 Lock Overhead
-- Every USES function call acquires/releases locks
+- Every thread accessing SHARED resources acquires/releases locks
 - Lock queue operations are O(1)
-- Alphabetical sorting is O(n log n) where n = number of USES resources
+- Alphabetical sorting is O(n log n) where n = number of SHARED resources accessed
 - Typically small n (1-5 resources)
 
 ### 10.2 Concurrency vs Parallelism
@@ -242,7 +234,7 @@ async acquireSingleLock(name) {
 - Test lock ordering (alphabetical)
 - Test deadlock prevention
 - Test error isolation between threads
-- Test USES validation
+- Test SHARED access validation
 - Test SHARED access control
 
 ### 11.2 Integration Tests
@@ -273,7 +265,7 @@ If porting to language with true threads:
 - [ ] LockManager class with acquire/release methods
 - [ ] sharedResources Set and sharedValues Map
 - [ ] visitSharedDeclStmt for SHARED declarations
-- [ ] visitFunctionDef with USES validation
+- [ ] visitThreadDef for thread definitions
 - [ ] visitParallelStmt for PARALLEL blocks
 - [ ] executeParallelTask for task execution
 - [ ] callUserFunctionAsync with lock management
@@ -320,18 +312,18 @@ const sorted = resources.sort();
 // No deadlock
 ```
 
-### 14.3 Accessing SHARED Without USES
+### 14.3 Accessing SHARED From Regular Functions
 **Wrong:**
 ```javascript
 function bad() do
-    counter = counter + 1  // counter is SHARED
+    counter = counter + 1  // counter is SHARED - only threads can access
 end
 ```
 
 **Correct:**
 ```javascript
-function good() USES counter do
-    counter = counter + 1
+thread good() do
+    counter = counter + 1  // threads can access SHARED variables directly
 end
 ```
 

@@ -84,7 +84,7 @@ end
 ```propertee
 shared counter = 0
 
-thread increment() uses counter do
+thread increment() do
     SLEEP(1000)
     counter = counter + 1
     return counter
@@ -106,7 +106,7 @@ PRINT("Counter:", counter)  // 2
 shared processed = 0
 shared total = 100
 
-thread process(item) uses processed do
+thread process(item) do
     doWork(item)
     processed = processed + 1
 end
@@ -138,7 +138,7 @@ end
 - 보안 고려사항
 - **주석 명세**: 한 줄 주석(`//`)과 블럭 주석(`/* */`) ✅
 - **사용자 정의 함수 명세**: `function` 키워드, 재귀, 스코프 규칙 ✅
-- **병렬 실행 및 쓰레딩**: `shared`, `uses`, `parallel` 키워드 ✅
+- **병렬 실행 및 쓰레딩**: `shared`, `parallel` 키워드 ✅
 - **1-based 인덱싱**: 배열 첫 번째 요소는 `.1` ✅
 
 ### 2. 문법 파일 업데이트
@@ -151,10 +151,9 @@ end
 - **사용자 정의 함수**: `K_FUNCTION`, `K_RETURN` 키워드 추가 ✅
 - **functionDef 규칙**: `function name(params) do ... end` ✅
 - **return 문**: `return expression?` ✅
-- **병렬 실행**: `K_SHARED`, `K_USES`, `K_PARALLEL` 키워드 추가 ✅
+- **병렬 실행**: `K_SHARED`, `K_PARALLEL` 키워드 추가 ✅
 - **sharedDecl 규칙**: `shared var1, var2 = init` ✅
 - **parallelStmt 규칙**: `parallel ... end` ✅
-- **usesClause 규칙**: `uses res1, res2` ✅
 - **1-based 인덱싱 주석**: ArrayAccess 주석 업데이트 ✅
 
 ### 3. 문서 업데이트
@@ -171,16 +170,15 @@ end
 
 #### grammar.md ✅
 - atom에 `"null"` 추가
-- 키워드: `loop`, `infinite`, **`function`, `return`, `shared`, `uses`, `parallel`** 추가 ✅
+- 키워드: `loop`, `infinite`, **`function`, `return`, `shared`, `parallel`** 추가 ✅
 - 반복문 섹션: `loop_statement`
 - **함수 정의 섹션 추가** (3.4절) ✅
 - **공유 변수 선언 섹션 추가** (3.5절) ✅
 - **병렬 실행 섹션 추가** (3.6절) ✅
-- **USES 절 섹션 추가** (3.7절) ✅
 - **흐름 제어에 return 추가** (3.3절) ✅
 - 모듈로 연산자 `%` 추가
 - 주석 섹션 추가
-- 전체 EBNF에 shared_decl, parallel_stmt, uses_clause 추가 ✅
+- 전체 EBNF에 shared_decl, parallel_stmt 추가 ✅
 - **1-based 인덱싱 명시** ✅
 
 #### bnf.md ✅
@@ -188,17 +186,16 @@ end
 - `loop_statement`로 통일
 - **`<function-definition>` 규칙 추가** ✅
 - **`<parameter-list>` 규칙 추가** ✅
-- **`<uses-clause>` 규칙 추가** ✅
 - **`<shared-declaration>` 규칙 추가** ✅
 - **`<parallel-statement>` 규칙 추가** ✅
 - **flow_control에 return 추가** ✅
-- 키워드 목록: **`function`, `return`, `shared`, `uses`, `parallel`** 추가 ✅
+- 키워드 목록: **`function`, `return`, `shared`, `parallel`** 추가 ✅
 - 모듈로 연산자 `%` 추가
 - 주석 섹션 추가
 
 #### docs/index.html ✅
 - JavaScript 예제 업데이트 (loop 문법)
-- 키워드 리스트: **`function`, `return`, `shared`, `uses`, `parallel`** 추가 ✅
+- 키워드 리스트: **`function`, `return`, `shared`, `parallel`** 추가 ✅
 - 내장 함수 목록 최신화
 - **배열 인덱스를 1-based로 변경** ✅
 - **병렬 실행 예제 추가** ✅
@@ -263,9 +260,8 @@ end
 - **사용자 정의 함수**: `function`, `return` 키워드 ✅
 - **재귀 함수 지원**: 함수 내 자기 호출 가능 ✅
 - **1-based 인덱싱**: 배열 첫 번째 요소는 `.1` ✅
-- **병렬 실행 및 쓰레딩**: `shared`, `uses`, `parallel` 키워드 ✅
+- **병렬 실행 및 쓰레딩**: `shared`, `parallel` 키워드 ✅
   - 공유 변수 선언 (`shared`)
-  - 함수의 공유 자원 명시 (`uses`)
   - 병렬 블록 실행 (`parallel...end`)
   - 자동 데드락 방지 (알파벳 순 잠금)
 
@@ -279,7 +275,7 @@ if then else end
 loop in do infinite
 break continue
 function thread return
-shared uses multi monitor    ← 병렬 실행 + 모니터링
+shared multi monitor    ← 병렬 실행 + 모니터링
 not and or
 true false null
 ```
@@ -339,12 +335,12 @@ shared counter = 0
 shared data = []
 
 // 쓰레드 (병렬 실행 가능)
-thread increment() uses counter do
+thread increment() do
     counter = counter + 1
     return counter
 end
 
-thread addData(value) uses data do
+thread addData(value) do
     data = PUSH(data, value)
     return data
 end
@@ -367,7 +363,6 @@ PRINT("Data:", data)        // [10, 20]
 **특징**:
 - `thread`: 병렬 실행 가능한 쓰레드 선언 (`function`과 구분)
 - `shared`: 전역 스코프에서 공유 변수 선언
-- `uses`: 쓰레드가 접근하는 공유 자원 명시
 - `multi...end`: 쓰레드 호출을 병렬로 실행
 - `monitor INTERVAL`: 밀리초 단위로 실행 중 상태 모니터링 (읽기 전용)
 - `->` 연산자: 병렬 실행 결과를 변수에 할당
