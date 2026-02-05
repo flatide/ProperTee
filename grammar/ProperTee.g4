@@ -46,15 +46,11 @@ functionDef
     ;
 
 threadDef
-    : K_THREAD funcName=ID '(' parameterList? ')' usesClause? K_DO block K_END
+    : K_THREAD funcName=ID '(' parameterList? ')' K_DO block K_END
     ;
 
 parameterList
     : ID (',' ID)*
-    ;
-
-usesClause
-    : K_USES ID (',' ID)*
     ;
 
 parallelStmt
@@ -159,7 +155,6 @@ K_TRUE      : 'true';
 K_FALSE     : 'false';
 K_INFINITE  : 'infinite';
 K_SHARED    : 'shared';
-K_USES      : 'uses';
 K_MULTI     : 'multi';
 K_MONITOR   : 'monitor';
 
