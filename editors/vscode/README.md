@@ -11,13 +11,6 @@ Syntax highlighting for the [ProperTee](https://github.com/flatide/ProperTee) sc
 
 ## Installation
 
-### From source
-
-```bash
-cd editors/vscode
-code --install-extension .
-```
-
 ### As .vsix package
 
 ```bash
@@ -27,7 +20,7 @@ vsce package
 code --install-extension propertee-*.vsix
 ```
 
-### Manual (symlink)
+### Symlink (for development)
 
 ```bash
 ln -s "$(pwd)/editors/vscode" ~/.vscode/extensions/propertee
