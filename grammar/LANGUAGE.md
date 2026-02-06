@@ -222,7 +222,7 @@ end
 
 ### Loops
 
-**Condition loop** — repeats while condition is `true`:
+**Condition loop** — repeats while condition is truthy:
 
 ```
 i = 0
