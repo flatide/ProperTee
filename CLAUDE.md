@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ProperTee is a lightweight, dynamically-typed scripting language (v2.4) for property-based data processing, configuration management, and embedding in host applications. It is developed by FLATIDE LC under the BSD 3-Clause License.
 
-This repository contains the **language specification, grammar, documentation, and examples**. The actual interpreter implementations live in separate repositories:
+This repository contains the **language specification, grammar, documentation, examples, and editor extensions**. The actual interpreter implementations live in separate repositories:
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency
 - **Java**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern
 
@@ -15,13 +15,10 @@ Both implementations share the ANTLR4 grammar (`grammar/ProperTee.g4`) and pass 
 ## Repository Structure
 
 - `grammar/ProperTee.g4` — ANTLR4 grammar definition (the canonical source of truth for syntax)
-- `grammar/LANGUAGE_SPEC.md` — Complete formal language specification (~3000 lines)
-- `grammar/THREADING_IMPLEMENTATION.md` — Concurrency implementation constraints for porters
-- `grammar.md` / `bnf.md` — EBNF and BNF grammar references (Korean)
-- `guide.md` — Comprehensive language tutorial (Korean)
 - `examples/*.pt` — Example scripts (basics, property access, control flow, real-world patterns)
 - `docs/` — Interactive web playground and pre-compiled JS bundle
-- `UPDATE_SUMMARY.md` — Version changelog and migration guide (Korean)
+- `editors/vscode/` — VS Code syntax highlighting extension
+- `editors/vim/` — Vim/Neovim syntax highlighting plugin
 
 ## Running Locally
 
@@ -31,7 +28,23 @@ cd docs && python3 -m http.server 8000
 # Open http://localhost:8000
 ```
 
-There is no build step in this repo — grammar compilation and bundling happens in the implementation repos. The `docs/dist/propertee-bundle.js` (289KB) is a pre-compiled artifact from propertee-js.
+There is no build step in this repo — grammar compilation and bundling happens in the implementation repos. The `docs/dist/propertee-bundle.js` is a pre-compiled artifact from propertee-js.
+
+## Editor Extensions
+
+### VS Code
+```bash
+cd editors/vscode
+npm install -g @vscode/vsce
+vsce package
+# Then install the .vsix via VS Code Extensions sidebar
+```
+
+### Vim
+```bash
+cp -r editors/vim/ftdetect editors/vim/ftplugin editors/vim/syntax ~/.vim/pack/plugins/start/propertee/
+```
+Requires `filetype plugin on` and `syntax on` in `~/.vimrc`. Note: `.pt` conflicts with Vim's built-in Zope Page Templates mapping — the ftdetect script uses `setlocal filetype=` (not `setfiletype`) to force override.
 
 ## Language Design Essentials
 
@@ -60,6 +73,10 @@ true false
 
 Note: `null` was removed in v1.2. The `parallel` keyword was renamed to `multi` in v2.3.
 
-## Bilingual Documentation
+## Syntax Highlighting Consistency
 
-Source code comments and several docs (`guide.md`, `grammar.md`, `bnf.md`, `UPDATE_SUMMARY.md`) are in Korean. The grammar file (`ProperTee.g4`) has Korean inline comments. `LANGUAGE_SPEC.md` and `README.md` are in English.
+Both editor extensions highlight the same token categories — keep them in sync when adding keywords or built-ins:
+- Keywords, logical operators (`not and or`), booleans (`true false`)
+- Built-in functions: `PRINT SLEEP SUM MAX MIN ABS FLOOR CEIL ROUND LEN TO_NUMBER TO_STRING PUSH POP CONCAT SLICE CHARS SPLIT JOIN SUBSTRING UPPERCASE LOWERCASE TRIM`
+- Comments (`//` line, `/* */` block), strings (double-quoted), numbers, operators
+- Vim syntax note: comments and strings must be defined last in the syntax file (Vim's last-defined-wins priority rule)
