@@ -10,7 +10,7 @@ This repository contains the **language specification, grammar, documentation, e
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency
 - **Java**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern
 
-All three repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep them in sync. Both implementations pass the same 53-test suite.
+All three repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep them in sync. Both implementations pass the same 55-test suite.
 
 ## Repository Structure
 
@@ -59,7 +59,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`.
 - **Unified loop**: Single `loop` keyword for condition, value, key-value, and infinite iteration.
 - **No separate thread functions**: The `thread` keyword is a spawn statement used only inside `multi` blocks to run regular functions concurrently. There is no `thread ... do ... end` definition syntax.
-- **Result collection**: `multi result do ... end` collects all thread results into a single object. Named threads (`-> key`) use the key; unnamed threads use 1-based position strings. Supports positional access (`result.1`) and iteration.
+- **Result collection**: `multi result do ... end` collects all thread results into a single object. Named threads (`-> key`) use the key; unnamed threads use 1-based position strings. Each entry is `{status, ok, value}` — `"running"` while executing, `"done"` on success, `"error"` on failure. Monitor can read `result.key.status` live. Supports positional access (`result.1`) and iteration.
 - **Thread purity**: Functions running inside `multi` can read globals via `::` (from a snapshot) but cannot write them. No locks — purity enforced by design.
 - **No `shared` keyword**: Removed. No `uses` clause. No locks exposed to users.
 - **`::` global prefix**: Inside functions, plain `x` is local. Use `::x` to access globals.
