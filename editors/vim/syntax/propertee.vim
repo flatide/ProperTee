@@ -11,7 +11,7 @@ syn keyword propertKeyword      if then else end
 syn keyword propertKeyword      loop in do infinite
 syn keyword propertKeyword      break continue return
 syn keyword propertKeyword      function thread
-syn keyword propertKeyword      shared multi monitor
+syn keyword propertKeyword      multi monitor
 
 " --- Logical operators ---
 syn keyword propertLogical      not and or
@@ -25,7 +25,7 @@ syn keyword propertBuiltin      SUM MAX MIN ABS FLOOR CEIL ROUND LEN
 syn keyword propertBuiltin      TO_NUMBER TO_STRING
 syn keyword propertBuiltin      PUSH POP CONCAT SLICE CHARS
 syn keyword propertBuiltin      SPLIT JOIN SUBSTRING
-syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM
+syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM HAS_KEY
 
 " --- Numbers ---
 syn match propertFloat  "\<\d\+\.\d\+\>"
