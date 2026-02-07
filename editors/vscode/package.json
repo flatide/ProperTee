@@ -1,8 +1,9 @@
 {
   "name": "propertee",
   "displayName": "ProperTee",
-  "description": "Syntax highlighting for the ProperTee scripting language",
-  "version": "0.1.0",
+  "description": "Syntax highlighting and formatting for the ProperTee scripting language",
+  "version": "0.2.0",
+  "main": "./extension.js",
   "publisher": "flatide",
   "license": "BSD-3-Clause",
   "repository": {
@@ -12,8 +13,12 @@
   "engines": {
     "vscode": "^1.60.0"
   },
+  "activationEvents": [
+    "onLanguage:propertee"
+  ],
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Formatters"
   ],
   "contributes": {
     "languages": [
