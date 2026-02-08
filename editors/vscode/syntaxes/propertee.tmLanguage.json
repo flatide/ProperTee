@@ -141,10 +141,6 @@
     "operators": {
       "patterns": [
         {
-          "name": "keyword.operator.arrow.propertee",
-          "match": "->"
-        },
-        {
           "name": "keyword.operator.comparison.propertee",
           "match": "==|!=|<=|>=|<|>"
         },

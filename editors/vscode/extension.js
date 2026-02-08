@@ -140,8 +140,8 @@ function normalizeCode(code) {
     // Space before :: after word char: "return::" → "return ::"
     code = code.replace(/([a-zA-Z0-9_])::/g, '$1 ::');
 
-    // Space around ->
-    code = code.replace(/\s*->\s*/g, ' -> ');
+    // Space after colon in thread spawn: "thread key:func()" → "thread key: func()"
+    code = code.replace(/\bthread\s+(\S+?):(?!\s)/g, 'thread $1: ');
 
     return code;
 }

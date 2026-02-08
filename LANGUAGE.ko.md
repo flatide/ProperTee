@@ -90,14 +90,15 @@ PRINT(x)                 // 42 (localOnly에 의해 변경되지 않음)
 | 연산자 | 연산 | 피연산자 타입 | 결과 |
 |---|---|---|---|
 | `+` | 덧셈 | 숫자 + 숫자 | 숫자 |
-| `+` | 연결 | 문자열 + 문자열 | 문자열 |
+| `+` | 연결 | 문자열 + 임의 | 문자열 |
+| `+` | 연결 | 임의 + 문자열 | 문자열 |
 | `-` | 뺄셈 | 숫자 - 숫자 | 숫자 |
 | `*` | 곱셈 | 숫자 * 숫자 | 숫자 |
 | `/` | 나눗셈 | 숫자 / 숫자 | 숫자 (항상 소수) |
 | `%` | 나머지 | 숫자 % 숫자 | 숫자 |
 | `-` (단항) | 부정 | 숫자 | 숫자 |
 
-`+`에서 타입 혼합 (예: 숫자 + 문자열)은 런타임 에러입니다. 암묵적 타입 변환이 없습니다.
+`+`에서 한쪽 피연산자가 문자열이면, 다른 값은 내부적으로 `TO_STRING()`을 사용하여 문자열로 변환됩니다. 문자열이 아닌, 숫자가 아닌 조합 (예: 불리언 + 불리언)은 런타임 에러입니다.
 
 0으로 나누기는 런타임 에러입니다.
 
@@ -413,8 +414,8 @@ function worker(name) do
 end
 
 multi result do
-    thread worker("A") -> resultA
-    thread worker("B") -> resultB
+    thread resultA: worker("A")
+    thread resultB: worker("B")
 end
 
 PRINT(result.resultA.value)   // "A done"
@@ -425,8 +426,8 @@ PRINT(result.resultB.value)   // "B done"
 
 ```
 multi resultVar do             // resultVar는 선택 사항
-    thread funcCall() -> key   // 이름 있는 결과 항목
-    thread funcCall()          // 이름 없음 (위치 기반 자동 키)
+    thread key: funcCall()     // 이름 있는 결과 항목
+    thread : funcCall()        // 이름 없음 (위치 기반 자동 키)
 monitor intervalMs             // 선택적 monitor 절
     // monitor 본문
 end
@@ -439,19 +440,22 @@ end
 
 `thread`는 multi 블록 내에서 함수 호출을 동시 실행 예약하는 데 사용됩니다:
 
-- `thread funcCall() -> key` — 함수를 실행하고 결과를 `key`로 컬렉션에 저장
-- `thread funcCall()` — 함수를 실행하되 결과는 폐기 (1-기반 생성 위치를 문자열로 자동 키 부여)
+- `thread key: funcCall()` — 함수를 실행하고 결과를 `key`로 컬렉션에 저장
+- `thread "key": funcCall()` — 위와 동일하나 문자열 리터럴 키 (특수 문자 허용)
+- `thread $var: funcCall()` — 변수 `var`의 문자열 값을 키로 사용 (동적 키)
+- `thread $(expr): funcCall()` — 표현식 `expr`을 평가하고 문자열 결과를 키로 사용 (동적 키)
+- `thread : funcCall()` — 함수를 실행하되 이름 없는 스레드 중 위치 기반으로 `"#1"`, `"#2"` 등의 자동 키 부여
 - `thread`는 multi 블록 내에서만 사용 가능 — 다른 곳에서 사용하면 런타임 에러
-- 같은 multi 블록 내 `-> key` 이름 중복은 런타임 에러
+- 같은 multi 블록 내 키 이름 중복은 런타임 에러 (동적 키 포함)
 
 multi 블록 본문은 스레드가 시작되기 전에 **설정 단계**로 실행됩니다. 일반 코드(if/else, 루프, PRINT)는 설정 중에 즉시 실행되고, `thread` 문은 동시 실행할 함수 호출을 수집합니다:
 
 ```
 multi result do
     if needsWorkerA == true then
-        thread workerA() -> rA
+        thread rA: workerA()
     end
-    thread workerB() -> rB
+    thread rB: workerB()
     PRINT("설정 완료")
 end
 ```
@@ -462,8 +466,8 @@ end
 
 `resultVar`는 모든 스레드 결과를 포함하는 **맵/객체**를 받습니다:
 
-- **이름 있는 스레드** (`-> key`): 컬렉션에서의 키는 사용자가 제공한 이름
-- **이름 없는 스레드**: 키는 1-기반 생성 위치의 문자열 (`"1"`, `"2"` 등)
+- **이름 있는 스레드** (`key: func()`): 컬렉션에서의 키는 사용자가 제공한 이름
+- **이름 없는 스레드**: 키는 `"#"` 뒤에 이름 없는 스레드 중 1-기반 위치 (`"#1"`, `"#2"` 등) — 이름 있는 스레드는 위치 슬롯을 차지하지 않음
 - 각 항목은 3개 필드를 가진 **Result 객체**:
 
 | status | ok | value |
@@ -476,9 +480,9 @@ end
 
 ```
 multi result do
-    thread funcA() -> a      // result.a
-    thread funcB()            // result."2" (위치 기반 자동 키)
-    thread funcC() -> c       // result.c
+    thread a: funcA()         // result.a
+    thread : funcB()          // result."#1" (자동 키: 이름 없는 1번째 스레드)
+    thread c: funcC()         // result.c
 end
 
 result.a.status               // "done"
@@ -498,16 +502,37 @@ end
 multi result do
     i = 1
     loop i <= 5 infinite do
-        thread worker(i)
+        thread : worker(i)
         i = i + 1
     end
 end
 
-// 위치로 접근 (모두 이름 없음, "1"부터 "5"까지 자동 키)
+// 위치로 접근 (모두 이름 없음, "#1"부터 "#5"까지 자동 키)
 loop r in result do
     PRINT(r.value)
 end
 ```
+
+### 동적 스레드 키
+
+스레드 키는 `$var` 또는 `$(expr)` 문법을 사용하여 런타임에 계산할 수 있습니다 (프로퍼티 접근 패턴과 동일):
+
+```
+names = ["alpha", "beta", "gamma"]
+multi result do
+    loop name in names do
+        thread $name: worker(name)           // 변수에서 키
+    end
+    thread $("delta"): worker("x")           // 표현식에서 키
+end
+PRINT(result.alpha.value)
+PRINT(result.delta.value)
+```
+
+동적 키의 **유효성 규칙**:
+- **문자열**이어야 함 — 문자열이 아닌 값 (숫자, 불리언, 객체)은 런타임 에러
+- **비어 있지 않아야** 함 — 빈 문자열은 런타임 에러
+- multi 블록 내에서 **고유해야** 함 — 중복 키 (정적 키와 동적 키 간의 중복 포함)는 런타임 에러
 
 ### 스레드 순수성
 
@@ -549,8 +574,8 @@ obj.3    // 3
 
 ```
 multi result do
-    thread worker("A") -> resultA
-    thread worker("B") -> resultB
+    thread resultA: worker("A")
+    thread resultB: worker("B")
 monitor 100
     PRINT("[하트비트]")
 end
@@ -564,7 +589,7 @@ end
 
 ```
 multi result do
-    thread slowWorker() -> r
+    thread r: slowWorker()
 monitor 100
     PRINT("상태:", result.r.status)   // "running" 또는 "done"
 end
@@ -576,11 +601,11 @@ end
 
 ```
 multi r1 do
-    thread compute(10) -> a
+    thread a: compute(10)
 end
 
 multi r2 do
-    thread compute(r1.a.value) -> b
+    thread b: compute(r1.a.value)
 end
 ```
 
@@ -753,7 +778,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 미정의 변수 | Variable 'x' is not defined |
 | 미정의 함수 | Unknown function 'foo' |
 | 산술 타입 불일치 | Arithmetic operator '+' requires numeric operands |
-| 문자열 + 숫자 | Addition requires both operands to be numbers or both to be strings |
+| 변환 불가능한 `+` 피연산자 | Addition requires numeric or string operands |
 | `and`/`or`에 비불리언 | Logical AND requires boolean operands |
 | 0으로 나누기 | Division by zero |
 | 누락된 프로퍼티 | Property 'x' does not exist |
@@ -764,5 +789,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | monitor 내 할당 | Cannot assign variables in monitor block (read-only) |
 | multi 외부에서 thread | thread can only be used inside multi blocks |
 | 결과 키 중복 | Duplicate result key 'x' in multi block |
+| 동적 키가 문자열이 아님 | Dynamic thread key must be a string, got number |
+| 동적 키가 비어 있음 | Dynamic thread key must not be empty |
 | 맵 위치 범위 초과 | Map positional index out of bounds: N |
 | 인자 초과 | Function 'foo' expects 2 argument(s), but 3 were provided |

@@ -90,14 +90,15 @@ At the **top level** (outside functions), `x` and `::x` are equivalent — both 
 | Operator | Operation | Operand Types | Result |
 |---|---|---|---|
 | `+` | addition | number + number | number |
-| `+` | concatenation | string + string | string |
+| `+` | concatenation | string + any | string |
+| `+` | concatenation | any + string | string |
 | `-` | subtraction | number - number | number |
 | `*` | multiplication | number * number | number |
 | `/` | division | number / number | number (always decimal) |
 | `%` | modulo | number % number | number |
 | `-` (unary) | negation | number | number |
 
-Mixed types in `+` (e.g., number + string) are a runtime error. No implicit type coercion.
+When `+` has at least one string operand, the other value is coerced to string using `TO_STRING()` internally. Non-string, non-number combinations (e.g., `boolean + boolean`) are a runtime error.
 
 Division by zero is a runtime error.
 
@@ -413,8 +414,8 @@ function worker(name) do
 end
 
 multi result do
-    thread worker("A") -> resultA
-    thread worker("B") -> resultB
+    thread resultA: worker("A")
+    thread resultB: worker("B")
 end
 
 PRINT(result.resultA.value)   // "A done"
@@ -425,8 +426,8 @@ PRINT(result.resultB.value)   // "B done"
 
 ```
 multi resultVar do             // resultVar is optional
-    thread funcCall() -> key   // named result entry
-    thread funcCall()          // unnamed (auto-keyed by position)
+    thread key: funcCall()     // named result entry
+    thread : funcCall()        // unnamed (auto-keyed by position)
 monitor intervalMs             // optional monitor clause
     // monitor body
 end
@@ -439,19 +440,22 @@ end
 
 `thread` is used inside multi blocks to schedule function calls for concurrent execution:
 
-- `thread funcCall() -> key` — run function and store its result in the collection under `key`
-- `thread funcCall()` — run function, discard result (auto-keyed by 1-based position among unnamed threads)
+- `thread key: funcCall()` — run function and store its result in the collection under `key`
+- `thread "key": funcCall()` — same as above, but key is a string literal (allows special characters)
+- `thread $var: funcCall()` — use the string value of `var` as the key (dynamic key)
+- `thread $(expr): funcCall()` — evaluate `expr` and use the string result as the key (dynamic key)
+- `thread : funcCall()` — run function, auto-keyed as `"#1"`, `"#2"`, etc. by position among unnamed threads
 - `thread` can only appear inside multi blocks — using it elsewhere is a runtime error
-- Duplicate `-> key` names within the same multi block are a runtime error
+- Duplicate key names within the same multi block are a runtime error (including dynamic keys)
 
 The multi block body runs as a **setup phase** before threads launch. Regular code (if/else, loops, PRINT) executes immediately during setup, while `thread` statements collect function calls to run concurrently:
 
 ```
 multi result do
     if needsWorkerA == true then
-        thread workerA() -> rA
+        thread rA: workerA()
     end
-    thread workerB() -> rB
+    thread rB: workerB()
     PRINT("setup done")
 end
 ```
@@ -462,8 +466,8 @@ All collected `thread` calls fire simultaneously when the setup phase ends (at `
 
 The `resultVar` receives a **map/object** containing all thread results:
 
-- **Named threads** (`-> key`): the key in the collection is the name you provide
-- **Unnamed threads**: the key is the 1-based position among unnamed threads as a string (`"1"`, `"2"`, etc.) — named threads do not consume positional slots
+- **Named threads** (`key: func()`): the key in the collection is the name you provide
+- **Unnamed threads**: the key is `"#"` followed by the 1-based position among unnamed threads (`"#1"`, `"#2"`, etc.) — named threads do not consume positional slots
 - Each entry is a **Result object** with three fields:
 
 | status | ok | value |
@@ -476,9 +480,9 @@ The collection is pre-built at spawn time with `"running"` entries. As threads c
 
 ```
 multi result do
-    thread funcA() -> a      // result.a
-    thread funcB()            // result."1" (auto-key: 1st unnamed thread)
-    thread funcC() -> c       // result.c
+    thread a: funcA()         // result.a
+    thread : funcB()          // result."#1" (auto-key: 1st unnamed thread)
+    thread c: funcC()         // result.c
 end
 
 result.a.status               // "done"
@@ -498,16 +502,37 @@ The setup phase supports loops, enabling dynamic thread spawning:
 multi result do
     i = 1
     loop i <= 5 infinite do
-        thread worker(i)
+        thread : worker(i)
         i = i + 1
     end
 end
 
-// Access by position (all unnamed, auto-keyed "1" through "5")
+// Access by position (all unnamed, auto-keyed "#1" through "#5")
 loop r in result do
     PRINT(r.value)
 end
 ```
+
+### Dynamic Thread Keys
+
+Thread keys can be computed at runtime using `$var` or `$(expr)` syntax (matching property access patterns):
+
+```
+names = ["alpha", "beta", "gamma"]
+multi result do
+    loop name in names do
+        thread $name: worker(name)           // key from variable
+    end
+    thread $("delta"): worker("x")           // key from expression
+end
+PRINT(result.alpha.value)
+PRINT(result.delta.value)
+```
+
+**Validation rules** for dynamic keys:
+- Must be a **string** — non-string values (numbers, booleans, objects) are a runtime error
+- Must be **non-empty** — empty string is a runtime error
+- Must be **unique** within the multi block — duplicate keys (including duplicates between static and dynamic keys) are a runtime error
 
 ### Thread Purity
 
@@ -549,8 +574,8 @@ An optional `monitor` clause runs code periodically while threads execute:
 
 ```
 multi result do
-    thread worker("A") -> resultA
-    thread worker("B") -> resultB
+    thread resultA: worker("A")
+    thread resultB: worker("B")
 monitor 100
     PRINT("[heartbeat]")
 end
@@ -564,7 +589,7 @@ end
 
 ```
 multi result do
-    thread slowWorker() -> r
+    thread r: slowWorker()
 monitor 100
     PRINT("status:", result.r.status)   // "running" or "done"
 end
@@ -576,11 +601,11 @@ Multiple `multi` blocks can chain results:
 
 ```
 multi r1 do
-    thread compute(10) -> a
+    thread a: compute(10)
 end
 
 multi r2 do
-    thread compute(r1.a.value) -> b
+    thread b: compute(r1.a.value)
 end
 ```
 
@@ -753,7 +778,7 @@ Common error conditions:
 | Undefined variable | Variable 'x' is not defined |
 | Undefined function | Unknown function 'foo' |
 | Type mismatch in arithmetic | Arithmetic operator '+' requires numeric operands |
-| String + number | Addition requires both operands to be numbers or both to be strings |
+| Non-coercible `+` operands | Addition requires numeric or string operands |
 | Non-boolean in `and`/`or` | Logical AND requires boolean operands |
 | Division by zero | Division by zero |
 | Missing property | Property 'x' does not exist |
@@ -764,5 +789,7 @@ Common error conditions:
 | Assignment in monitor | Cannot assign variables in monitor block (read-only) |
 | thread outside multi | thread can only be used inside multi blocks |
 | Duplicate result key | Duplicate result key 'x' in multi block |
+| Dynamic key not string | Dynamic thread key must be a string, got number |
+| Dynamic key empty | Dynamic thread key must not be empty |
 | Map positional OOB | Map positional index out of bounds: N |
 | Too many arguments | Function 'foo' expects 2 argument(s), but 3 were provided |

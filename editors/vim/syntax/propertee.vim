@@ -32,7 +32,6 @@ syn match propertFloat  "\<\d\+\.\d\+\>"
 syn match propertNumber "\<\d\+\>"
 
 " --- Operators ---
-syn match propertArrow    "->"
 syn match propertCompare  "==\|!=\|<=\|>=\|<\|>"
 syn match propertAssign   "=\ze[^=]"
 syn match propertArith    "+\|-\|\*\|/\|%"
@@ -64,7 +63,6 @@ hi def link propertKeyword      Keyword
 hi def link propertLogical      Keyword
 hi def link propertBoolean      Boolean
 hi def link propertBuiltin      Function
-hi def link propertArrow        Operator
 hi def link propertCompare      Operator
 hi def link propertAssign       Operator
 hi def link propertArith        Operator

@@ -73,8 +73,8 @@ function worker(id) do
 end
 
 multi result do
-    thread worker("A") -> resultA
-    thread worker("B") -> resultB
+    thread resultA: worker("A")
+    thread resultB: worker("B")
 monitor 500
     PRINT("대기 중...")
 end

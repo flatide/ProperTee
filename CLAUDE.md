@@ -44,13 +44,13 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 
 - **1-based indexing**: First array element is `.1`, not `.0`. `arr.0` is a runtime error.
 - **No null type**: Empty object `{}` is the universal "no value" sentinel.
-- **No type coercion**: `"5" + 3` is a runtime error. `5 == "5"` is false.
+- **String concatenation coercion**: `+` with at least one string operand auto-coerces the other via `TO_STRING()`. `5 == "5"` is still false (no comparison coercion).
 - **Inverted truthiness**: Only `true` is truthy. Everything else (`false`, `0`, `""`, `[]`, `{}`) is falsy. Non-booleans are allowed in conditions but are always falsy.
 - **Division by zero**: Runtime error, not Infinity.
 - **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`.
 - **Unified loop**: Single `loop` keyword for condition, value, key-value, and infinite iteration.
 - **No separate thread functions**: The `thread` keyword is a spawn statement used only inside `multi` blocks to run regular functions concurrently. There is no `thread ... do ... end` definition syntax.
-- **Result collection**: `multi result do ... end` collects all thread results into a single object. Named threads (`-> key`) use the key; unnamed threads use 1-based position among unnamed threads only (named threads don't consume positional slots). Each entry is `{status, ok, value}` — `"running"` while executing, `"done"` on success, `"error"` on failure. Monitor can read `result.key.status` live. Supports positional access (`result.1`) and iteration.
+- **Result collection**: `multi result do ... end` collects all thread results into a single object. Named threads (`key: func()`) use the key; unnamed threads (`thread : func()`) use `"#1"`, `"#2"`, etc. by position among unnamed threads (named threads don't consume positional slots). Keys can be dynamic: `$var:` or `$(expr):`. Each entry is `{status, ok, value}` — `"running"` while executing, `"done"` on success, `"error"` on failure. Monitor can read `result.key.status` live.
 - **Thread purity**: Functions running inside `multi` can read globals via `::` (from a snapshot) but cannot write them. No locks — purity enforced by design.
 - **No `shared` keyword**: Removed. No `uses` clause. No locks exposed to users.
 - **`::` global prefix**: Inside functions, plain `x` is local. Use `::x` to access globals.
@@ -73,7 +73,7 @@ true false
 
 In the grammar, some internal rule names don't match the keyword:
 - `K_SPAWN` → `'thread'` (the `thread` keyword is used for spawning, not defining)
-- `spawnStmt` → the `thread funcCall() -> var` syntax inside multi blocks
+- `spawnStmt` → the `thread key: funcCall()` syntax inside multi blocks (key optional; supports `ID`, `STRING`, `$var`, `$(expr)`)
 - `parallelStmt` → the `multi resultVar do ... end` block (resultVar optional)
 
 ## Syntax Highlighting Consistency
