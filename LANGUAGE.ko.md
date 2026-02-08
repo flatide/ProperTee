@@ -544,7 +544,7 @@ PRINT(result.delta.value)
 
 동적 키의 **유효성 규칙**:
 - 값은 `TO_STRING()`을 통해 **자동으로 문자열로 변환** — 숫자, 불리언, 객체, 배열 모두 문자열 표현이 됨
-- **비어 있지 않아야** 함 — 빈 문자열은 런타임 에러
+- **빈 문자열**은 이름 없는 스레드로 처리 (`"#1"`, `"#2"` 등으로 자동 키 부여)
 - multi 블록 내에서 **고유해야** 함 — 중복 키 (정적 키와 동적 키 간의 중복 포함)는 런타임 에러
 
 ### 스레드 순수성
@@ -802,6 +802,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | monitor 내 할당 | Cannot assign variables in monitor block (read-only) |
 | multi 외부에서 thread | thread can only be used inside multi blocks |
 | 결과 키 중복 | Duplicate result key 'x' in multi block |
+| 동적 키가 문자열이 아님 | Dynamic thread key must be a string, got number |
 | 동적 키가 비어 있음 | Dynamic thread key must not be empty |
 | 맵 위치 범위 초과 | Map positional index out of bounds: N |
 | 인자 초과 | Function 'foo' expects 2 argument(s), but 3 were provided |
