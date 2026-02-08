@@ -67,29 +67,26 @@ message = greet("ProperTee")
 PRINT(message)
 
 // Parallel execution
-thread worker(id) do
+function worker(id) do
     PRINT("Worker " + id + " running")
     return 42
 end
 
-multi
-    worker("A") -> resultA
-    worker("B") -> resultB
+multi result do
+    thread worker("A") -> resultA
+    thread worker("B") -> resultB
 monitor 500
     PRINT("waiting...")
 end
 
-PRINT("Results:", resultA, resultB)
+PRINT("Results:", result.resultA.value, result.resultB.value)
 ```
 
 ## Documentation
 
 - [Language Specification (Official)](LANGUAGE.md)
+- [Language Specification (Korean)](LANGUAGE_KO.md)
 - [Grammar File (ANTLR4)](grammar/ProperTee.g4)
-- [Grammar Reference (EBNF)](grammar.md)
-- [BNF Reference](bnf.md)
-- [Language Guide](guide.md)
-- [Examples](examples/)
 
 ## Implementations
 
@@ -98,7 +95,7 @@ PRINT("Results:", resultA, resultB)
 | **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js (ES modules, generator-based concurrency) |
 | **Java** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) |
 
-Both implementations share the same ANTLR4 grammar and pass the same 41-test suite.
+Both implementations share the same ANTLR4 grammar and pass the same 55-test suite.
 
 ## Online Playground
 

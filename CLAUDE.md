@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ProperTee is a lightweight, dynamically-typed scripting language (v2.4) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
 
-This repository contains the **language specification, grammar, documentation, examples, and editor extensions**. The interpreter implementations live in separate repositories:
+This repository contains the **language specification, grammar, documentation, and editor extensions**. The interpreter implementations live in separate repositories:
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency
 - **Java**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern
 
@@ -16,20 +16,11 @@ All three repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep 
 
 - `grammar/ProperTee.g4` — ANTLR4 grammar (canonical source of truth for syntax)
 - `LANGUAGE.md` — Full language specification (English)
-- `examples/*.pt` — Example scripts
-- `docs/` — Interactive web playground (`docs/dist/propertee-bundle.js` is a pre-compiled artifact from propertee-js)
-- `editors/vscode/` — VS Code syntax highlighting extension
+- `LANGUAGE_KO.md` — Full language specification (Korean)
+- `editors/vscode/` — VS Code syntax highlighting extension + formatter
 - `editors/vim/` — Vim/Neovim syntax highlighting plugin
 
 No build step in this repo — grammar compilation and bundling happens in the implementation repos.
-
-## Running Locally
-
-```bash
-# Serve the interactive playground
-cd docs && python3 -m http.server 8000
-# Open http://localhost:8000
-```
 
 ## Editor Extensions
 

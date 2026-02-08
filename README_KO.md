@@ -87,7 +87,6 @@ PRINT("결과:", result.resultA.value, result.resultB.value)
 - [언어 명세 (한국어)](LANGUAGE_KO.md)
 - [언어 명세 (영어)](LANGUAGE.md)
 - [문법 파일 (ANTLR4)](grammar/ProperTee.g4)
-- [예제](examples/)
 
 ## 구현체
 
