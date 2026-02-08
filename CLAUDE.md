@@ -53,7 +53,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **Result collection**: `multi result do ... end` collects all thread results into a single object. Spawn keys use the same `access` syntax as property access. Named threads (`key: func()`) use the key; unnamed threads (`thread : func()`) use `"#1"`, `"#2"`, etc. Keys can be ID, STRING, INTEGER, `$var`, or `$(expr)` — all auto-coerced to string via `TO_STRING()`. Each entry is `{status, ok, value}` — `"running"` / `"done"` / `"error"`.
 - **Thread purity**: Functions running inside `multi` can read globals via `::` (from a snapshot) but cannot write them. No locks — purity enforced by design.
 - **No `shared` keyword**: Removed. No `uses` clause. No locks exposed to users.
-- **`::` global prefix**: Inside functions, plain `x` is local. Use `::x` to access globals.
+- **`::` global prefix**: Inside functions and multi setup, plain `x` is local. Use `::x` to access globals. Multi setup runs in isolated scope like a function.
 
 ## Keywords (complete set — from grammar)
 
