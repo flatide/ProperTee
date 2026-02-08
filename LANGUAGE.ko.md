@@ -440,11 +440,14 @@ end
 
 `thread`는 multi 블록 내에서 함수 호출을 동시 실행 예약하는 데 사용됩니다:
 
-- `thread key: funcCall()` — 함수를 실행하고 결과를 `key`로 컬렉션에 저장
-- `thread "key": funcCall()` — 위와 동일하나 문자열 리터럴 키 (특수 문자 허용)
-- `thread $var: funcCall()` — 변수 `var`의 문자열 값을 키로 사용 (동적 키)
-- `thread $(expr): funcCall()` — 표현식 `expr`을 평가하고 문자열 결과를 키로 사용 (동적 키)
-- `thread : funcCall()` — 함수를 실행하되 이름 없는 스레드 중 위치 기반으로 `"#1"`, `"#2"` 등의 자동 키 부여
+- `thread key: funcCall()` — 식별자 키 (문자열 `"key"`)
+- `thread "key": funcCall()` — 문자열 리터럴 키 (특수 문자 허용)
+- `thread 42: funcCall()` — 정수 리터럴 키 (문자열 `"42"`)
+- `thread $var: funcCall()` — 변수 키 (`TO_STRING()`으로 자동 문자열 변환)
+- `thread $(expr): funcCall()` — 표현식 키 (`TO_STRING()`으로 자동 문자열 변환)
+- `thread : funcCall()` — 이름 없음, `"#1"`, `"#2"` 등으로 자동 키 부여
+
+스레드 생성 키는 프로퍼티 접근과 동일한 `access` 문법을 사용합니다 (`obj.key`, `obj."key"`, `obj.1`, `obj.$var`, `obj.$(expr)`). 모든 키는 내부적으로 문자열입니다.
 - `thread`는 multi 블록 내에서만 사용 가능 — 다른 곳에서 사용하면 런타임 에러
 - 같은 multi 블록 내 키 이름 중복은 런타임 에러 (동적 키 포함)
 
@@ -530,7 +533,7 @@ PRINT(result.delta.value)
 ```
 
 동적 키의 **유효성 규칙**:
-- **문자열**이어야 함 — 문자열이 아닌 값 (숫자, 불리언, 객체)은 런타임 에러
+- 값은 `TO_STRING()`을 통해 **자동으로 문자열로 변환** — 숫자, 불리언, 객체, 배열 모두 문자열 표현이 됨
 - **비어 있지 않아야** 함 — 빈 문자열은 런타임 에러
 - multi 블록 내에서 **고유해야** 함 — 중복 키 (정적 키와 동적 키 간의 중복 포함)는 런타임 에러
 
@@ -789,7 +792,6 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | monitor 내 할당 | Cannot assign variables in monitor block (read-only) |
 | multi 외부에서 thread | thread can only be used inside multi blocks |
 | 결과 키 중복 | Duplicate result key 'x' in multi block |
-| 동적 키가 문자열이 아님 | Dynamic thread key must be a string, got number |
 | 동적 키가 비어 있음 | Dynamic thread key must not be empty |
 | 맵 위치 범위 초과 | Map positional index out of bounds: N |
 | 인자 초과 | Function 'foo' expects 2 argument(s), but 3 were provided |

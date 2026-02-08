@@ -50,7 +50,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`.
 - **Unified loop**: Single `loop` keyword for condition, value, key-value, and infinite iteration.
 - **No separate thread functions**: The `thread` keyword is a spawn statement used only inside `multi` blocks to run regular functions concurrently. There is no `thread ... do ... end` definition syntax.
-- **Result collection**: `multi result do ... end` collects all thread results into a single object. Named threads (`key: func()`) use the key; unnamed threads (`thread : func()`) use `"#1"`, `"#2"`, etc. by position among unnamed threads (named threads don't consume positional slots). Keys can be dynamic: `$var:` or `$(expr):`. Each entry is `{status, ok, value}` — `"running"` while executing, `"done"` on success, `"error"` on failure. Monitor can read `result.key.status` live.
+- **Result collection**: `multi result do ... end` collects all thread results into a single object. Spawn keys use the same `access` syntax as property access. Named threads (`key: func()`) use the key; unnamed threads (`thread : func()`) use `"#1"`, `"#2"`, etc. Keys can be ID, STRING, INTEGER, `$var`, or `$(expr)` — all auto-coerced to string via `TO_STRING()`. Each entry is `{status, ok, value}` — `"running"` / `"done"` / `"error"`.
 - **Thread purity**: Functions running inside `multi` can read globals via `::` (from a snapshot) but cannot write them. No locks — purity enforced by design.
 - **No `shared` keyword**: Removed. No `uses` clause. No locks exposed to users.
 - **`::` global prefix**: Inside functions, plain `x` is local. Use `::x` to access globals.
@@ -73,7 +73,7 @@ true false
 
 In the grammar, some internal rule names don't match the keyword:
 - `K_SPAWN` → `'thread'` (the `thread` keyword is used for spawning, not defining)
-- `spawnStmt` → the `thread key: funcCall()` syntax inside multi blocks (key optional; supports `ID`, `STRING`, `$var`, `$(expr)`)
+- `spawnStmt` → the `thread key: funcCall()` syntax inside multi blocks (key uses `access` rule — same as property access: ID, STRING, INTEGER, `$var`, `$(expr)`)
 - `parallelStmt` → the `multi resultVar do ... end` block (resultVar optional)
 
 ## Syntax Highlighting Consistency
