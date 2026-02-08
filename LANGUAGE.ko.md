@@ -456,6 +456,7 @@ end
 - `thread $var: funcCall()` — 변수 키 (`TO_STRING()`으로 자동 문자열 변환)
 - `thread $(expr): funcCall()` — 표현식 키 (`TO_STRING()`으로 자동 문자열 변환)
 - `thread : funcCall()` — 이름 없음, `"#1"`, `"#2"` 등으로 자동 키 부여
+- `thread "": funcCall()` — 이름 없음으로 처리 (빈 문자열 키 = 이름 없음)
 
 스레드 생성 키는 프로퍼티 접근과 동일한 `access` 문법을 사용합니다 (`obj.key`, `obj."key"`, `obj.1`, `obj.$var`, `obj.$(expr)`). 모든 키는 내부적으로 문자열입니다.
 - `thread`는 multi 블록 내에서만 사용 가능 — 다른 곳에서 사용하면 런타임 에러
