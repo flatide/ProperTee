@@ -15,7 +15,7 @@ All three repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep 
 ## Repository Structure
 
 - `grammar/ProperTee.g4` — ANTLR4 grammar (canonical source of truth for syntax)
-- `grammar/LANGUAGE.md` — Full language specification (English)
+- `LANGUAGE.md` — Full language specification (English)
 - `examples/*.pt` — Example scripts
 - `docs/` — Interactive web playground (`docs/dist/propertee-bundle.js` is a pre-compiled artifact from propertee-js)
 - `editors/vscode/` — VS Code syntax highlighting extension
@@ -59,7 +59,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`.
 - **Unified loop**: Single `loop` keyword for condition, value, key-value, and infinite iteration.
 - **No separate thread functions**: The `thread` keyword is a spawn statement used only inside `multi` blocks to run regular functions concurrently. There is no `thread ... do ... end` definition syntax.
-- **Result collection**: `multi result do ... end` collects all thread results into a single object. Named threads (`-> key`) use the key; unnamed threads use 1-based position strings. Each entry is `{status, ok, value}` — `"running"` while executing, `"done"` on success, `"error"` on failure. Monitor can read `result.key.status` live. Supports positional access (`result.1`) and iteration.
+- **Result collection**: `multi result do ... end` collects all thread results into a single object. Named threads (`-> key`) use the key; unnamed threads use 1-based position among unnamed threads only (named threads don't consume positional slots). Each entry is `{status, ok, value}` — `"running"` while executing, `"done"` on success, `"error"` on failure. Monitor can read `result.key.status` live. Supports positional access (`result.1`) and iteration.
 - **Thread purity**: Functions running inside `multi` can read globals via `::` (from a snapshot) but cannot write them. No locks — purity enforced by design.
 - **No `shared` keyword**: Removed. No `uses` clause. No locks exposed to users.
 - **`::` global prefix**: Inside functions, plain `x` is local. Use `::x` to access globals.

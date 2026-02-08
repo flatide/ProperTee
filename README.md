@@ -84,8 +84,7 @@ PRINT("Results:", resultA, resultB)
 
 ## Documentation
 
-- [Language Specification (Official)](grammar/LANGUAGE_SPEC.md)
-  - [Function Limitations (Variadic, Async)](grammar/LANGUAGE_SPEC.md#181-current-limitations)
+- [Language Specification (Official)](LANGUAGE.md)
 - [Grammar File (ANTLR4)](grammar/ProperTee.g4)
 - [Grammar Reference (EBNF)](grammar.md)
 - [BNF Reference](bnf.md)
