@@ -16,7 +16,7 @@ All three repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep 
 
 - `grammar/ProperTee.g4` — ANTLR4 grammar (canonical source of truth for syntax)
 - `LANGUAGE.md` — Full language specification (English)
-- `LANGUAGE_KO.md` — Full language specification (Korean)
+- `LANGUAGE.ko.md` — Full language specification (Korean)
 - `editors/vscode/` — VS Code syntax highlighting extension + formatter
 - `editors/vim/` — Vim/Neovim syntax highlighting plugin
 
