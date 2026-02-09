@@ -192,6 +192,23 @@ nums.1 = 99     // nums는 이제 [99, 20, 30]
 
 내장 배열 함수 (`PUSH`, `POP`, `CONCAT`, `SLICE`)는 **새** 배열을 반환하며 원본을 변경하지 않습니다.
 
+### 범위 배열
+
+`[start~end]`는 `start`부터 `end`까지 (포함)의 배열을 생성합니다. 선택적 step으로 증가값을 제어합니다:
+
+| 문법 | 결과 |
+|---|---|
+| `[1~5]` | `[1, 2, 3, 4, 5]` |
+| `[1~6, 2]` | `[1, 3, 5]` |
+| `[10~5, 1]` | `[10, 9, 8, 7, 6, 5]` |
+| `[0.0~0.3, 0.1]` | `[0.0, 0.1, 0.2, 0.3]` |
+| `[5~1]` | `[5, 4, 3, 2, 1]` (자동 step -1) |
+
+- 양쪽 경계와 step은 모두 숫자여야 합니다
+- Step은 양수여야 합니다 (기본값 `1`). 방향은 start와 end에서 추론
+- Step이 `0` 또는 음수이면 런타임 에러
+- 경계와 step은 표현식 가능: `[1~n]`, `[a~b, c]`
+
 ## 객체
 
 객체는 순서가 있는 키-값 쌍으로, 문자열 키를 사용합니다.
@@ -819,3 +836,6 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 동적 키가 비어 있음 | Dynamic thread key must not be empty |
 | 맵 위치 범위 초과 | Map positional index out of bounds: N |
 | 인자 초과 | Function 'foo' expects 2 argument(s), but 3 were provided |
+| 범위 step이 양수가 아님 | Range step must be positive |
+| 범위 경계가 숫자가 아님 | Range bounds must be numbers |
+| 범위 step이 숫자가 아님 | Range step must be a number |
