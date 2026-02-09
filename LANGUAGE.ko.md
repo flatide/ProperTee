@@ -481,6 +481,8 @@ end
 
 수집된 모든 `thread` 호출은 설정 단계가 끝날 때 (`end` 또는 `monitor`에서) 동시에 시작됩니다.
 
+**결과 변수 스코핑:** `resultVar`는 multi 블록이 완료될 때 현재 스코프에 할당됩니다 — 최상위 레벨에서는 전역 변수가 되고, 함수 내부에서는 해당 함수 스코프의 지역 변수가 됩니다. 일반 변수 할당과 동일한 규칙을 따릅니다.
+
 ### 결과 수집
 
 `resultVar`는 모든 스레드 결과를 포함하는 **맵/객체**를 받습니다:
@@ -605,6 +607,7 @@ end
 - monitor는 내장 함수를 호출할 수 있음 (예: `PRINT`)
 - monitor는 결과 컬렉션 변수를 읽어 스레드 상태를 확인할 수 있음 (예: `result.key.status`)
 - monitor는 모든 스레드 완료 후 마지막으로 한 번 더 실행
+- monitor는 전역 변수를 읽을 수 있지만 (`::` 접두사), 설정 단계의 지역 변수에는 접근 **불가** — monitor는 전역과 결과 변수만 포함하는 자체 스코프에서 실행
 
 ```
 multi result do
@@ -808,7 +811,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 배열 범위 초과 | Array index out of bounds |
 | 루프 제한 초과 | Loop exceeded maximum iterations (1000) |
 | multi 블록 내 전역 쓰기 | Cannot assign to global variable '::x' inside multi block |
-| 함수 내 :: 없이 전역 접근 | Variable 'x' is not defined in local scope. Use ::x to access the global variable |
+| 지역 스코프에서 :: 없이 전역 접근 | Variable 'x' is not defined in local scope. Use ::x to access the global variable |
 | monitor 내 할당 | Cannot assign variables in monitor block (read-only) |
 | multi 외부에서 thread | thread can only be used inside multi blocks |
 | 결과 키 중복 | Duplicate result key 'x' in multi block |
