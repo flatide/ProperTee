@@ -740,9 +740,11 @@ end
 ```
 
 Result 객체는 3개 필드를 가집니다:
-- `status` — 성공 시 `"done"`, 실패 시 `"error"` (진행 중인 스레드 결과는 `"running"`)
-- `ok` — 성공 시 `true`, 실패 시 `false`
-- `value` — 성공 시 결과 값, 실패 시 에러 메시지 문자열
+- `ok` — 성공 시 `true`, 실패 시 또는 진행 중이면 `false`
+- `value` — 성공 시 결과 값, 실패 시 에러 메시지 문자열, 진행 중이면 `{}`
+- `status` — `"done"`, `"error"`, 또는 `"running"` (multi 블록의 진행 중인 스레드)
+
+외부 함수 결과에는 `ok`로 충분합니다 — `res.ok == true`를 확인하세요. `status` 필드는 주로 multi 블록 스레드 결과를 위해 존재하며, `"running"` (아직 완료되지 않음)과 `"error"` (실패로 완료됨)를 구분합니다 — 둘 다 `ok: false`입니다.
 
 ## 주석
 
