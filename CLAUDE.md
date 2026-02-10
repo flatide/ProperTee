@@ -80,6 +80,6 @@ In the grammar, some internal rule names don't match the keyword:
 
 Both editor extensions highlight the same token categories — keep them in sync when adding keywords or built-ins:
 - Keywords, logical operators (`not and or`), booleans (`true false`)
-- Built-in functions: `PRINT SLEEP SUM MAX MIN ABS FLOOR CEIL ROUND LEN TO_NUMBER TO_STRING PUSH POP CONCAT SLICE CHARS SPLIT JOIN SUBSTRING UPPERCASE LOWERCASE TRIM HAS_KEY`
+- Built-in functions: `PRINT SLEEP SUM MAX MIN ABS FLOOR CEIL ROUND RANDOM LEN TO_NUMBER TO_STRING PUSH POP CONCAT SLICE CHARS SPLIT JOIN SUBSTRING UPPERCASE LOWERCASE TRIM HAS_KEY MILTIME DATE TIME`
 - Comments (`//` line, `/* */` block), strings (double-quoted), numbers, operators
 - Vim syntax note: comments and strings must be defined last in the syntax file (Vim's last-defined-wins priority rule)

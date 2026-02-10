@@ -72,7 +72,7 @@
     "builtin-functions": {
       "patterns": [
         {
-          "match": "\\b(PRINT|SLEEP|SUM|MAX|MIN|ABS|FLOOR|CEIL|ROUND|LEN|TO_NUMBER|TO_STRING|PUSH|POP|CONCAT|SLICE|CHARS|SPLIT|JOIN|SUBSTRING|UPPERCASE|LOWERCASE|TRIM|HAS_KEY)\\s*(?=\\()",
+          "match": "\\b(PRINT|SLEEP|SUM|MAX|MIN|ABS|FLOOR|CEIL|ROUND|RANDOM|LEN|TO_NUMBER|TO_STRING|PUSH|POP|CONCAT|SLICE|CHARS|SPLIT|JOIN|SUBSTRING|UPPERCASE|LOWERCASE|TRIM|HAS_KEY|MILTIME|DATE|TIME)\\s*(?=\\()",
           "captures": {
             "1": { "name": "support.function.builtin.propertee" }
           }
