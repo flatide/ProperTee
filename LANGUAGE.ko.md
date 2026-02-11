@@ -229,7 +229,7 @@ empty = {}
 | 따옴표 키 | `obj."special-key"` | 특수 문자가 포함된 키 |
 | 변수 키 | `obj.$varName` 또는 `obj.$::varName` | 변수에 저장된 키 이름 (전역은 `$::`) |
 | 계산 키 | `obj.$(expression)` | 표현식으로 결정되는 키 |
-| 숫자 키 | `obj.1` | 1-기반 인덱스. 배열은 인덱스로 요소 접근. 객체는: **읽기** 시 삽입 순서에 따라 N번째 항목 접근; **쓰기** 시 문자열 키 `"1"` 설정. |
+| 숫자 키 | `obj.1` | 배열과 문자열은 1-기반 인덱스. 객체는 정수가 문자열 키 `"1"`이 됨 (읽기와 쓰기 모두). |
 
 ```
 key = "name"
@@ -239,17 +239,7 @@ person.$("na" + "me") // "Alice"
 
 `$::var`는 전역 변수를 키로 접근합니다 (`$(::var)`와 동일).
 
-정수 키는 할당 시 문자열 키가 됩니다:
-
-```
-obj = {}
-obj.1 = "first"      // obj는 {"1": "first"}
-obj.2 = "second"     // obj는 {"1": "first", "2": "second"}
-```
-
 존재하지 않는 프로퍼티에 접근하면 런타임 에러가 발생합니다.
-
-참고: 읽기 시 `.INTEGER`는 **위치적** (삽입 순서)이지만, 쓰기 시에는 **문자열 키**를 설정합니다. 예를 들어, `obj.1`은 첫 번째 항목을 읽고, `obj.1 = val`은 키 `"1"`을 설정합니다.
 
 ### 객체 변경
 
@@ -258,6 +248,16 @@ obj.2 = "second"     // obj는 {"1": "first", "2": "second"}
 ```
 person.email = "alice@example.com"    // 새 프로퍼티 추가
 person.age = 31                       // 기존 프로퍼티 수정
+```
+
+정수 키는 읽기와 쓰기 모두에서 문자열 키가 됩니다:
+
+```
+obj = {}
+obj.1 = "first"      // obj는 {"1": "first"}
+obj.2 = "second"     // obj는 {"1": "first", "2": "second"}
+PRINT(obj.1)          // "first" (키 "1"을 읽음)
+PRINT(obj."1")        // "first" (동일)
 ```
 
 ### 중첩 접근
@@ -525,7 +525,6 @@ end
 
 result.a.status               // "done"
 result.a.value                // 이름으로 접근
-result.1.value                // 위치로 접근 (삽입 순서의 1번째 항목)
 LEN(result)                   // 3
 loop key, val in result do    // 모든 결과 반복
     PRINT(key, val.status, val.value)
@@ -594,17 +593,6 @@ multi 블록 내에서 실행되는 함수는 순수성 모델을 적용합니�
 7. monitor 절은 실행 중 실시간 결과 컬렉션을 읽을 수 있음
 8. 모든 스레드가 완료되어야 `end` 이후로 실행이 계속됨
 9. 결과 컬렉션은 **모든** 스레드 완료 후 `resultVar`에 할당
-
-### 객체의 위치 접근
-
-`.INTEGER` 문법은 삽입 순서에 따른 객체(맵)의 위치 접근을 제공합니다. 결과 컬렉션 반복에 특히 유용합니다:
-
-```
-obj = {a: 1, b: 2, c: 3}
-obj.1    // 1 (삽입 순서의 첫 번째 항목)
-obj.2    // 2
-obj.3    // 3
-```
 
 ### Monitor 절
 
@@ -841,7 +829,6 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 결과 키 중복 | Duplicate result key 'x' in multi block |
 | 동적 키가 문자열이 아님 | Dynamic thread key must be a string, got number |
 | 동적 키가 비어 있음 | Dynamic thread key must not be empty |
-| 맵 위치 범위 초과 | Map positional index out of bounds: N |
 | 인자 초과 | Function 'foo' expects 2 argument(s), but 3 were provided |
 | 범위 step이 양수가 아님 | Range step must be positive |
 | 범위 경계가 숫자가 아님 | Range bounds must be numbers |
