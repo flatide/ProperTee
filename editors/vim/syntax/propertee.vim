@@ -25,7 +25,7 @@ syn keyword propertBuiltin      SUM MAX MIN ABS FLOOR CEIL ROUND RANDOM LEN
 syn keyword propertBuiltin      TO_NUMBER TO_STRING
 syn keyword propertBuiltin      PUSH POP CONCAT SLICE CHARS
 syn keyword propertBuiltin      SPLIT JOIN SUBSTRING
-syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM HAS_KEY
+syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM HAS_KEY KEYS
 syn keyword propertBuiltin      MILTIME DATE TIME
 
 " --- Numbers ---
