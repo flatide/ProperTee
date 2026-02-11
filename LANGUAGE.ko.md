@@ -705,6 +705,11 @@ end
 | `POP(arr)` | 마지막 요소가 제거된 새 배열 반환. 원본 변경 없음. |
 | `CONCAT(arrs...)` | 모든 입력 배열을 연결한 새 배열 반환 |
 | `SLICE(arr, start, [end])` | 부분 배열 반환. `start`는 1-기반. `end`는 배타적. |
+| `SORT(arr)` | 오름차순 정렬된 새 배열 반환. 모든 요소가 같은 타입(숫자 또는 문자열)이어야 합니다. |
+| `SORT_DESC(arr)` | 내림차순 정렬된 새 배열 반환. `SORT`와 동일한 타입 제한. |
+| `SORT_BY(arr, key)` | 주어진 키로 오름차순 정렬된 객체 배열 반환. |
+| `SORT_BY_DESC(arr, key)` | 주어진 키로 내림차순 정렬된 객체 배열 반환. |
+| `REVERSE(arr)` | 요소 순서가 반전된 새 배열 반환. 타입 제한 없음. |
 
 ### 객체 함수
 
@@ -830,6 +835,9 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 동적 키가 문자열이 아님 | Dynamic thread key must be a string, got number |
 | 동적 키가 비어 있음 | Dynamic thread key must not be empty |
 | 인자 초과 | Function 'foo' expects 2 argument(s), but 3 were provided |
+| 혼합 타입 정렬 | SORT() requires all elements to be the same type (number or string) |
+| SORT_BY 키 없음 | Property 'x' does not exist in array element at index N |
+| 비배열 정렬 | SORT() requires an array argument |
 | 범위 step이 양수가 아님 | Range step must be positive |
 | 범위 경계가 숫자가 아님 | Range bounds must be numbers |
 | 범위 step이 숫자가 아님 | Range step must be a number |

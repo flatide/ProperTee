@@ -23,7 +23,7 @@ syn keyword propertBoolean      true false
 syn keyword propertBuiltin      PRINT SLEEP
 syn keyword propertBuiltin      SUM MAX MIN ABS FLOOR CEIL ROUND RANDOM LEN
 syn keyword propertBuiltin      TO_NUMBER TO_STRING
-syn keyword propertBuiltin      PUSH POP CONCAT SLICE CHARS
+syn keyword propertBuiltin      PUSH POP CONCAT SLICE CHARS SORT SORT_DESC SORT_BY SORT_BY_DESC REVERSE
 syn keyword propertBuiltin      SPLIT JOIN SUBSTRING
 syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM HAS_KEY KEYS
 syn keyword propertBuiltin      MILTIME DATE TIME
