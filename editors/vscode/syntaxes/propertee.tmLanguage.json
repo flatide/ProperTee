@@ -83,7 +83,7 @@
       "patterns": [
         {
           "name": "keyword.control.propertee",
-          "match": "\\b(if|then|else|end|loop|in|do|infinite|break|continue|return|thread|multi|monitor)\\b"
+          "match": "\\b(if|then|else|end|loop|in|do|infinite|break|continue|return|debug|thread|multi|monitor)\\b"
         },
         {
           "name": "keyword.control.function.propertee",

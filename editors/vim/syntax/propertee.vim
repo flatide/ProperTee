@@ -9,7 +9,7 @@ endif
 " --- Keywords ---
 syn keyword propertKeyword      if then else end
 syn keyword propertKeyword      loop in do infinite
-syn keyword propertKeyword      break continue return
+syn keyword propertKeyword      break continue return debug
 syn keyword propertKeyword      function thread
 syn keyword propertKeyword      multi monitor
 
