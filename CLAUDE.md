@@ -60,7 +60,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 ```
 if then else end
 loop in do infinite
-break continue
+break continue debug
 function thread return
 multi monitor
 not and or
