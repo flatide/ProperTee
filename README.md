@@ -84,9 +84,10 @@ PRINT("Results:", result.resultA.value, result.resultB.value)
 
 ## Documentation
 
-- [Language Specification (Official)](LANGUAGE.md)
+- [Language Specification (Official)](grammar/LANGUAGE.md)
 - [Language Specification (Korean)](LANGUAGE.ko.md)
 - [Grammar File (ANTLR4)](grammar/ProperTee.g4)
+- [Changelog](grammar/LANGUAGE.md#changelog)
 
 ## Implementations
 
