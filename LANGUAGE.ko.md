@@ -1,4 +1,4 @@
-# ProperTee 언어 명세
+# ProperTee 언어 명세 v0.3.0
 
 ## 개요
 
