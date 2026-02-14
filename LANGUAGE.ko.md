@@ -784,7 +784,64 @@ Result 객체는 3개 필드를 가집니다:
 
 외부 함수 결과에는 `ok`로 충분합니다 — `res.ok == true`를 확인하세요. `status` 필드는 주로 multi 블록 스레드 결과를 위해 존재하며, `"running"` (아직 완료되지 않음)과 `"error"` (실패로 완료됨)를 구분합니다 — 둘 다 `ok: false`입니다.
 
-호스트 애플리케이션은 다른 ProperTee 스레드를 멈추지 않고 블로킹 I/O를 수행하는 **비동기 외부 함수**를 등록할 수도 있습니다. 비동기 함수가 호출되면, 현재 스레드는 블로킹되고 multi 블록 내의 다른 스레드는 계속 실행됩니다. 비동기 결과는 캐시되고 I/O가 완료되면 문장이 재실행됩니다. Java 구현의 README에서 `registerExternalAsync()` API를 참조하세요.
+### 비동기 외부 함수
+
+호스트 애플리케이션은 다른 ProperTee 스레드를 멈추지 않는 블로킹 I/O(데이터베이스 쿼리, HTTP 요청, 파일 읽기)를 위해 **비동기 외부 함수**를 등록할 수 있습니다. `registerExternal()` 대신 `registerExternalAsync()`를 사용합니다:
+
+```java
+// Java 호스트 — 5초 타임아웃 비동기 함수
+interpreter.builtins.registerExternalAsync("DB_QUERY", new BuiltinFunction() {
+    public Object call(List<Object> args) {
+        String sql = (String) args.get(0);
+        // 백그라운드 스레드에서 실행 — 블로킹 가능
+        return Result.ok(database.execute(sql));
+    }
+}, 5000);
+```
+
+```javascript
+// JavaScript 호스트 — 비동기 함수 (타임아웃 없음)
+visitor.registerExternalAsync("HTTP_GET", (url) => {
+    const response = await fetch(url);
+    return Result.ok(response.json());
+});
+```
+
+스크립트 측에서는 비동기 함수와 동기 외부 함수가 동일하게 보입니다:
+
+```
+// 스크립트는 GET_BALANCE가 동기인지 비동기인지 알 필요 없음
+res = GET_BALANCE("alice")
+if res.ok == true then
+    PRINT("잔액:", res.value)
+end
+```
+
+**동작 방식:**
+- 호출 스레드는 비동기 작업이 완료(또는 타임아웃)될 때까지 **블로킹**됩니다
+- `multi` 블록 내의 다른 스레드는 **계속 실행**됩니다 — 호출 스레드만 일시 정지
+- `multi` 블록 외부에서는 스크립트가 단순히 대기합니다 (실행할 다른 스레드 없음)
+- 결과는 동일한 Result 패턴 사용: 성공 시 `{ok: true, value: ...}`, 실패 시 `{ok: false, value: "에러 메시지"}`
+- 비동기 함수 내부에서 발생한 예외는 자동으로 `Result.error(message)`로 래핑됩니다
+
+**타임아웃:** 선택적 타임아웃 매개변수(밀리초)는 스레드 대기 시간을 제한합니다. 작업이 타임아웃을 초과하면 함수는 `{status: "error", ok: false, value: "timeout"}`을 반환합니다:
+
+```
+// 호스트가 100ms 타임아웃으로 등록
+// registerExternalAsync("FAST_LOOKUP", func, 100)
+
+res = FAST_LOOKUP("key")
+if res.ok == true then
+    PRINT(res.value)
+else
+    PRINT("타임아웃 또는 에러:", res.value)   // "timeout"
+end
+```
+
+**제한 사항:**
+- 비동기 함수는 `monitor` 블록 내에서 호출할 수 없습니다 (런타임 에러)
+- 같은 문장에서 여러 비동기 호출은 지원되지 않습니다 — 별도 문장을 사용하세요
+- 비동기 함수는 딥카피된 인수를 받습니다 (스레드 안전)
 
 ## 주석
 
