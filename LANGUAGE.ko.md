@@ -500,6 +500,8 @@ end
 - `thread`는 multi 블록 내에서만 사용 가능 — 다른 곳에서 사용하면 런타임 에러
 - 같은 multi 블록 내 키 이름 중복은 런타임 에러 (동적 키 포함)
 
+multi 블록의 본문은 스레드 실행 전에 **설정 단계**로 실행됩니다. 일반 코드 (if/else, 루프, PRINT)는 설정 중 즉시 실행되고, `thread` 문은 동시에 실행할 함수 호출을 수집합니다.
+
 **설정 단계 스코프 격리:** 설정 단계는 함수 내부와 동일한 격리된 지역 스코프에서 실행됩니다. 설정 중 생성된 변수는 바깥 스코프로 유출되지 않습니다. 전역 변수 접근에는 `::` 접두사가 필요합니다.
 
 ```
@@ -516,8 +518,6 @@ end
 
 수집된 모든 `thread` 호출은 설정 단계가 끝날 때 (`end` 또는 `monitor`에서) 동시에 시작됩니다.
 
-**결과 변수 스코핑:** `resultVar`는 multi 블록이 완료될 때 현재 스코프에 할당됩니다 — 최상위 레벨에서는 전역 변수가 되고, 함수 내부에서는 해당 함수 스코프의 지역 변수가 됩니다. 일반 변수 할당과 동일한 규칙을 따릅니다.
-
 ### 결과 수집
 
 `resultVar`는 모든 스레드 결과를 포함하는 **맵/객체**를 받습니다:
@@ -533,6 +533,8 @@ end
 | `"error"` | `false` | 에러 메시지 문자열 |
 
 컬렉션은 생성 시점에 `"running"` 항목으로 미리 구축됩니다. 스레드가 완료되면 항목이 제자리에서 업데이트됩니다. multi 블록이 끝난 후 모든 항목은 `"done"` 또는 `"error"`가 됩니다.
+
+**결과 변수 스코핑:** `resultVar`는 multi 블록이 완료될 때 현재 스코프에 할당됩니다 — 최상위 레벨에서는 전역 변수가 되고, 함수 내부에서는 해당 함수 스코프의 지역 변수가 됩니다. 일반 변수 할당과 동일한 규칙을 따릅니다.
 
 ```
 multi result do
@@ -718,7 +720,6 @@ end
 
 | 함수 | 설명 |
 |---|---|
-| `LEN(arr)` | 요소 수 (객체에서도 동작 — 키 수를 반환) |
 | `PUSH(arr, values...)` | 값이 추가된 새 배열 반환. 원본 변경 없음. |
 | `POP(arr)` | 마지막 요소가 제거된 새 배열 반환. 원본 변경 없음. |
 | `CONCAT(arrs...)` | 모든 입력 배열을 연결한 새 배열 반환 |
@@ -735,7 +736,6 @@ end
 |---|---|
 | `HAS_KEY(obj, key)` | `obj`에 `key`가 있으면 `true`, 없으면 `false` 반환. 두 인자 모두 필수: `obj`는 객체, `key`는 문자열이어야 합니다. |
 | `KEYS(obj)` | 객체의 키를 삽입 순서대로 배열로 반환. `obj`는 객체여야 합니다. |
-| `LEN(obj)` | 객체의 항목 수 |
 
 ### 타이밍
 
@@ -745,6 +745,35 @@ end
 | `MILTIME()` | 현재 시간을 에포크 밀리초 (숫자)로 반환 |
 | `DATE()` | 현재 날짜를 `"YYYY-MM-DD"` 문자열로 반환 |
 | `TIME()` | 현재 시각을 `"HH:MM:SS"` 문자열로 반환 |
+
+### 셸
+
+| 함수 | 설명 |
+|---|---|
+| `SHELL(cmd)` | 셸 명령을 실행합니다. 종료 코드 0이면 stdout과 함께 Result `ok`, 0이 아니면 출력과 함께 `error`를 반환합니다. |
+| `SHELL(ctx, cmd)` | `SHELL_CTX()`에서 받은 컨텍스트를 사용하여 셸 명령을 실행합니다. Result를 직접 전달하세요 — `SHELL`이 자동으로 언래핑합니다. |
+| `SHELL_CTX(cwd)` | 작업 디렉토리 `cwd`로 셸 컨텍스트를 생성합니다. 디렉토리가 존재하면 컨텍스트 객체와 함께 Result `ok`, 없으면 `error`를 반환합니다. |
+| `SHELL_CTX(cwd, env)` | 작업 디렉토리와 환경 변수로 셸 컨텍스트를 생성합니다. `env`는 키-값 쌍 객체입니다. |
+
+각 `SHELL()` 호출은 `/bin/sh -c <cmd>`를 통해 새 프로세스를 생성합니다. 영속 세션은 없습니다. `SHELL_CTX()`의 컨텍스트는 설정 객체일 뿐으로, 프로세스 상태를 유지하지 않습니다. `SHELL()`에 컨텍스트를 전달할 때는 `SHELL_CTX()`의 Result를 직접 전달하세요 — `SHELL`이 자동으로 Result를 언래핑하여 컨텍스트를 추출합니다.
+
+```
+// 단일 명령
+result = SHELL("echo hello")
+PRINT(result.value)              // "hello"
+
+// 컨텍스트 사용 (작업 디렉토리 + 환경 변수)
+ctx = SHELL_CTX("/data/project", {"ENV": "prod"})
+result = SHELL(ctx, "./build.sh")
+
+// 에러 처리
+result = SHELL("exit 1")
+if result.ok == false then
+    PRINT("명령 실패")
+end
+```
+
+`SHELL()`은 비동기입니다 — multi 블록에서 셸 명령이 실행되는 동안 다른 스레드는 계속 실행됩니다. multi 블록 외부에서는 스크립트가 단순히 대기합니다.
 
 ## 내장 프로퍼티
 
@@ -909,8 +938,6 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | monitor 내 할당 | Cannot assign variables in monitor block (read-only) |
 | multi 외부에서 thread | thread can only be used inside multi blocks |
 | 결과 키 중복 | Duplicate result key 'x' in multi block |
-| 동적 키가 문자열이 아님 | Dynamic thread key must be a string, got number |
-| 동적 키가 비어 있음 | Dynamic thread key must not be empty |
 | 인자 초과 | Function 'foo' expects 2 argument(s), but 3 were provided |
 | 혼합 타입 정렬 | SORT() requires all elements to be the same type (number or string) |
 | SORT_BY 키 없음 | Property 'x' does not exist in array element at index N |
@@ -923,6 +950,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 
 ### v0.3.0
 
+- **`SHELL()`과 `SHELL_CTX()` 내장 함수**: 스크립트에서 셸 명령을 실행합니다. `SHELL(cmd)`로 단일 명령, `SHELL(ctx, cmd)`로 `SHELL_CTX(cwd[, env])`에서 받은 컨텍스트로 작업 디렉토리와 환경 변수를 제어. 비동기 실행 — multi 블록에서 셸 명령이 실행되는 동안 다른 스레드는 계속 실행됩니다.
 - **일반 식별자 키 금지**: 객체 키는 따옴표 문자열 또는 정수여야 합니다. `{"name": "Alice"}`는 유효하며, `{name: "Alice"}`는 파싱 에러입니다.
 - **`debug` 문**: 플레이그라운드 디버거의 명시적 중단점을 위한 새 키워드. 일반 실행에서는 아무 동작 없음(no-op).
 - **깊은 복사 값 의미론**: 모든 할당 (변수, 프로퍼티, 함수 인자, 스레드 인자, 루프 변수)이 독립적인 깊은 복사를 생성합니다. 변수 간 공유 가변 상태 없음.
