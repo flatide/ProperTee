@@ -872,6 +872,47 @@ end
 - 같은 문장에서 여러 비동기 호출은 지원되지 않습니다 — 별도 문장을 사용하세요
 - 비동기 함수는 딥카피된 인수를 받습니다 (스레드 안전)
 
+### 호스트 환경 제한
+
+호스트 애플리케이션은 사용 가능한 언어 키워드와 내장 함수를 제한할 수 있습니다:
+
+```
+// Java 호스트
+Set<String> hidden = new HashSet<String>();
+hidden.add("multi");
+hidden.add("loop");
+interpreter.setHiddenKeywords(hidden);
+
+Set<String> ignored = new HashSet<String>();
+ignored.add("SHELL");
+interpreter.setIgnoredFunctions(ignored);
+
+// JavaScript 호스트
+visitor.setHiddenKeywords(["multi", "loop"]);
+visitor.setIgnoredFunctions(["SHELL"]);
+```
+
+**숨김 키워드**는 해당 문이 실행될 때 런타임 에러를 발생시킵니다:
+
+```
+// "if"가 숨겨진 경우:
+x = 10
+if x == 10 then    // 런타임 에러: 'if' is not available in this environment
+    PRINT(x)
+end
+```
+
+숨길 수 있는 키워드: `if`, `loop`, `function`, `multi`, `thread`, `debug`.
+
+**무시된 함수**는 호출 시 런타임 에러를 발생시킵니다:
+
+```
+// "SHELL"이 무시된 경우:
+x = SHELL("echo hello")   // 런타임 에러: 'SHELL' is not available in this environment
+```
+
+내장 함수와 외부 함수 모두 무시할 수 있습니다. 일반 함수 호출과 multi 블록 `thread` 생성의 함수 호출 모두에서 검사됩니다.
+
 ## 주석
 
 ```
@@ -950,6 +991,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 
 ### v0.3.0
 
+- **호스트 환경 제한**: `setHiddenKeywords()`로 언어 키워드를 숨기고 (`if`, `loop`, `function`, `multi`, `thread`, `debug`), `setIgnoredFunctions()`로 내장/외부 함수 호출을 차단합니다. 사용 시 런타임 에러 발생.
 - **`SHELL()`과 `SHELL_CTX()` 내장 함수**: 스크립트에서 셸 명령을 실행합니다. `SHELL(cmd)`로 단일 명령, `SHELL(ctx, cmd)`로 `SHELL_CTX(cwd[, env])`에서 받은 컨텍스트로 작업 디렉토리와 환경 변수를 제어. 비동기 실행 — multi 블록에서 셸 명령이 실행되는 동안 다른 스레드는 계속 실행됩니다.
 - **일반 식별자 키 금지**: 객체 키는 따옴표 문자열 또는 정수여야 합니다. `{"name": "Alice"}`는 유효하며, `{name: "Alice"}`는 파싱 에러입니다.
 - **`debug` 문**: 플레이그라운드 디버거의 명시적 중단점을 위한 새 키워드. 일반 실행에서는 아무 동작 없음(no-op).
