@@ -16,6 +16,7 @@
 - **Comments**: Single-line (`//`) and block (`/* */`) comments
 - **No null**: Empty object `{}` is the no-value sentinel
 - **External function integration**: `registerExternal()` with Result pattern for host I/O
+- **Host environment restrictions**: Hide keywords and block functions for sandboxed execution
 
 ## Quick Example
 
@@ -96,7 +97,7 @@ PRINT("Results:", result.resultA.value, result.resultB.value)
 | **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js (ES modules, generator-based concurrency) |
 | **Java** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) |
 
-Both implementations share the same ANTLR4 grammar and pass the same 69-test suite.
+Both implementations share the same ANTLR4 grammar and pass the same 73-test suite.
 
 ## Online Playground
 
@@ -147,6 +148,30 @@ const result = await scheduler.run(mainGenerator);
 ```
 
 Full embedding example: [scratch.html](https://github.com/flatide/propertee-js/blob/main/docs/dist/scratch.html)
+
+### Restricting Language Features
+
+Hide keywords and block functions to create sandboxed environments:
+
+```javascript
+// JavaScript
+visitor.setHiddenKeywords(["multi", "loop"]);
+visitor.setIgnoredFunctions(["SHELL", "SLEEP"]);
+```
+
+```java
+// Java
+Set<String> hidden = new HashSet<String>();
+hidden.add("multi");
+hidden.add("loop");
+interpreter.setHiddenKeywords(hidden);
+
+Set<String> ignored = new HashSet<String>();
+ignored.add("SHELL");
+interpreter.setIgnoredFunctions(ignored);
+```
+
+Keywords that can be hidden: `if`, `loop`, `function`, `multi`, `thread`, `debug`. Both built-in and external functions can be blocked. Using a hidden keyword or blocked function produces a runtime error: `'X' is not available in this environment`.
 
 ### Running Locally
 
