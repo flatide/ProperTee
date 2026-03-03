@@ -20,9 +20,6 @@ browser/antlr4-bundle.js
 *.interp
 *.tokens
 
-# Claude Code
-CLAUDE.md
-
 # macOS
 .DS_Store
 
