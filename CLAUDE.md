@@ -39,7 +39,7 @@ vsce package
 ```bash
 cp -r editors/vim/ftdetect editors/vim/ftplugin editors/vim/syntax ~/.vim/pack/plugins/start/propertee/
 ```
-Note: `.pt` conflicts with Vim's built-in Zope Page Templates mapping — the ftdetect script uses `setlocal filetype=` (not `setfiletype`) to force override.
+Note: `.tee` is the ProperTee script file extension — the ftdetect script uses `setlocal filetype=` to set the filetype.
 
 ## Language Design Essentials
 

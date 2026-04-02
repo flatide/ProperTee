@@ -5,7 +5,7 @@ Syntax highlighting for the [ProperTee](https://github.com/flatide/ProperTee) sc
 ## Features
 
 - Syntax highlighting for keywords, built-in functions, strings, numbers, comments, and operators
-- Automatic filetype detection for `.pt` files
+- Automatic filetype detection for `.tee` files
 - Comment formatting (`//` line comments, `/* */` block comments)
 - Basic indentation settings
 
@@ -64,7 +64,7 @@ Then run `:PluginInstall`.
 
 ## Verification
 
-Open any `.pt` file in Vim and check:
+Open any `.tee` file in Vim and check:
 
 ```vim
 :set ft?

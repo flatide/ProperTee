@@ -29,7 +29,7 @@
           "propertee"
         ],
         "extensions": [
-          ".pt"
+          ".tee"
         ],
         "configuration": "./language-configuration.json"
       }

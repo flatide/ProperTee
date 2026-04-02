@@ -1,6 +1,6 @@
 # ProperTee for VS Code
 
-Syntax highlighting for the [ProperTee](https://github.com/flatide/ProperTee) scripting language (`.pt` files).
+Syntax highlighting for the [ProperTee](https://github.com/flatide/ProperTee) scripting language (`.tee` files).
 
 ## Features
 
@@ -31,4 +31,4 @@ Then restart VS Code.
 
 ## Verification
 
-Open any `.pt` file (see `examples/` in the repo root) and confirm that keywords, strings, comments, numbers, and built-in functions are highlighted with distinct colors.
+Open any `.tee` file (see `examples/` in the repo root) and confirm that keywords, strings, comments, numbers, and built-in functions are highlighted with distinct colors.

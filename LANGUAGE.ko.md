@@ -781,7 +781,7 @@ end
 
 ```bash
 # 커맨드 라인
-java -jar propertee.jar -p '{"width": 100, "height": 200}' script.pt
+java -jar propertee.jar -p '{"width": 100, "height": 200}' script.tee
 ```
 
 ```
