@@ -158,10 +158,16 @@ PRINT(x)                 // 42 (localOnly에 의해 변경되지 않음)
 |---|---|
 | `\"` | 큰따옴표 |
 | `\\` | 백슬래시 |
+| `\n` | 줄바꿈 |
+| `\t` | 탭 |
+| `\r` | 캐리지 리턴 |
+
+인식되지 않는 이스케이프(예: `\d`)는 그대로 유지됩니다 (리터럴 백슬래시 + 문자).
 
 ```
 msg = "She said \"hello\""
 path = "C:\\Users\\file"
+multiline = "line1\nline2"
 ```
 
 문자열은 **불변**입니다. 문자열 연산은 새 문자열을 반환합니다.
@@ -703,6 +709,12 @@ end
 | `TO_NUMBER(s)` | 문자열을 숫자로 변환. 유효한 숫자 문자열이 아니면 에러. |
 | `TO_STRING(v)` | 모든 값을 문자열 표현으로 변환 |
 
+### 타입
+
+| 함수 | 설명 |
+|---|---|
+| `TYPE_OF(v)` | 타입 이름 반환: `"number"`, `"string"`, `"boolean"`, `"array"`, `"object"` |
+
 ### 문자열 함수
 
 | 함수 | 설명 |
@@ -715,6 +727,12 @@ end
 | `SPLIT(s, delimiter)` | 문자열을 배열로 분리. 후행 빈 문자열을 유지. |
 | `JOIN(arr, [separator])` | 배열 요소를 문자열로 합침. 기본 구분자는 `""`. |
 | `CHARS(s)` | 문자열을 단일 문자 배열로 분리 |
+| `CONTAINS(s, sub)` | `s`가 `sub`를 포함하면 `true` 반환 |
+| `STARTS_WITH(s, prefix)` | `s`가 `prefix`로 시작하면 `true` 반환 |
+| `ENDS_WITH(s, suffix)` | `s`가 `suffix`로 끝나면 `true` 반환 |
+| `MATCHES(s, pattern)` | 정규식 `pattern`이 `s`의 어디에든 매치하면 `true` 반환 |
+| `REGEX_FIND(s, pattern)` | [전체매치, 그룹1, 그룹2, ...] 배열 반환. 매치 없으면 `{}`. 1-기반 배열. |
+| `REPLACE(s, target, replacement)` | `target`의 모든 발생을 `replacement`로 치환. 리터럴 문자열 매치 (정규식 아님). |
 
 ### 배열 함수
 
@@ -736,6 +754,40 @@ end
 |---|---|
 | `HAS_KEY(obj, key)` | `obj`에 `key`가 있으면 `true`, 없으면 `false` 반환. 두 인자 모두 필수: `obj`는 객체, `key`는 문자열이어야 합니다. |
 | `KEYS(obj)` | 객체의 키를 삽입 순서대로 배열로 반환. `obj`는 객체여야 합니다. |
+| `VALUES(obj)` | 객체의 값을 삽입 순서대로 배열로 반환. |
+| `ENTRIES(obj)` | `{"key": k, "value": v}` 객체들의 배열을 삽입 순서대로 반환. |
+| `MERGE(obj1, obj2)` | 두 객체를 병합한 새 객체 반환. 키 충돌 시 `obj2` 우선. |
+| `REMOVE_KEY(obj, key)` | 지정한 키를 제거한 새 객체 반환. 키 부재 시 에러 없음. |
+
+### 환경 변수
+
+| 함수 | 설명 |
+|---|---|
+| `ENV(name)` | 환경 변수 읽기. 미설정 시 `{}` 반환. |
+| `ENV(name, default)` | 환경 변수 읽기 (기본값 제공). 미설정 시 `default` 반환. |
+
+### JSON
+
+| 함수 | 설명 |
+|---|---|
+| `JSON_PARSE(s)` | JSON 문자열 파싱. Result 반환: 성공 시 `ok`와 파싱된 값, 실패 시 `error`. JSON `null`은 `{}`로 변환. |
+| `JSON_FORMAT(v)` | 모든 값을 JSON 문자열로 변환. |
+
+### 파일 I/O
+
+| 함수 | 설명 |
+|---|---|
+| `FILE_EXISTS(path)` | 파일 또는 디렉터리가 존재하면 `true` 반환. |
+| `FILE_INFO(path)` | Result 반환: `ok`와 `{type, size, modified}`, 미존재 시 `error`. |
+| `READ_LINES(path, [start], [count])` | 파일에서 라인 읽기. `start`는 1-기반 (기본 1). `count`는 읽을 라인 수 제한. Result와 문자열 배열 반환. |
+| `WRITE_FILE(path, content)` | 파일에 문자열 쓰기 (덮어쓰기). Result 반환. |
+| `WRITE_LINES(path, lines)` | 문자열 배열의 각 요소를 줄 단위로 쓰기 (각 줄 뒤에 줄바꿈). Result 반환. |
+| `APPEND_FILE(path, content)` | 파일에 문자열 추가. Result 반환. |
+| `MKDIR(path)` | 디렉터리 생성 (부모 포함). Result 반환. |
+| `LIST_DIR(path)` | 디렉터리 항목 목록. Result와 `{name, type, size}` 객체 배열 반환. 이름순 정렬. |
+| `DELETE_FILE(path)` | 단일 파일 삭제. 디렉터리는 거부. Result 반환. |
+
+> **런타임 가용성:** 셸 함수는 호스트가 제공하는 `TaskRunner`가 필요합니다. 파일 I/O와 ENV는 `PlatformProvider`가 필요합니다. JavaScript 런타임(브라우저/Node.js)에서는 이 함수들이 스텁으로 `{ok: false, value: "... is not available in this environment"}`를 반환합니다.
 
 ### 타이밍
 
