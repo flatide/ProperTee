@@ -989,6 +989,18 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 
 ## 변경 이력
 
+### v0.4.0
+
+- **파일 I/O 내장 함수**: `FILE_EXISTS()`, `FILE_INFO()`, `READ_LINES()`, `WRITE_FILE()`, `WRITE_LINES()`, `APPEND_FILE()`, `MKDIR()`, `LIST_DIR()`, `DELETE_FILE()`. `READ_LINES`는 1-based offset과 count 제한으로 전체 파일을 메모리에 로드하지 않음. 모든 I/O 함수는 Result 패턴 사용.
+- **문자열 매칭 내장 함수**: `CONTAINS()`, `STARTS_WITH()`, `ENDS_WITH()` 단순 검사. `MATCHES()`와 `REGEX_FIND()` 정규식. `REPLACE()` 문자열 치환.
+- **객체 확장**: `VALUES()`, `ENTRIES()`, `MERGE()`, `REMOVE_KEY()`.
+- **JSON 내장 함수**: `JSON_PARSE()`는 JSON 문자열을 ProperTee 값으로 변환 (JSON `null` → `{}`). `JSON_FORMAT()`은 값을 JSON 문자열로 변환.
+- **환경 변수**: `ENV(name, [default])`로 환경 변수 읽기. 미설정 시 `{}` 반환.
+- **타입 조회**: `TYPE_OF()`는 타입 이름을 문자열로 반환.
+- **문자열 이스케이프 처리**: 문자열 리터럴이 모든 컨텍스트(식, 객체 키, 프로퍼티 접근)에서 이스케이프 시퀀스(`\"`, `\\`, `\n`, `\t`, `\r`)를 처리.
+- **PlatformProvider**: ENV와 파일 I/O는 호스트가 제공하는 `PlatformProvider`를 통해 동작. 미제공 시 unsupported 에러 반환.
+- **스크립트 확장자**: `.pt` → `.tee`로 변경.
+
 ### v0.3.0
 
 - **호스트 환경 제한**: `setHiddenKeywords()`로 언어 키워드를 숨기고 (`if`, `loop`, `function`, `multi`, `thread`, `debug`), `setIgnoredFunctions()`로 내장/외부 함수 호출을 차단합니다. 사용 시 런타임 에러 발생.
