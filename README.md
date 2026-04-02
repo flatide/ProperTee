@@ -1,4 +1,4 @@
-# ProperTee v0.3.0
+# ProperTee v0.4.0
 
 **ProperTee** is a lightweight scripting language for property-based data processing. It features intuitive syntax, powerful dynamic access patterns, and cooperative multithreading — designed for configuration, data transformation, and embedding in host applications.
 
@@ -97,7 +97,7 @@ PRINT("Results:", result.resultA.value, result.resultB.value)
 | **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js (ES modules, generator-based concurrency) |
 | **Java** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) |
 
-Both implementations share the same ANTLR4 grammar and pass the same 73-test suite.
+Both implementations share the same ANTLR4 grammar and pass the same 85-test suite.
 
 ## Online Playground
 
