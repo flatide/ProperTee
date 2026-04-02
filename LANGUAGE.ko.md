@@ -787,8 +787,6 @@ end
 | `LIST_DIR(path)` | 디렉터리 항목 목록. Result와 `{name, type, size}` 객체 배열 반환. 이름순 정렬. |
 | `DELETE_FILE(path)` | 단일 파일 삭제. 디렉터리는 거부. Result 반환. |
 
-> **런타임 가용성:** 셸 함수는 호스트가 제공하는 `TaskRunner`가 필요합니다. 파일 I/O와 ENV는 `PlatformProvider`가 필요합니다. JavaScript 런타임(브라우저/Node.js)에서는 이 함수들이 스텁으로 `{ok: false, value: "... is not available in this environment"}`를 반환합니다.
-
 ### 타이밍
 
 | 함수 | 설명 |
@@ -826,6 +824,8 @@ end
 ```
 
 `SHELL()`은 비동기입니다 — multi 블록에서 셸 명령이 실행되는 동안 다른 스레드는 계속 실행됩니다. multi 블록 외부에서는 스크립트가 단순히 대기합니다.
+
+> **런타임 가용성:** 셸 함수는 호스트가 제공하는 `TaskRunner`가 필요합니다. 파일 I/O와 ENV는 `PlatformProvider`가 필요합니다. JavaScript 런타임(브라우저/Node.js)에서는 이 함수들이 스텁으로 `{ok: false, value: "... is not available in this environment"}`를 반환합니다.
 
 ## 내장 프로퍼티
 
