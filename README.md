@@ -1,4 +1,4 @@
-# ProperTee v0.4.0
+# ProperTee v0.5.0
 
 **ProperTee** is a lightweight scripting language for property-based data processing. It features intuitive syntax, powerful dynamic access patterns, and cooperative multithreading — designed for configuration, data transformation, and embedding in host applications.
 
