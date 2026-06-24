@@ -1,4 +1,4 @@
-# ProperTee Language Specification v0.5.0
+# ProperTee Language Specification v0.6.0
 
 ## Overview
 
@@ -838,6 +838,28 @@ end
 
 Each `SHELL()` call creates a fresh process via `/bin/sh -c <cmd>`. There are no persistent sessions. The context from `SHELL_CTX()` is just a configuration object — it doesn't hold any process state. When passing a context to `SHELL()`, pass the Result from `SHELL_CTX()` directly — `SHELL` auto-unwraps the Result to extract the context.
 
+### HTTP
+
+| Function | Description |
+|---|---|
+| `HTTP_GET(url, [options])` | HTTP GET. Returns Result (see below). |
+| `HTTP_POST(url, body, [options])` | HTTP POST with a string `body`. Returns Result. |
+| `HTTP(method, url, [options])` | General request for any method (PUT/DELETE/PATCH/...). `options.body` carries the request body. |
+
+`options` is an object: `{"headers": {"Key": "Value", ...}, "timeout": <ms>, "body": "<for HTTP()>"}` — all optional.
+
+**Result shape.** A request that completes returns `{status, body, headers}` as `value`, with `ok` true only for a 2xx status (4xx/5xx keep the full `value` with `ok` false). A transport-level failure (bad URL, DNS, connection refused, timeout) returns `ok` false with `value = {"status": 0, "body": "<error message>", "headers": {}}`. So `res.value` is always that object — check `res.ok` and `res.value.status`.
+
+```
+res = HTTP_GET("http://service/health")
+if res.ok == true then
+    PRINT(res.value.body)
+end
+PRINT("status", res.value.status)
+```
+
+HTTP is a host-provided capability (a `PlatformProvider`), like file I/O — environments without one return the unsupported error.
+
 ```
 // One-off command
 result = SHELL("echo hello")
@@ -1087,6 +1109,10 @@ Common error conditions:
 ---
 
 ## Changelog
+
+### v0.6.0
+
+- **HTTP built-ins**: `HTTP_GET(url, [options])`, `HTTP_POST(url, body, [options])`, and the general `HTTP(method, url, [options])`. Host-provided capability (`PlatformProvider`). Returns a Result whose `value` is `{status, body, headers}`; `ok` is true only for 2xx, and a transport failure yields `{status: 0, body: <message>, headers: {}}`.
 
 ### v0.5.0
 

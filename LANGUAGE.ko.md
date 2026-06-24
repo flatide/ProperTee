@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.5.0
+# ProperTee 언어 명세 v0.6.0
 
 ## 개요
 
@@ -807,6 +807,28 @@ end
 
 각 `SHELL()` 호출은 `/bin/sh -c <cmd>`를 통해 새 프로세스를 생성합니다. 영속 세션은 없습니다. `SHELL_CTX()`의 컨텍스트는 설정 객체일 뿐으로, 프로세스 상태를 유지하지 않습니다. `SHELL()`에 컨텍스트를 전달할 때는 `SHELL_CTX()`의 Result를 직접 전달하세요 — `SHELL`이 자동으로 Result를 언래핑하여 컨텍스트를 추출합니다.
 
+### HTTP
+
+| 함수 | 설명 |
+|---|---|
+| `HTTP_GET(url, [options])` | HTTP GET. Result 반환(아래 참고). |
+| `HTTP_POST(url, body, [options])` | 문자열 `body`로 HTTP POST. Result 반환. |
+| `HTTP(method, url, [options])` | 임의 메서드(PUT/DELETE/PATCH/...)용 범용 요청. `options.body`로 요청 본문 전달. |
+
+`options`는 객체입니다: `{"headers": {"Key": "Value", ...}, "timeout": <ms>, "body": "<HTTP()용>"}` — 모두 선택.
+
+**Result 형태.** 요청이 완료되면 `value = {status, body, headers}`이고 `ok`는 2xx일 때만 true입니다(4xx/5xx도 `value`는 그대로 유지하되 `ok`는 false). 전송 단계 실패(잘못된 URL, DNS, 연결 거부, 타임아웃)는 `ok` false와 `value = {"status": 0, "body": "<에러 메시지>", "headers": {}}`를 반환합니다. 즉 `res.value`는 항상 이 객체이며 — `res.ok`와 `res.value.status`를 확인하세요.
+
+```
+res = HTTP_GET("http://service/health")
+if res.ok == true then
+    PRINT(res.value.body)
+end
+PRINT("status", res.value.status)
+```
+
+HTTP는 파일 I/O처럼 호스트가 제공하는 기능(`PlatformProvider`)입니다 — 제공자가 없는 환경에서는 미지원 에러를 반환합니다.
+
 ```
 // 단일 명령
 result = SHELL("echo hello")
@@ -1054,6 +1076,10 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 범위 step이 숫자가 아님 | Range step must be a number |
 
 ## 변경 이력
+
+### v0.6.0
+
+- **HTTP 내장 함수**: `HTTP_GET(url, [options])`, `HTTP_POST(url, body, [options])`, 범용 `HTTP(method, url, [options])`. 호스트 제공 기능(`PlatformProvider`). `value`가 `{status, body, headers}`인 Result 반환; `ok`는 2xx일 때만 true, 전송 실패 시 `{status: 0, body: <메시지>, headers: {}}`.
 
 ### v0.5.0
 
