@@ -815,7 +815,9 @@ end
 | `HTTP_POST(url, body, [options])` | 문자열 `body`로 HTTP POST. Result 반환. |
 | `HTTP(method, url, [options])` | 임의 메서드(PUT/DELETE/PATCH/...)용 범용 요청. `options.body`로 요청 본문 전달. |
 
-`options`는 객체입니다: `{"headers": {"Key": "Value", ...}, "timeout": <ms>, "body": "<HTTP()용>"}` — 모두 선택.
+`options`는 객체입니다: `{"headers": {"Key": "Value", ...}, "timeout": <ms>, "body": <HTTP()용>}` — 모두 선택. (`"headers"` 대신 `"header"` 도 허용.)
+
+**요청 본문.** 문자열 body 는 그대로 전송되고, 그 외 값(객체/배열/숫자/불리언)은 **JSON 으로 직렬화**됩니다. 즉 `HTTP_POST(url, {"a": 1})` 는 `{"a":1}` 을 보냅니다(`a=1` 형태가 아님). 서버가 요구하면 `headers` 에 `"Content-Type": "application/json"` 을 넣으세요.
 
 **Result 형태.** 요청이 완료되면 `value = {status, body, headers}`이고 `ok`는 2xx일 때만 true입니다(4xx/5xx도 `value`는 그대로 유지하되 `ok`는 false). 전송 단계 실패(잘못된 URL, DNS, 연결 거부, 타임아웃)는 `ok` false와 `value = {"status": 0, "body": "<에러 메시지>", "headers": {}}`를 반환합니다. 즉 `res.value`는 항상 이 객체이며 — `res.ok`와 `res.value.status`를 확인하세요.
 
