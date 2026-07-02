@@ -1,4 +1,4 @@
-# ProperTee v0.6.0
+# ProperTee v0.7.0
 
 **ProperTee** is a lightweight scripting language for property-based data processing. It features intuitive syntax, powerful dynamic access patterns, and cooperative multithreading — designed for configuration, data transformation, and embedding in host applications.
 
@@ -98,7 +98,7 @@ PRINT("Results:", result.resultA.value, result.resultB.value)
 | **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js / browser (ES modules, generator-based concurrency) | Active — powers the online playground |
 | **Java (legacy)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) | Frozen at v1.0.0 (security/bugfixes only) |
 
-All implementations share the same ANTLR4 grammar (`grammar/ProperTee.g4`) and target spec v0.6.0. Conformance is fixture-based — `.tee` scripts with byte-exact `.expected` outputs. The Java runtimes pass an 84-fixture suite; the JavaScript runtime passes an 80-fixture variant (host-dependent fixtures such as SHELL and file I/O are Java-only; in JS those functions are stubs per the spec's runtime-availability rule).
+All implementations share the same ANTLR4 grammar (`grammar/ProperTee.g4`). **propertee2-java (0.3.0) and propertee-js implement spec v0.7.0**; the frozen propertee-java v1 stays on spec v0.6.0 semantics. Conformance is fixture-based — `.tee` scripts with byte-exact `.expected` outputs. The reference Java runtime passes a 90-fixture suite; the JavaScript runtime passes an 86-fixture variant (host-dependent fixtures such as SHELL and file I/O are Java-only; in JS those functions are stubs per the spec's runtime-availability rule).
 
 ## Online Playground
 

@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.6.0
+# ProperTee 언어 명세 v0.7.0
 
 ## 개요
 
@@ -28,12 +28,13 @@ ProperTee에는 6가지 타입이 있습니다:
 
 ### 참/거짓 판별 (Truthiness)
 
-`if` 조건과 `loop` 조건에서 사용:
+`if` 조건과 `loop` 조건은 **불리언** 값을 요구합니다:
 
-- **참(Truthy):** `true`만
-- **거짓(Falsy):** 나머지 모두 — `false`, `0`, `""`, `[]`, `{}` 포함
+- `true` — 분기 실행 / 루프 계속
+- `false` — 분기 건너뜀 / 루프 종료
+- **다른 타입은 런타임 에러:** `Condition requires a boolean value`
 
-참고: 조건문에서는 명시적 불리언 비교를 사용해야 합니다 (예: `if x == true then` 또는 `if x != false then`).
+암묵적 강제 변환은 없습니다 — `0`, `""`, `[]`, `{}`는 "falsy"가 아니라 조건에서 타입 에러이며, 논리 연산자의 엄격성과 일치합니다. (spec v0.6.0까지는 비불리언 조건이 조용히 거짓 취급되었습니다. v0.7.0에서 시끄러운 에러로 변경 — 변경 이력의 마이그레이션 노트 참고.)
 
 ## 변수
 
@@ -136,7 +137,17 @@ PRINT(x)                 // 42 (localOnly에 의해 변경되지 않음)
 | `or` | 논리 OR | boolean or boolean |
 | `not` | 논리 NOT | not boolean |
 
-모든 논리 연산자는 **불리언 피연산자를 요구**합니다. 숫자나 문자열을 `and`/`or`에 사용하면 런타임 에러입니다. 양쪽 모두 항상 평가됩니다 (단축 평가 없음).
+모든 논리 연산자는 **불리언 피연산자를 요구**합니다. 숫자나 문자열을 `and`/`or`에 사용하면 런타임 에러입니다.
+
+평가는 좌→우로 **단축 평가(short-circuit)** 됩니다: `false and X`와 `true or X`는 `X`를 아예 평가하지 않으며(부수효과 포함), 피연산자의 타입 검사도 실제로 평가될 때만 수행됩니다. 덕분에 존재 확인 가드 관용구가 가능합니다:
+
+```
+if HAS_KEY(obj, "k") and obj.k == 1 then   // "k"가 없으면 obj.k는 아예 평가되지 않음
+    ...
+end
+```
+
+(spec v0.6.0까지는 양쪽 모두 항상 평가되었습니다.)
 
 ### 우선순위 (낮은 것에서 높은 것 순)
 
@@ -701,8 +712,9 @@ end
 | `CEIL(n)` | 올림 |
 | `ROUND(n)` | 반올림 |
 | `RANDOM()` | 0.0 (포함) ~ 1.0 (미포함) 사이의 랜덤 소수 |
-| `RANDOM(max)` | 0 (포함) ~ `max` (미포함) 사이의 랜덤 정수. `max`는 양수여야 합니다. |
 | `RANDOM(min, max)` | `min` ~ `max` (양쪽 포함) 사이의 랜덤 정수. |
+
+단일 인자 형태 `RANDOM(max)`는 **v0.7.0에서 제거**되었습니다 — 배타적 상한이 포함 규약인 2-인자 형태와 충돌했기 때문입니다. 단일 인자 호출은 런타임 에러이며, 기존 의미가 필요하면 `RANDOM(0, max - 1)`을 사용하세요.
 
 ### 타입 변환
 
@@ -721,7 +733,7 @@ end
 
 | 함수 | 설명 |
 |---|---|
-| `LEN(s)` | 문자열, 배열 또는 객체의 길이 (항목 수). 다른 타입은 `0` 반환. |
+| `LEN(s)` | 문자열, 배열 또는 객체의 길이 (항목 수). 다른 타입은 런타임 에러. |
 | `UPPERCASE(s)` | 대문자로 변환 |
 | `LOWERCASE(s)` | 소문자로 변환 |
 | `TRIM(s)` | 앞뒤 공백 제거 |
@@ -743,7 +755,7 @@ end
 | `PUSH(arr, values...)` | 값이 추가된 새 배열 반환. 원본 변경 없음. |
 | `POP(arr)` | 마지막 요소가 제거된 새 배열 반환. 원본 변경 없음. |
 | `CONCAT(arrs...)` | 모든 입력 배열을 연결한 새 배열 반환 |
-| `SLICE(arr, start, [end])` | 부분 배열 반환. `start`는 1-기반. `end`는 배타적. |
+| `SLICE(arr, start, [count])` | `start`(1-기반)부터 최대 `count`개 요소의 부분 배열 반환. `count` 생략 시 배열 끝까지. `SUBSTRING`·`READ_LINES`와 동일한 start+count 규약. |
 | `SORT(arr)` | 오름차순 정렬된 새 배열 반환. 모든 요소가 같은 타입(숫자 또는 문자열)이어야 합니다. |
 | `SORT_DESC(arr)` | 내림차순 정렬된 새 배열 반환. `SORT`와 동일한 타입 제한. |
 | `SORT_BY(arr, key)` | 주어진 키로 오름차순 정렬된 객체 배열 반환. |
@@ -1091,6 +1103,9 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 산술 타입 불일치 | Arithmetic operator '+' requires numeric operands |
 | 변환 불가능한 `+` 피연산자 | Addition requires numeric or string operands |
 | `and`/`or`에 비불리언 | Logical AND requires boolean operands |
+| `if`/`loop` 조건에 비불리언 | Condition requires a boolean value |
+| 비컬렉션에 `LEN` | LEN() requires a string, array, or object argument |
+| 단일 인자 `RANDOM` | RANDOM() requires zero or two arguments |
 | 0으로 나누기 | Division by zero |
 | 누락된 프로퍼티 | Property 'x' does not exist |
 | 배열 범위 초과 | Array index out of bounds |
@@ -1109,6 +1124,16 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 범위 step이 숫자가 아님 | Range step must be a number |
 
 ## 변경 이력
+
+### v0.7.0 — breaking 변경 배치
+
+다섯 개의 breaking 변경([#1](https://github.com/flatide/ProperTee/issues/1), [#2](https://github.com/flatide/ProperTee/issues/2), [#5](https://github.com/flatide/ProperTee/issues/5), [#6](https://github.com/flatide/ProperTee/issues/6), [#7](https://github.com/flatide/ProperTee/issues/7))을 한 번에 묶어 스크립트 이관이 1회로 끝나도록 했습니다. **마이그레이션 노트:**
+
+- **조건 엄격화** (#1): 비불리언 `if`/`loop` 조건은 이제 런타임 에러(`Condition requires a boolean value`)입니다. 이전에는 조용히 거짓 취급 — `if LEN(arr) then`은 절대 실행되지 않았지만 이제 시끄럽게 실패합니다. 명시적 비교를 쓰세요(`if LEN(arr) > 0 then`).
+- **`and`/`or` 단축 평가** (#2): 좌→우로 평가하며 결과가 결정되는 즉시 중단합니다 — `false and X` / `true or X`는 `X`를 부수효과 포함 평가하지 않습니다. `if HAS_KEY(obj, "k") and obj.k == 1 then` 가드가 가능해집니다. 피연산자 타입 에러는 이제 실제 평가된 피연산자의 타입만 보고합니다(`Got number and number`가 아니라 `Got number`).
+- **`RANDOM(max)` 제거** (#5): 단일 인자 형태(0 ~ max−1, 배타)는 포함 규약인 2-인자 형태와 충돌했습니다. 단일 인자 호출은 런타임 에러이며, 기존 의미는 `RANDOM(0, max - 1)`로 대체하세요.
+- **`SLICE(arr, start, count)`** (#6): 제3인자가 이제 **count**이며 `SUBSTRING`·`READ_LINES`와 통일됩니다. 기존 제3인자는 실질적으로 1-기반 *포함* end였으므로(이전 스펙의 "end는 배타적"은 0-기반 내부 경계 서술) `SLICE(a, s, e)` → `SLICE(a, s, e - s + 1)`로 이관하세요.
+- **`LEN` 엄격화** (#7): 숫자·불리언에 `LEN`은 조용한 `0` 반환 대신 런타임 에러(`LEN() requires a string, array, or object argument`)입니다.
 
 ### v0.6.0
 

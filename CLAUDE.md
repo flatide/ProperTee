@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProperTee is a lightweight, dynamically-typed scripting language (v0.6.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
+ProperTee is a lightweight, dynamically-typed scripting language (v0.7.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
 
 This repository contains the **language specification, grammar, documentation, and editor extensions**. The interpreter implementations live in separate repositories:
 - **Java (reference implementation)**: [propertee2-java](https://github.com/flatide/propertee2-java) — Java 25, virtual-thread cooperative runtime; consumed by [TeeBox](https://github.com/flatide/TeeBox)
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency; powers the online playground
 - **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **frozen at v1.0.0** (security/bugfixes only, do not add features)
 
-All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, and propertee-js in sync (propertee-java is frozen). Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the Java runtimes pass 84 fixtures, the JavaScript runtime 80 (host-dependent SHELL/file-I/O fixtures are Java-only).
+All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, and propertee-js in sync (propertee-java is frozen). Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 90 fixtures (spec v0.7.0), the JavaScript runtime 86 (host-dependent SHELL/file-I/O fixtures are Java-only); the frozen v1 runtime stays at its 84 (spec v0.6.0 semantics).
 
 ## Repository Structure
 
@@ -25,7 +25,7 @@ All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this r
 
 No build step in this repo — grammar compilation and bundling happens in the implementation repos.
 
-**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.6.0); `grammar/LANGUAGE.md` is a byte-identical copy of it. Implementation repos carry their own copies: propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy; propertee-js's copy is stale at v0.4.0 and needs a refresh (its implementation already tracks v0.6.0 — `_PROPS`, HTTP stubs). propertee-java's copy is frozen with that runtime. Update `LANGUAGE.ko.md` manually when the English spec changes.
+**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.7.0); `grammar/LANGUAGE.md` and propertee-js's `LANGUAGE.md` are byte-identical copies of it. propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy. propertee-java's copy is frozen with that runtime. Update `LANGUAGE.ko.md` manually when the English spec changes.
 
 ## Editor Extensions
 
@@ -50,7 +50,8 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **1-based indexing**: First array element is `.1`, not `.0`. `arr.0` is a runtime error.
 - **No null type**: Empty object `{}` is the universal "no value" sentinel.
 - **String concatenation coercion**: `+` with at least one string operand auto-coerces the other via `TO_STRING()`. `5 == "5"` is still false (no comparison coercion).
-- **Inverted truthiness**: Only `true` is truthy. Everything else (`false`, `0`, `""`, `[]`, `{}`) is falsy. Non-booleans are allowed in conditions but are always falsy.
+- **Strict boolean conditions** (spec v0.7.0): `if`/`loop` conditions require a boolean — any other type is a runtime error (`Condition requires a boolean value`). There is no truthiness coercion.
+- **Short-circuit `and`/`or`** (spec v0.7.0): left to right, the right operand is not evaluated (side effects included) when the left side decides; operands are type-checked only when evaluated.
 - **Division by zero**: Runtime error, not Infinity.
 - **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`.
 - **Unified loop**: Single `loop` keyword for condition, value, key-value, and infinite iteration.
