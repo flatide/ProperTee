@@ -45,6 +45,10 @@ syn match propertDynAccess "\.\$"
 " --- Punctuation ---
 syn match propertPunct "[,:.{}\[\]()]"
 
+" --- Suspicious: `not x == y` parses as `(not x) == y` (LANGUAGE.md §Precedence) ---
+" not + non-parenthesized simple operand + ==/!= ; `not (x == y)` is not matched.
+syn match propertNotCompare "\<not\s\+(\@!\%(\%(::\)\=\h\w*\%(\.\$\=\h\w*\|\.\d\+\)*\|\d\+\%(\.\d\+\)\=\)\s*[!=]="
+
 " --- Strings (defined after operators so they take priority) ---
 syn region propertString start=+"+ skip=+\\"+ end=+"+ contains=propertEscape
 syn match  propertEscape +\\.+ contained
@@ -66,6 +70,7 @@ hi def link propertKeyword      Keyword
 hi def link propertLogical      Keyword
 hi def link propertBoolean      Boolean
 hi def link propertNull         Constant
+hi def link propertNotCompare   WarningMsg
 hi def link propertBuiltin      Function
 hi def link propertCompare      Operator
 hi def link propertAssign       Operator

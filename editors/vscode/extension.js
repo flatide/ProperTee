@@ -17,6 +17,64 @@ function activate(context) {
             }
         })
     );
+
+    // `not a == b` parses as `(not a) == b` (LANGUAGE.md §Precedence) — with a boolean a and a
+    // non-boolean b this silently always yields false, so flag the shape as suspicious.
+    const diagnostics = vscode.languages.createDiagnosticCollection('propertee');
+    context.subscriptions.push(diagnostics);
+    const refresh = (document) => {
+        if (document.languageId !== 'propertee') return;
+        diagnostics.set(document.uri, scanNotComparison(document));
+    };
+    vscode.workspace.textDocuments.forEach(refresh);
+    context.subscriptions.push(
+        vscode.workspace.onDidOpenTextDocument(refresh),
+        vscode.workspace.onDidChangeTextDocument(e => refresh(e.document)),
+        vscode.workspace.onDidCloseTextDocument(document => diagnostics.delete(document.uri))
+    );
+}
+
+// not + non-parenthesized simple operand (identifier/member chain or literal) + ==/!=.
+// `not (a == b)` — the correct form — is deliberately not matched.
+const NOT_COMPARISON =
+    /\bnot\s+(?!\()((?:::)?[A-Za-z_]\w*(?:\.\$?[A-Za-z_]\w*|\.\d+)*|\d+(?:\.\d+)?)\s*(==|!=)/g;
+
+function scanNotComparison(document) {
+    const found = [];
+    for (let line = 0; line < document.lineCount; line++) {
+        const code = blankStrings(document.lineAt(line).text);
+        NOT_COMPARISON.lastIndex = 0;
+        let m;
+        while ((m = NOT_COMPARISON.exec(code)) !== null) {
+            const flipped = m[2] === '==' ? '!=' : '==';
+            found.push(new vscode.Diagnostic(
+                new vscode.Range(line, m.index, line, m.index + m[0].length),
+                `'not ${m[1]} ${m[2]} …' parses as '(not ${m[1]}) ${m[2]} …' — 'not' binds tighter than comparison. ` +
+                `If you meant to negate the comparison, write '${m[1]} ${flipped} …' or 'not (${m[1]} ${m[2]} …)'.`,
+                vscode.DiagnosticSeverity.Warning
+            ));
+        }
+    }
+    return found;
+}
+
+// Blank out string contents (quotes kept) and drop the line comment, so neither can false-match.
+function blankStrings(line) {
+    let out = '', inStr = false, esc = false;
+    for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (inStr) {
+            if (esc) { esc = false; out += ' '; continue; }
+            if (c === '\\') { esc = true; out += ' '; continue; }
+            if (c === '"') { inStr = false; out += '"'; continue; }
+            out += ' ';
+        } else {
+            if (c === '"') { inStr = true; out += '"'; continue; }
+            if (c === '/' && line[i + 1] === '/') break;
+            out += c;
+        }
+    }
+    return out;
 }
 
 function formatText(text, indent) {

@@ -4,6 +4,12 @@ Open design questions for the ProperTee language. This file is the **index**; th
 
 Snapshot: **2026-07-03**, spec v0.9.0. Update this file when issues close or new ones are filed.
 
+## Landed — docs/tooling (no spec version): `not` precedence footgun (2026-07-03)
+
+| # | Title | Resolution |
+|---|---|---|
+| [#8](https://github.com/flatide/ProperTee/issues/8) | `not a == b` parses as `(not a) == b` — silent-false footgun with mixed types | Documentation + tooling per the issue's proposal; no grammar change. LANGUAGE.md §Precedence warning (EN/KO); vscode extension 0.3.0 ships a diagnostics provider flagging the `not <operand> ==/!=` shape (the corrected `not (…)` form is not flagged); vim highlights the shape as `WarningMsg`; the playground prints a parse hint before running. |
+
 ## Landed — spec v0.9.0: `elseif` (2026-07-03)
 
 | # | Title | Resolution |
@@ -32,10 +38,9 @@ The five breaking items shipped together in **spec v0.7.0** with a single migrat
 
 | # | Title | Kind | Breaking? |
 |---|---|---|---|
-| [#8](https://github.com/flatide/ProperTee/issues/8) | `not a == b` parses as `(not a) == b` — silent-false footgun with mixed types | docs / tooling | No |
 | [#9](https://github.com/flatide/ProperTee/issues/9) | Host restrictions are runtime-only — opt-in parse-time validation pass | host API | No (opt-in) |
 
-The open items are all non-breaking (or free at the documentation tier) and can proceed independently at any time. If a future breaking item appears, batch it the same way: one spec version, one migration note, loud failures preferred over silent behavior shifts.
+The open item is non-breaking and can proceed independently at any time. If a future breaking item appears, batch it the same way: one spec version, one migration note, loud failures preferred over silent behavior shifts.
 
 ## What an accepted change touches
 

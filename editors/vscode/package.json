@@ -2,7 +2,7 @@
   "name": "propertee",
   "displayName": "ProperTee",
   "description": "Syntax highlighting and formatting for the ProperTee scripting language",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "./extension.js",
   "publisher": "flatide",
   "license": "BSD-3-Clause",
