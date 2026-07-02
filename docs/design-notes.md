@@ -21,7 +21,7 @@ The five breaking items shipped together in **spec v0.7.0** with a single migrat
 | # | Title | Kind | Breaking? |
 |---|---|---|---|
 | [#3](https://github.com/flatide/ProperTee/issues/3) | Add `elseif` — else-if chains require nested blocks with stacked `end`s | grammar | Nearly no (`elseif` becomes reserved) |
-| [#4](https://github.com/flatide/ProperTee/issues/4) | JSON `null` becomes `{}` — JSON round-trips are lossy | value model / docs | Tiered (doc caveat is free) |
+| [#4](https://github.com/flatide/ProperTee/issues/4) | JSON `null` becomes `{}` — JSON round-trips are lossy | value model | **Direction accepted (2026-07-02):** first-class `null` literal; the "no null" pillar becomes "**no implicit null**" (the language never produces `null`; only data can). Slated for **spec v0.8.0** — breaking: `null` reserved + `JSON_PARSE` stops normalizing `null`→`{}`. Full design on the issue. |
 | [#8](https://github.com/flatide/ProperTee/issues/8) | `not a == b` parses as `(not a) == b` — silent-false footgun with mixed types | docs / tooling | No |
 | [#9](https://github.com/flatide/ProperTee/issues/9) | Host restrictions are runtime-only — opt-in parse-time validation pass | host API | No (opt-in) |
 
