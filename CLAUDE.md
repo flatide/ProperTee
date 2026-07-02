@@ -21,6 +21,7 @@ All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this r
 - `LANGUAGE.ko.md` — Full language specification (Korean, manually maintained translation)
 - `editors/vscode/` — VS Code syntax highlighting extension + formatter
 - `editors/vim/` — Vim/Neovim syntax highlighting plugin
+- `docs/design-notes.md` — index of open language-design questions (tracked as GitHub issues; includes breaking-change batching guidance)
 
 No build step in this repo — grammar compilation and bundling happens in the implementation repos.
 
