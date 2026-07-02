@@ -85,9 +85,10 @@ PRINT("결과:", result.resultA.value, result.resultB.value)
 
 ## 문서
 
+- [언어 명세 (공식, 영어)](grammar/LANGUAGE.md)
 - [언어 명세 (한국어)](LANGUAGE.ko.md)
-- [언어 명세 (영어)](LANGUAGE.md)
 - [문법 파일 (ANTLR4)](grammar/ProperTee.g4)
+- [변경 이력](grammar/LANGUAGE.md#changelog)
 
 ## 구현체
 
@@ -148,6 +149,30 @@ const result = await scheduler.run(mainGenerator);
 ```
 
 전체 내장 예제: [scratch.html](https://github.com/flatide/propertee-js/blob/main/docs/dist/scratch.html)
+
+### 언어 기능 제한
+
+키워드를 숨기고 함수를 차단하여 샌드박스 실행 환경을 만들 수 있습니다:
+
+```javascript
+// JavaScript
+visitor.setHiddenKeywords(["multi", "loop"]);
+visitor.setIgnoredFunctions(["SHELL", "SLEEP"]);
+```
+
+```java
+// Java
+Set<String> hidden = new HashSet<String>();
+hidden.add("multi");
+hidden.add("loop");
+interpreter.setHiddenKeywords(hidden);
+
+Set<String> ignored = new HashSet<String>();
+ignored.add("SHELL");
+interpreter.setIgnoredFunctions(ignored);
+```
+
+숨길 수 있는 키워드: `if`, `loop`, `function`, `multi`, `thread`, `debug`. 내장 함수와 외부 함수 모두 차단할 수 있습니다. 숨겨진 키워드나 차단된 함수를 사용하면 런타임 에러가 발생합니다: `'X' is not available in this environment`.
 
 ### 로컬에서 실행하기
 
