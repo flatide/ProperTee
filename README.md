@@ -12,7 +12,7 @@
 - **1-based indexing**: First array element is `.1`
 - **Unified loop**: `loop` keyword covers condition, iteration, and infinite loops
 - **User-defined functions**: `function` keyword for reusable logic
-- **Cooperative multithreading**: `multi` blocks for safe parallel execution with thread purity
+- **Cooperative multithreading**: `multi` blocks for deterministic, race-free concurrency (overlapping I/O waits) with thread purity
 - **Comments**: Single-line (`//`) and block (`/* */`) comments
 - **No null**: Empty object `{}` is the no-value sentinel
 - **External function integration**: `registerExternal()` with Result pattern for host I/O
@@ -67,7 +67,7 @@ end
 message = greet("ProperTee")
 PRINT(message)
 
-// Parallel execution
+// Concurrent execution (cooperative — waits overlap, output order is deterministic)
 function worker(id) do
     PRINT("Worker " + id + " running")
     return 42
@@ -92,12 +92,13 @@ PRINT("Results:", result.resultA.value, result.resultB.value)
 
 ## Implementations
 
-| Implementation | Repository | Runtime |
-|---|---|---|
-| **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js (ES modules, generator-based concurrency) |
-| **Java** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) |
+| Implementation | Repository | Runtime | Status |
+|---|---|---|---|
+| **Java** | [propertee2-java](https://github.com/flatide/propertee2-java) | Java 25 (virtual-thread cooperative runtime) | **Active — reference implementation**; consumed by [TeeBox](https://github.com/flatide/TeeBox) |
+| **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js / browser (ES modules, generator-based concurrency) | Active — powers the online playground |
+| **Java (legacy)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) | Frozen at v1.0.0 (security/bugfixes only) |
 
-Both implementations share the same ANTLR4 grammar and pass the same 85-test suite.
+All implementations share the same ANTLR4 grammar (`grammar/ProperTee.g4`) and target spec v0.6.0. Conformance is fixture-based — `.tee` scripts with byte-exact `.expected` outputs. The Java runtimes pass an 84-fixture suite; the JavaScript runtime passes an 80-fixture variant (host-dependent fixtures such as SHELL and file I/O are Java-only; in JS those functions are stubs per the spec's runtime-availability rule).
 
 ## Online Playground
 

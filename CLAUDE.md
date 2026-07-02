@@ -7,10 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ProperTee is a lightweight, dynamically-typed scripting language (v0.6.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
 
 This repository contains the **language specification, grammar, documentation, and editor extensions**. The interpreter implementations live in separate repositories:
-- **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency
-- **Java**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern
+- **Java (reference implementation)**: [propertee2-java](https://github.com/flatide/propertee2-java) — Java 25, virtual-thread cooperative runtime; consumed by [TeeBox](https://github.com/flatide/TeeBox)
+- **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency; powers the online playground
+- **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **frozen at v1.0.0** (security/bugfixes only, do not add features)
 
-All three repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep them in sync. Both implementations pass the same 70-test suite.
+All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, and propertee-js in sync (propertee-java is frozen). Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the Java runtimes pass 84 fixtures, the JavaScript runtime 80 (host-dependent SHELL/file-I/O fixtures are Java-only).
 
 ## Repository Structure
 
@@ -23,7 +24,7 @@ All three repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep 
 
 No build step in this repo — grammar compilation and bundling happens in the implementation repos.
 
-**LANGUAGE.md sync workflow:** propertee-java is the canonical source → copy to propertee-js and both locations in this repo (`LANGUAGE.md` and `grammar/LANGUAGE.md`). Update `LANGUAGE.ko.md` manually when the English spec changes.
+**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.6.0); `grammar/LANGUAGE.md` is a byte-identical copy of it. Implementation repos carry their own copies: propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy; propertee-js's copy is stale at v0.4.0 and needs a refresh (its implementation already tracks v0.6.0 — `_PROPS`, HTTP stubs). propertee-java's copy is frozen with that runtime. Update `LANGUAGE.ko.md` manually when the English spec changes.
 
 ## Editor Extensions
 

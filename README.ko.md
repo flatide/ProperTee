@@ -1,4 +1,4 @@
-# ProperTee
+# ProperTee v0.6.0
 
 **ProperTee**는 프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어입니다. 직관적인 문법, 강력한 동적 접근 패턴, 협력적 멀티스레딩을 지원하며 — 설정 관리, 데이터 변환, 호스트 애플리케이션 내장용으로 설계되었습니다.
 
@@ -12,10 +12,11 @@
 - **1-기반 인덱싱**: 배열의 첫 번째 요소는 `.1`
 - **통합 루프**: `loop` 키워드로 조건, 반복, 무한 루프를 모두 처리
 - **사용자 정의 함수**: `function` 키워드로 재사용 가능한 로직 작성
-- **협력적 멀티스레딩**: `multi` 블록으로 스레드 순수성이 보장된 안전한 병렬 실행
+- **협력적 멀티스레딩**: `multi` 블록으로 스레드 순수성이 보장된 결정론적 동시 실행 (I/O 대기 중첩)
 - **주석**: 한 줄 (`//`) 및 블록 (`/* */`) 주석
 - **null 없음**: 빈 객체 `{}`가 "값 없음"을 나타내는 센티넬
 - **외부 함수 연동**: `registerExternal()`과 Result 패턴으로 호스트 I/O 처리
+- **호스트 환경 제한**: 키워드 숨김과 함수 차단으로 샌드박스 실행 환경 구성
 
 ## 빠른 예제
 
@@ -26,8 +27,8 @@ version = 1.2
 
 // 객체와 배열 (1-기반 인덱싱)
 config = {
-    debug: true,
-    ports: [8080, 8443, 3000],
+    "debug": true,
+    "ports": [8080, 8443, 3000],
     "api-key": "secret123"
 }
 
@@ -66,7 +67,7 @@ end
 message = greet("ProperTee")
 PRINT(message)
 
-// 병렬 실행
+// 동시 실행 (협력형 — 대기는 중첩되고 출력 순서는 결정론적)
 function worker(id) do
     PRINT("Worker " + id + " 실행 중")
     return 42
@@ -90,12 +91,13 @@ PRINT("결과:", result.resultA.value, result.resultB.value)
 
 ## 구현체
 
-| 구현체 | 저장소 | 런타임 |
-|---|---|---|
-| **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js (ES 모듈, 제너레이터 기반 동시성) |
-| **Java** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper 패턴, 레거시 시스템 내장) |
+| 구현체 | 저장소 | 런타임 | 상태 |
+|---|---|---|---|
+| **Java** | [propertee2-java](https://github.com/flatide/propertee2-java) | Java 25 (가상 스레드 협력형 런타임) | **활성 — 레퍼런스 구현**; [TeeBox](https://github.com/flatide/TeeBox)가 사용 |
+| **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js / 브라우저 (ES 모듈, 제너레이터 기반 동시성) | 활성 — 온라인 플레이그라운드 구동 |
+| **Java (레거시)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper 패턴, 레거시 시스템 내장) | v1.0.0에서 동결 (보안/버그픽스만) |
 
-두 구현체 모두 동일한 ANTLR4 문법을 공유하며 55개 테스트 스위트를 통과합니다.
+모든 구현체는 동일한 ANTLR4 문법(`grammar/ProperTee.g4`)을 공유하며 스펙 v0.6.0을 타깃으로 합니다. 컨포먼스는 픽스처 기반(`.tee` 스크립트와 byte 단위로 일치해야 하는 `.expected` 출력)으로 검증합니다 — Java 런타임은 84개 픽스처를, JavaScript 런타임은 80개 변형 스위트를 통과합니다(SHELL·파일 I/O 등 호스트 의존 픽스처는 Java 전용이며, JS에서는 스펙의 런타임 가용성 규칙에 따라 해당 함수가 스텁으로 동작합니다).
 
 ## 온라인 플레이그라운드
 
