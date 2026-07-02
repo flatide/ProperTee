@@ -1,4 +1,4 @@
-# ProperTee v0.8.0
+# ProperTee v0.9.0
 
 **ProperTee**는 프로퍼티 기반 데이터 처리를 위한 경량 스크립팅 언어입니다. 직관적인 문법, 강력한 동적 접근 패턴, 협력적 멀티스레딩을 지원하며 — 설정 관리, 데이터 변환, 호스트 애플리케이션 내장용으로 설계되었습니다.
 
@@ -98,7 +98,7 @@ PRINT("결과:", result.resultA.value, result.resultB.value)
 | **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js / 브라우저 (ES 모듈, 제너레이터 기반 동시성) | 활성 — 온라인 플레이그라운드 구동 |
 | **Java (레거시)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper 패턴, 레거시 시스템 내장) | v1.0.0에서 동결 (보안/버그픽스만) |
 
-모든 구현체는 동일한 ANTLR4 문법(`grammar/ProperTee.g4`)을 공유합니다. **propertee2-java(0.3.0)와 propertee-js는 스펙 v0.7.0을 구현**하며, 동결된 propertee-java v1은 스펙 v0.6.0 의미론에 머뭅니다. 컨포먼스는 픽스처 기반(`.tee` 스크립트와 byte 단위로 일치해야 하는 `.expected` 출력)으로 검증합니다 — 레퍼런스 Java 런타임은 90개 픽스처를, JavaScript 런타임은 86개 변형 스위트를 통과합니다(SHELL·파일 I/O 등 호스트 의존 픽스처는 Java 전용이며, JS에서는 스펙의 런타임 가용성 규칙에 따라 해당 함수가 스텁으로 동작합니다).
+모든 구현체는 동일한 ANTLR4 문법(`grammar/ProperTee.g4`)을 공유합니다. **propertee2-java(0.5.0)와 propertee-js는 스펙 v0.9.0을 구현**하며, 동결된 propertee-java v1은 스펙 v0.6.0 의미론에 머뭅니다. 컨포먼스는 픽스처 기반(`.tee` 스크립트와 byte 단위로 일치해야 하는 `.expected` 출력)으로 검증합니다 — 레퍼런스 Java 런타임은 96개 픽스처를, JavaScript 런타임은 92개 변형 스위트를 통과합니다(SHELL·파일 I/O 등 호스트 의존 픽스처는 Java 전용이며, JS에서는 스펙의 런타임 가용성 규칙에 따라 해당 함수가 스텁으로 동작합니다).
 
 ## 온라인 플레이그라운드
 

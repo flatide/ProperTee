@@ -54,8 +54,8 @@ function formatText(text, indent) {
         const normalized = normalizeLine(trimmed);
         const code = extractCode(normalized);
 
-        // Dedent for: end, else, monitor
-        if (/^(end|else|monitor)\b/.test(code)) {
+        // Dedent for: end, elseif, else, monitor
+        if (/^(end|elseif|else|monitor)\b/.test(code)) {
             level = Math.max(0, level - 1);
         }
 

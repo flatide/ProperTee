@@ -28,12 +28,12 @@
     }
   },
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(if\\b.*\\bthen|.*\\bdo|else|multi|monitor\\s+\\d+)\\s*(//.*)?$",
-    "decreaseIndentPattern": "^\\s*(end|else|monitor)\\b"
+    "increaseIndentPattern": "^\\s*(if\\b.*\\bthen|elseif\\b.*\\bthen|.*\\bdo|else|multi|monitor\\s+\\d+)\\s*(//.*)?$",
+    "decreaseIndentPattern": "^\\s*(end|elseif|else|monitor)\\b"
   },
   "onEnterRules": [
     {
-      "beforeText": "^\\s*(if\\b.*\\bthen|.*\\bdo|else|multi|monitor\\s+\\d+)\\s*(//.*)?$",
+      "beforeText": "^\\s*(if\\b.*\\bthen|elseif\\b.*\\bthen|.*\\bdo|else|multi|monitor\\s+\\d+)\\s*(//.*)?$",
       "action": { "indent": "indent" }
     },
     {

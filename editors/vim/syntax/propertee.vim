@@ -7,7 +7,7 @@ if exists('b:current_syntax')
 endif
 
 " --- Keywords ---
-syn keyword propertKeyword      if then else end
+syn keyword propertKeyword      if then elseif else end
 syn keyword propertKeyword      loop in do infinite
 syn keyword propertKeyword      break continue return debug
 syn keyword propertKeyword      function thread

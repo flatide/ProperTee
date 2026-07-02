@@ -2,7 +2,13 @@
 
 Open design questions for the ProperTee language. This file is the **index**; the analysis and discussion live in the [GitHub issues](https://github.com/flatide/ProperTee/issues). Each issue follows the same format: current behavior (spec citation) → problem → proposal → impact/compatibility → alternatives.
 
-Snapshot: **2026-07-02**, spec v0.8.0. Update this file when issues close or new ones are filed.
+Snapshot: **2026-07-03**, spec v0.9.0. Update this file when issues close or new ones are filed.
+
+## Landed — spec v0.9.0: `elseif` (2026-07-03)
+
+| # | Title | Resolution |
+|---|---|---|
+| [#3](https://github.com/flatide/ProperTee/issues/3) | Add `elseif` — else-if chains require nested blocks with stacked `end`s | Lua-style `elseif` per the issue's proposal — one chain, one `end`; first true arm wins, later conditions unevaluated; strict-boolean (v0.7.0) applies per evaluated condition; hiding `if` covers the chain. Nearly non-breaking: `elseif` becomes reserved. |
 
 ## Landed — spec v0.8.0: first-class `null` (2026-07-02)
 
@@ -26,7 +32,6 @@ The five breaking items shipped together in **spec v0.7.0** with a single migrat
 
 | # | Title | Kind | Breaking? |
 |---|---|---|---|
-| [#3](https://github.com/flatide/ProperTee/issues/3) | Add `elseif` — else-if chains require nested blocks with stacked `end`s | grammar | Nearly no (`elseif` becomes reserved) |
 | [#8](https://github.com/flatide/ProperTee/issues/8) | `not a == b` parses as `(not a) == b` — silent-false footgun with mixed types | docs / tooling | No |
 | [#9](https://github.com/flatide/ProperTee/issues/9) | Host restrictions are runtime-only — opt-in parse-time validation pass | host API | No (opt-in) |
 

@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.8.0
+# ProperTee 언어 명세 v0.9.0
 
 ## 개요
 
@@ -309,7 +309,7 @@ data.users.2.name    // "Bob"
 
 ## 제어 흐름
 
-### If / Else
+### If / Elseif / Else
 
 ```
 if condition then
@@ -321,11 +321,23 @@ if condition then
 else
     // 문장들
 end
+
+if condition then
+    // 문장들
+elseif condition then
+    // 문장들
+elseif condition then
+    // 문장들
+else
+    // 문장들
+end
 ```
+
+조건은 위에서 아래로 검사되며, 처음으로 `true`가 된 가지가 실행되고 그 뒤는 — 이후의 조건 포함 — 전부 건너뜁니다(`elseif` 조건은 도달했을 때만 평가되고, 타입 검사도 그때만 수행). 어떤 조건도 맞지 않으면 선택적 `else` 가지가 실행됩니다. 평가되는 조건은 모두 불리언이어야 합니다(참/거짓 판별 참고). `end` 하나가 체인 전체를 닫습니다 — `elseif`는 spec v0.9.0에서 추가되었으며, 이전에는 다분기마다 `else if ... end`를 중첩해 `end`를 쌓아야 했습니다(그 형태도 여전히 동작합니다).
 
 ### 루프
 
-**조건 루프** — 조건이 참인 동안 반복:
+**조건 루프** — 조건이 `true`인 동안 반복(비불리언 조건은 `if`와 동일하게 런타임 에러):
 
 ```
 i = 0
@@ -1042,7 +1054,7 @@ if x == 10 then    // 런타임 에러: 'if' is not available in this environmen
 end
 ```
 
-숨길 수 있는 키워드: `if`, `loop`, `function`, `multi`, `thread`, `debug`.
+숨길 수 있는 키워드: `if`, `loop`, `function`, `multi`, `thread`, `debug`. `if`를 숨기면 `if`/`elseif`/`else` 문 전체가 막힙니다.
 
 **무시된 함수**는 호출 시 런타임 에러를 발생시킵니다:
 
@@ -1131,6 +1143,12 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 범위 step이 숫자가 아님 | Range step must be a number |
 
 ## 변경 이력
+
+### v0.9.0 — `elseif`
+
+Lua 스타일 `elseif`([#3](https://github.com/flatide/ProperTee/issues/3)): 다분기가 더 이상 `else if ... end` 중첩으로 `end`를 쌓지 않습니다 — 체인 하나에 `end` 하나. 조건은 위에서 아래로 검사되고, 처음 `true`가 된 가지가 이기며 이후 조건은 평가되지 않습니다(따라서 타입 검사도 없음). 평가되는 각 조건에는 엄격 불리언 규칙(spec v0.7.0)이 적용되고, `if` 키워드를 숨기면 체인 전체가 막힙니다.
+
+**마이그레이션 노트:** `elseif`는 이제 예약어입니다 — 변수·함수 이름으로 쓰던 스크립트는 이름을 바꿔야 합니다. 기존의 중첩 `else if ... end` 체인은 그대로 동작합니다.
 
 ### v0.8.0 — 일급 `null`
 

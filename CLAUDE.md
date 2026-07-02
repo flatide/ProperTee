@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProperTee is a lightweight, dynamically-typed scripting language (v0.8.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
+ProperTee is a lightweight, dynamically-typed scripting language (v0.9.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
 
 This repository contains the **language specification, grammar, documentation, and editor extensions**. The interpreter implementations live in separate repositories:
 - **Java (reference implementation)**: [propertee2-java](https://github.com/flatide/propertee2-java) — Java 25, virtual-thread cooperative runtime; consumed by [TeeBox](https://github.com/flatide/TeeBox)
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency; powers the online playground
 - **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **frozen at v1.0.0** (security/bugfixes only, do not add features)
 
-All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, and propertee-js in sync (propertee-java is frozen). Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 94 fixtures (spec v0.8.0), the JavaScript runtime 90 (host-dependent SHELL/file-I/O fixtures are Java-only); the frozen v1 runtime stays at its 84 (spec v0.6.0 semantics).
+All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, and propertee-js in sync (propertee-java is frozen). Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 96 fixtures (spec v0.9.0), the JavaScript runtime 92 (host-dependent SHELL/file-I/O fixtures are Java-only); the frozen v1 runtime stays at its 84 (spec v0.6.0 semantics).
 
 ## Repository Structure
 
@@ -25,7 +25,7 @@ All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this r
 
 No build step in this repo — grammar compilation and bundling happens in the implementation repos.
 
-**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.8.0); `grammar/LANGUAGE.md` and propertee-js's `LANGUAGE.md` are byte-identical copies of it. propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy. propertee-java's copy is frozen with that runtime. Update `LANGUAGE.ko.md` manually when the English spec changes.
+**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.9.0); `grammar/LANGUAGE.md` and propertee-js's `LANGUAGE.md` are byte-identical copies of it. propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy. propertee-java's copy is frozen with that runtime. Update `LANGUAGE.ko.md` manually when the English spec changes.
 
 ## Editor Extensions
 
@@ -53,7 +53,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **Strict boolean conditions** (spec v0.7.0): `if`/`loop` conditions require a boolean — any other type is a runtime error (`Condition requires a boolean value`). There is no truthiness coercion.
 - **Short-circuit `and`/`or`** (spec v0.7.0): left to right, the right operand is not evaluated (side effects included) when the left side decides; operands are type-checked only when evaluated.
 - **Division by zero**: Runtime error, not Infinity.
-- **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`.
+- **Block structure**: Pascal/Lua-style `if-then-end`, `loop-do-end`, `function-do-end`. Multi-way branches use Lua-style `elseif` (spec v0.9.0) — one chain, one `end`; the first true arm wins and later conditions are not evaluated.
 - **Unified loop**: Single `loop` keyword for condition, value, key-value, and infinite iteration.
 - **No separate thread functions**: The `thread` keyword is a spawn statement used only inside `multi` blocks to run regular functions concurrently. There is no `thread ... do ... end` definition syntax.
 - **Result collection**: `multi result do ... end` collects all thread results into a single object. Spawn keys use the same `access` syntax as property access. Named threads (`key: func()`) use the key; unnamed threads (`thread : func()`) use `"#1"`, `"#2"`, etc. Keys can be ID, STRING, INTEGER, `$var`, or `$(expr)` — all auto-coerced to string via `TO_STRING()`. Each entry is `{status, ok, value}` — `"running"` / `"done"` / `"error"`.
@@ -65,7 +65,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 ## Keywords (complete set — from grammar)
 
 ```
-if then else end
+if then elseif else end
 loop in do infinite
 break continue debug
 function thread return
