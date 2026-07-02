@@ -789,6 +789,35 @@ end
 | `LIST_DIR(path)` | 디렉터리 항목 목록. Result와 `{name, type, size}` 객체 배열 반환. 이름순 정렬. |
 | `DELETE_FILE(path)` | 단일 파일 삭제. 디렉터리는 거부. Result 반환. |
 
+```
+// 라인 쓰기와 읽기
+WRITE_LINES("/data/output.csv", ["name,age", "Alice,30", "Bob,25"])
+res = READ_LINES("/data/output.csv", 2, 1)    // 헤더 건너뛰고 1줄 읽기
+PRINT(res.value.1)                              // "Alice,30"
+
+// 대용량 파일 순회
+offset = 1
+loop true infinite do
+    res = READ_LINES("/data/big.log", offset, 500)
+    if res.ok == false then break end
+    lines = res.value
+    if LEN(lines) == 0 then break end
+    loop line in lines do
+        if CONTAINS(line, "ERROR") == true then
+            PRINT(line)
+        end
+    end
+    offset = offset + LEN(lines)
+end
+
+// 디렉터리 작업
+MKDIR("/data/reports/2024")
+res = LIST_DIR("/data/reports")
+loop entry in res.value do
+    PRINT(entry.name, entry.type)
+end
+```
+
 ### 타이밍
 
 | 함수 | 설명 |
