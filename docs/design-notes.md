@@ -2,7 +2,13 @@
 
 Open design questions for the ProperTee language. This file is the **index**; the analysis and discussion live in the [GitHub issues](https://github.com/flatide/ProperTee/issues). Each issue follows the same format: current behavior (spec citation) → problem → proposal → impact/compatibility → alternatives.
 
-Snapshot: **2026-07-02**, spec v0.7.0. Update this file when issues close or new ones are filed.
+Snapshot: **2026-07-02**, spec v0.8.0. Update this file when issues close or new ones are filed.
+
+## Landed — spec v0.8.0: first-class `null` (2026-07-02)
+
+| # | Title | Resolution |
+|---|---|---|
+| [#4](https://github.com/flatide/ProperTee/issues/4) | JSON `null` becomes `{}` — JSON round-trips are lossy | `null` is the seventh value type, under a "**no implicit null**" principle: the language never produces it (missing args / bare `return` stay `{}`); it enters only via the `null` literal or data (`JSON_PARSE`, host values), and misuse (conditions/logic/arithmetic/member access) fails loudly via the v0.7.0 strictness. Breaking: `null` reserved word + `JSON_PARSE` stops normalizing `null`→`{}`. |
 
 ## Landed — spec v0.7.0 breaking batch (2026-07-02)
 
@@ -21,7 +27,6 @@ The five breaking items shipped together in **spec v0.7.0** with a single migrat
 | # | Title | Kind | Breaking? |
 |---|---|---|---|
 | [#3](https://github.com/flatide/ProperTee/issues/3) | Add `elseif` — else-if chains require nested blocks with stacked `end`s | grammar | Nearly no (`elseif` becomes reserved) |
-| [#4](https://github.com/flatide/ProperTee/issues/4) | JSON `null` becomes `{}` — JSON round-trips are lossy | value model | **Direction accepted (2026-07-02):** first-class `null` literal; the "no null" pillar becomes "**no implicit null**" (the language never produces `null`; only data can). Slated for **spec v0.8.0** — breaking: `null` reserved + `JSON_PARSE` stops normalizing `null`→`{}`. Full design on the issue. |
 | [#8](https://github.com/flatide/ProperTee/issues/8) | `not a == b` parses as `(not a) == b` — silent-false footgun with mixed types | docs / tooling | No |
 | [#9](https://github.com/flatide/ProperTee/issues/9) | Host restrictions are runtime-only — opt-in parse-time validation pass | host API | No (opt-in) |
 

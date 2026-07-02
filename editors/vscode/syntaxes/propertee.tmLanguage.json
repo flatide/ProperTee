@@ -96,6 +96,10 @@
         {
           "name": "constant.language.boolean.propertee",
           "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "constant.language.null.propertee",
+          "match": "\\b(null)\\b"
         }
       ]
     },

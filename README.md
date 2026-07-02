@@ -1,4 +1,4 @@
-# ProperTee v0.7.0
+# ProperTee v0.8.0
 
 **ProperTee** is a lightweight scripting language for property-based data processing. It features intuitive syntax, powerful dynamic access patterns, and cooperative multithreading — designed for configuration, data transformation, and embedding in host applications.
 
@@ -14,7 +14,7 @@
 - **User-defined functions**: `function` keyword for reusable logic
 - **Cooperative multithreading**: `multi` blocks for deterministic, race-free concurrency (overlapping I/O waits) with thread purity
 - **Comments**: Single-line (`//`) and block (`/* */`) comments
-- **No null**: Empty object `{}` is the no-value sentinel
+- **No implicit null**: Empty object `{}` is the no-value sentinel; `null` exists only as data, for lossless JSON round-trips
 - **External function integration**: `registerExternal()` with Result pattern for host I/O
 - **Host environment restrictions**: Hide keywords and block functions for sandboxed execution
 

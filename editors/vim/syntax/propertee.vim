@@ -16,8 +16,9 @@ syn keyword propertKeyword      multi monitor
 " --- Logical operators ---
 syn keyword propertLogical      not and or
 
-" --- Booleans ---
+" --- Booleans / null ---
 syn keyword propertBoolean      true false
+syn keyword propertNull         null
 
 " --- Built-in functions ---
 syn keyword propertBuiltin      PRINT SLEEP
@@ -64,6 +65,7 @@ hi def link propertNumber       Number
 hi def link propertKeyword      Keyword
 hi def link propertLogical      Keyword
 hi def link propertBoolean      Boolean
+hi def link propertNull         Constant
 hi def link propertBuiltin      Function
 hi def link propertCompare      Operator
 hi def link propertAssign       Operator
