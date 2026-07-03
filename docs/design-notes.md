@@ -49,3 +49,4 @@ Any accepted semantic/grammar change propagates to:
 - this repo: `LANGUAGE.md` (canonical) + `grammar/LANGUAGE.md` (byte copy) + `LANGUAGE.ko.md` (manual translation), `grammar/ProperTee.g4` for grammar changes, `editors/vscode` + `editors/vim` for keyword changes
 - [propertee2-java](https://github.com/flatide/propertee2-java) (reference implementation) — engine + conformance fixtures (new fixtures numbered 87+; existing `.expected` files change only with a spec version bump)
 - [propertee-js](https://github.com/flatide/propertee-js) (playground) — interpreter + its fixture copy + playground examples
+- [propertee-java](https://github.com/flatide/propertee-java) (legacy, Java 7/8) — language semantics only (policy revised 2026-07: spec syncs allowed; stepper/host API untouched)

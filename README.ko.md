@@ -96,9 +96,9 @@ PRINT("결과:", result.resultA.value, result.resultB.value)
 |---|---|---|---|
 | **Java** | [propertee2-java](https://github.com/flatide/propertee2-java) | Java 25 (가상 스레드 협력형 런타임) | **활성 — 레퍼런스 구현**; [TeeBox](https://github.com/flatide/TeeBox)가 사용 |
 | **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js / 브라우저 (ES 모듈, 제너레이터 기반 동시성) | 활성 — 온라인 플레이그라운드 구동 |
-| **Java (레거시)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper 패턴, 레거시 시스템 내장) | v1.0.0에서 동결 (보안/버그픽스만) |
+| **Java (레거시)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper 패턴, 레거시 시스템 내장) | 유지보수 — 스펙 추종(1.1.0 = 스펙 v0.9.0), 런타임 기능 추가 없음. `v1.0.0` 태그 = 동기화 전 기준선(스펙 v0.6.0) |
 
-모든 구현체는 동일한 ANTLR4 문법(`grammar/ProperTee.g4`)을 공유합니다. **propertee2-java(0.5.0)와 propertee-js는 스펙 v0.9.0을 구현**하며, 동결된 propertee-java v1은 스펙 v0.6.0 의미론에 머뭅니다. 컨포먼스는 픽스처 기반(`.tee` 스크립트와 byte 단위로 일치해야 하는 `.expected` 출력)으로 검증합니다 — 레퍼런스 Java 런타임은 96개 픽스처를, JavaScript 런타임은 92개 변형 스위트를 통과합니다(SHELL·파일 I/O 등 호스트 의존 픽스처는 Java 전용이며, JS에서는 스펙의 런타임 가용성 규칙에 따라 해당 함수가 스텁으로 동작합니다).
+모든 구현체는 동일한 ANTLR4 문법(`grammar/ProperTee.g4`)을 공유합니다. **propertee2-java(0.5.0), propertee-js, propertee-java(1.1.0)가 스펙 v0.9.0을 구현**합니다(`v1.0.0` 태그는 레거시 임베더용 동기화 전 스펙 v0.6.0 기준선). 컨포먼스는 픽스처 기반(`.tee` 스크립트와 byte 단위로 일치해야 하는 `.expected` 출력)으로 검증합니다 — 레퍼런스 Java 런타임은 96개 픽스처를(propertee-java도 동일한 96개 통과), JavaScript 런타임은 92개 변형 스위트를 통과합니다(SHELL·파일 I/O 등 호스트 의존 픽스처는 Java 전용이며, JS에서는 스펙의 런타임 가용성 규칙에 따라 해당 함수가 스텁으로 동작합니다).
 
 ## 온라인 플레이그라운드
 

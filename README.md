@@ -96,9 +96,9 @@ PRINT("Results:", result.resultA.value, result.resultB.value)
 |---|---|---|---|
 | **Java** | [propertee2-java](https://github.com/flatide/propertee2-java) | Java 25 (virtual-thread cooperative runtime) | **Active — reference implementation**; consumed by [TeeBox](https://github.com/flatide/TeeBox) |
 | **JavaScript** | [propertee-js](https://github.com/flatide/propertee-js) | Node.js / browser (ES modules, generator-based concurrency) | Active — powers the online playground |
-| **Java (legacy)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) | Frozen at v1.0.0 (security/bugfixes only) |
+| **Java (legacy)** | [propertee-java](https://github.com/flatide/propertee-java) | Java 7+ (Stepper pattern, legacy system embedding) | Maintenance — tracks the spec (1.1.0 = spec v0.9.0); no runtime features. `v1.0.0` tag = pre-sync baseline (spec v0.6.0) |
 
-All implementations share the same ANTLR4 grammar (`grammar/ProperTee.g4`). **propertee2-java (0.5.0) and propertee-js implement spec v0.9.0**; the frozen propertee-java v1 stays on spec v0.6.0 semantics. Conformance is fixture-based — `.tee` scripts with byte-exact `.expected` outputs. The reference Java runtime passes a 96-fixture suite; the JavaScript runtime passes a 92-fixture variant (host-dependent fixtures such as SHELL and file I/O are Java-only; in JS those functions are stubs per the spec's runtime-availability rule).
+All implementations share the same ANTLR4 grammar (`grammar/ProperTee.g4`). **propertee2-java (0.5.0), propertee-js, and propertee-java (1.1.0) implement spec v0.9.0** (the `v1.0.0` tag remains the pre-sync spec v0.6.0 baseline for legacy embedders). Conformance is fixture-based — `.tee` scripts with byte-exact `.expected` outputs. The reference Java runtime passes a 96-fixture suite (propertee-java runs the same 96); the JavaScript runtime passes a 92-fixture variant (host-dependent fixtures such as SHELL and file I/O are Java-only; in JS those functions are stubs per the spec's runtime-availability rule).
 
 ## Online Playground
 
