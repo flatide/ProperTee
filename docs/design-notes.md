@@ -2,7 +2,7 @@
 
 Open design questions for the ProperTee language. This file is the **index**; the analysis and discussion live in the [GitHub issues](https://github.com/flatide/ProperTee/issues). Each issue follows the same format: current behavior (spec citation) → problem → proposal → impact/compatibility → alternatives.
 
-Snapshot: **2026-07-03**, spec v0.9.0. Update this file when issues close or new ones are filed.
+Snapshot: **2026-07-04**, spec v0.9.0. Update this file when issues close or new ones are filed.
 
 ## Landed — docs/tooling (no spec version): `not` precedence footgun (2026-07-03)
 
@@ -41,6 +41,12 @@ The five breaking items shipped together in **spec v0.7.0** with a single migrat
 | [#9](https://github.com/flatide/ProperTee/issues/9) | Host restrictions are runtime-only — opt-in parse-time validation pass | host API | No (opt-in) |
 
 The open item is non-breaking and can proceed independently at any time. If a future breaking item appears, batch it the same way: one spec version, one migration note, loud failures preferred over silent behavior shifts.
+
+## Drafts — analysis done, deliberately not filed as issues
+
+| Draft | Title | Doc |
+|---|---|---|
+| (candidate #10) | Script failure escalation: `FAIL`/`UNWRAP` builtins + TeeBox unconditional Result envelope | [design-draft-result-handling.md](design-draft-result-handling.md) — kept as a document by user decision (2026-07-04); non-breaking additive, spec v0.10.0 candidate if adopted |
 
 ## What an accepted change touches
 
