@@ -29,6 +29,7 @@ syn keyword propertBuiltin      SPLIT JOIN SUBSTRING
 syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM HAS_KEY KEYS
 syn keyword propertBuiltin      MILTIME DATE TIME
 syn keyword propertBuiltin      SHELL SHELL_CTX
+syn keyword propertBuiltin      FAIL UNWRAP OK ERR IS_RESULT
 
 " --- Numbers ---
 syn match propertFloat  "\<\d\+\.\d\+\>"

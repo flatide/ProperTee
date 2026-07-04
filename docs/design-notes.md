@@ -2,7 +2,13 @@
 
 Open design questions for the ProperTee language. This file is the **index**; the analysis and discussion live in the [GitHub issues](https://github.com/flatide/ProperTee/issues). Each issue follows the same format: current behavior (spec citation) → problem → proposal → impact/compatibility → alternatives.
 
-Snapshot: **2026-07-04**, spec v0.9.0. Update this file when issues close or new ones are filed.
+Snapshot: **2026-07-04**, spec v0.10.0. Update this file when issues close or new ones are filed.
+
+## Landed — spec v0.10.0: Result escalation `FAIL`/`UNWRAP` + genuine Results (2026-07-04)
+
+| Item | Resolution |
+|---|---|
+| Script failure escalation (no issue — analyzed in [design-draft-result-handling.md](design-draft-result-handling.md), adopted directly by user decision) | Non-breaking additive batch: `FAIL(message)` escalation, brand-keyed `UNWRAP(res[, msg])`, `OK`/`ERR` constructors, `IS_RESULT`, and the *genuine Result* origin rule (§9 B안 of the draft — full first-class type rejected). No grammar/keyword changes; existing fixtures byte-identical. The TeeBox-side unconditional Result envelope (draft §5) remains a separate, not-yet-scheduled track. |
 
 ## Landed — docs/tooling (no spec version): `not` precedence footgun (2026-07-03)
 
@@ -46,7 +52,7 @@ The open item is non-breaking and can proceed independently at any time. If a fu
 
 | Draft | Title | Doc |
 |---|---|---|
-| (candidate #10) | Script failure escalation: `FAIL`/`UNWRAP` builtins + TeeBox unconditional Result envelope | [design-draft-result-handling.md](design-draft-result-handling.md) — kept as a document by user decision (2026-07-04); non-breaking additive, spec v0.10.0 candidate if adopted |
+| (TeeBox track) | Unconditional Result envelope on the run-result API (run = "thread #0") | [design-draft-result-handling.md](design-draft-result-handling.md) §5 — the language half of the draft landed as spec v0.10.0 (2026-07-04); the TeeBox host-side envelope is deferred until scheduled |
 
 ## What an accepted change touches
 

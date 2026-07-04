@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.9.0
+# ProperTee 언어 명세 v0.10.0
 
 ## 개요
 
@@ -803,6 +803,18 @@ end
 | `MERGE(obj1, obj2)` | 두 객체를 병합한 새 객체 반환. 키 충돌 시 `obj2` 우선. |
 | `REMOVE_KEY(obj, key)` | 지정한 키를 제거한 새 객체 반환. 키 부재 시 에러 없음. |
 
+### Result와 에러 승격
+
+스펙 v0.10.0에서 추가. 의미론은 [Genuine Result와 `FAIL`, `UNWRAP`](#genuine-result와-fail-unwrap)을 참고하세요.
+
+| 함수 | 설명 |
+|---|---|
+| `FAIL(message)` | 호출 지점에서 `message`로 런타임 에러를 발생시킵니다 (비문자열은 `TO_STRING`으로 코어션). 스크립트는 여느 런타임 에러와 동일하게 종료됩니다 — `Runtime Error at line L:C: <message>`; `multi` 스레드 안에서는 해당 스레드만 실패합니다 (`{status: "error"}`로 수집). 반환하지 않습니다. |
+| `UNWRAP(res[, message])` | `res`가 `ok`가 true인 genuine Result면 `res.value`로 평가됩니다. `ok`가 false면 (`"running"` 포함) `TO_STRING(res.value)`로 런타임 에러를 발생시킵니다 — 두 번째 인자가 있으면 `message + ": "` 접두. genuine Result가 아닌 값은 런타임 에러입니다 (`UNWRAP() requires a Result`). |
+| `OK([value])` | genuine Result `{status: "done", ok: true, value: value}`를 생성합니다. 인자 생략 시 `value`는 `{}`. |
+| `ERR([value])` | genuine Result `{status: "error", ok: false, value: value}`를 생성합니다. 인자 생략 시 `value`는 `{}`. `value`는 어떤 타입이든 가능합니다 (HTTP 에러 Result처럼 구조화된 에러 허용). |
+| `IS_RESULT(x)` | `x`가 genuine Result(런타임 생성 또는 `OK`/`ERR` 생성)면 `true`, 아니면 `false`. 어떤 값이든 받으며 에러를 내지 않습니다. |
+
 ### 환경 변수
 
 | 함수 | 설명 |
@@ -975,6 +987,35 @@ Result 객체는 3개 필드를 가집니다:
 - `status` — `"done"`, `"error"`, 또는 `"running"` (multi 블록의 진행 중인 스레드)
 
 외부 함수 결과에는 `ok`로 충분합니다 — `res.ok == true`를 확인하세요. `status` 필드는 주로 multi 블록 스레드 결과를 위해 존재하며, `"running"` (아직 완료되지 않음)과 `"error"` (실패로 완료됨)를 구분합니다 — 둘 다 `ok: false`입니다.
+
+### Genuine Result와 `FAIL`, `UNWRAP`
+
+스펙 v0.10.0에서 추가.
+
+**Genuine Result.** 런타임이 생성한 Result 객체 — Result를 반환하는 빌트인(`JSON_PARSE`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 그룹), 외부 함수 호출(동기·비동기, 타임아웃 에러 포함), `multi` 스레드 수집 항목 — 과 `OK`/`ERR` 생성자가 만든 Result는 *genuine Result*입니다: 런타임이 그 출처를 기억합니다. 같은 세 필드를 가진 스크립트 객체 리터럴은 일반 객체이지 genuine Result가 **아닙니다**.
+
+이 구별은 `TYPE_OF`(여전히 `"object"`), 표시, 동등성, JSON 직렬화에는 보이지 않습니다; 오직 `IS_RESULT`와 `UNWRAP`만 관찰합니다. genuine Result의 복사본(할당, 인자 전달, `PUSH`, 깊은 복사)은 genuine Result이며, 필드를 변경해도 출처는 사라지지 않습니다. 출처는 JSON을 통과하지 못합니다: `JSON_FORMAT`은 genuine Result를 일반 3필드 객체로 렌더링하고, `JSON_PARSE`된 데이터 내부에는 genuine Result가 없습니다 (`JSON_PARSE` 자체가 반환하는 래퍼 Result는 genuine입니다).
+
+**승격(escalation).** Result 패턴은 복구 가능한 에러를 명시적 값으로 만듭니다; `FAIL`은 스크립트가 치명적이라고 판단한 에러를 위한 명시적 승격입니다 — 호출 지점에서 일반 런타임 에러를 발생시켜, 다른 런타임 에러와 정확히 동일하게 런이 실패합니다:
+
+```
+res = HTTP_GET(url)
+if not res.ok then
+    FAIL("upstream failed: " + res.value.body)
+end
+```
+
+`UNWRAP`은 검사-후-승격 체인을 호출 하나로 압축합니다 — 별도의 에러 메커니즘이 아니라 `FAIL`로 탈설탕됩니다:
+
+```
+// UNWRAP(res) ≡  if not res.ok then FAIL(TO_STRING(res.value)) end  ... 그리고 res.value
+user = UNWRAP(fetch(1))
+data = UNWRAP(JSON_PARSE(text), "config parse")   // 에러 메시지: "config parse: <파싱 에러>"
+```
+
+`multi` 스레드 안에서 `FAIL`(과 승격되는 `UNWRAP`)은 해당 스레드만 실패시킵니다 — 실패는 `{status: "error", ok: false, value: <메시지>}`로 수집되고 런은 계속됩니다 (여느 워커 런타임 에러와 동일).
+
+호스트에 **구조화된** 에러(메시지 문자열이 아니라)를 전달해야 하는 스크립트는 승격 대신 Result를 데이터로 반환하세요 — `FAIL`/`UNWRAP`은 실패를 메시지 문자열로 납작하게 만듭니다.
 
 ### 비동기 외부 함수
 
@@ -1152,8 +1193,17 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 범위 step이 양수가 아님 | Range step must be positive |
 | 범위 경계가 숫자가 아님 | Range bounds must be numbers |
 | 범위 step이 숫자가 아님 | Range step must be a number |
+| 의도적 실패 | `FAIL(msg)`은 `msg` 자체를 발생 (스크립트가 정한 텍스트) |
+| 비Result에 `UNWRAP` | UNWRAP() requires a Result |
+| 메시지 없는 `FAIL` | FAIL() requires a message argument |
 
 ## 변경 이력
+
+### v0.10.0 — Result 승격 (`FAIL`/`UNWRAP`)과 genuine Result
+
+새 빌트인 5종 — `FAIL`, `UNWRAP`, `OK`, `ERR`, `IS_RESULT` — 과 *genuine Result* 출처 규칙 ([Genuine Result와 `FAIL`, `UNWRAP`](#genuine-result와-fail-unwrap) 참고). Result 패턴은 복구 가능한 에러를 다룹니다; 이 배치는 빠져 있던 **승격** 방향을 추가합니다: 스크립트가 이제 에러를 치명적이라고 선언할 수 있고(`FAIL`), `UNWRAP`은 검사-후-승격 체인을 호출 하나로 압축합니다. `OK`/`ERR`는 genuine Result를 생성하며(구조화된 결과 반환과 Result 반환 호출의 mock 작성용), `IS_RESULT`는 출처를 관찰합니다.
+
+**비파괴**: 문법·키워드 변경 없음; 기존 동작 변경 없음; 기존 픽스처는 byte 동일. 이 다섯 이름으로 함수를 정의(또는 등록)한 스크립트·호스트는 새 빌트인을 가리며 기존 동작을 유지합니다 (호스트 주의: 외부 등록된 `FAIL`/`UNWRAP`은 빌트인에 가려집니다 — `PRINT`/`SLEEP`이 원래 그랬던 것과 동일). `UNWRAP`은 genuine Result만 받습니다 — `UNWRAP`과 상호작용해야 하는 수제 `{"status": ..., "ok": ..., "value": ...}` 리터럴은 `OK(v)`/`ERR(v)`로 교체하세요.
 
 ### v0.9.0 — `elseif`
 
