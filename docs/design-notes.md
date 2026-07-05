@@ -2,7 +2,13 @@
 
 Open design questions for the ProperTee language. This file is the **index**; the analysis and discussion live in the [GitHub issues](https://github.com/flatide/ProperTee/issues). Each issue follows the same format: current behavior (spec citation) → problem → proposal → impact/compatibility → alternatives.
 
-Snapshot: **2026-07-04**, spec v0.10.0. Update this file when issues close or new ones are filed.
+Snapshot: **2026-07-05**, spec v0.11.0. Update this file when issues close or new ones are filed.
+
+## Landed — spec v0.11.0: function-name resolution pinned (2026-07-05)
+
+| Item | Resolution |
+|---|---|
+| Script-function vs built-in dispatch divergence (no issue — surfaced by a v0.10.0 docs-accuracy review, adopted directly by user decision) | Resolution order specified: host-blocked check → script-defined functions → built-ins/externals. Script functions shadow all built-ins/externals in every runtime (the reference runtime's existing order); v1/js switched from builtins-first to script-first. Externals cannot replace `FAIL`/`UNWRAP`; `PRINT`/`SLEEP`-named externals stay implementation-defined. Fixture 104 pins it. Rationale: new spec built-ins must never change what existing scripts' calls resolve to. |
 
 ## Landed — spec v0.10.0: Result escalation `FAIL`/`UNWRAP` + genuine Results (2026-07-04)
 

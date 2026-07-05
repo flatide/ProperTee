@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProperTee is a lightweight, dynamically-typed scripting language (v0.10.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
+ProperTee is a lightweight, dynamically-typed scripting language (v0.11.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
 
 This repository contains the **language specification, grammar, documentation, and editor extensions**. The interpreter implementations live in separate repositories:
 - **Java (reference implementation)**: [propertee2-java](https://github.com/flatide/propertee2-java) — Java 25, virtual-thread cooperative runtime; consumed by [TeeBox](https://github.com/flatide/TeeBox)
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency; powers the online playground
-- **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **maintenance: language-spec syncs + security/bugfixes only, no runtime features** (policy revised 2026-07; 1.2.0 = spec v0.10.0; the `v1.0.0` tag is the pre-sync spec v0.6.0 baseline)
+- **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **maintenance: language-spec syncs + security/bugfixes only, no runtime features** (policy revised 2026-07; 1.3.0 = spec v0.11.0; the `v1.0.0` tag is the pre-sync spec v0.6.0 baseline)
 
-All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, propertee-js, and propertee-java in sync. Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 101 fixtures (spec v0.10.0), propertee-java 1.2.0 the same 101 (plus its extra 79_task_cancel), the JavaScript runtime 97 (host-dependent SHELL/file-I/O fixtures are Java-only).
+All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, propertee-js, and propertee-java in sync. Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 102 fixtures (spec v0.11.0), propertee-java 1.3.0 the same 102 (plus its extra 79_task_cancel), the JavaScript runtime 98 (host-dependent SHELL/file-I/O fixtures are Java-only).
 
 ## Repository Structure
 
@@ -25,7 +25,7 @@ All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this r
 
 No build step in this repo — grammar compilation and bundling happens in the implementation repos.
 
-**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.10.0); `grammar/LANGUAGE.md` and propertee-js's `LANGUAGE.md` are byte-identical copies of it. propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy. propertee-java's copy also carries runtime-specific annotations (stepper-era eager-seam notes) — sync it by content too. Update `LANGUAGE.ko.md` manually when the English spec changes.
+**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.11.0); `grammar/LANGUAGE.md` and propertee-js's `LANGUAGE.md` are byte-identical copies of it. propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy. propertee-java's copy also carries runtime-specific annotations (stepper-era eager-seam notes) — sync it by content too. Update `LANGUAGE.ko.md` manually when the English spec changes.
 
 ## Editor Extensions
 
@@ -50,6 +50,7 @@ When editing grammar, specs, or examples, keep these design rules consistent:
 - **1-based indexing**: First array element is `.1`, not `.0`. `arr.0` is a runtime error.
 - **No implicit null** (spec v0.8.0): the empty object `{}` remains the language's "no value" sentinel (missing args, bare `return`). `null` exists as a seventh value type purely for lossless JSON round-trips — the language never produces it; it enters only via the `null` literal or data (`JSON_PARSE`, host values). Equality and `TYPE_OF` work on it; conditions, logic, arithmetic, and member access on `null` are runtime errors (no null propagation).
 - **Result escalation** (spec v0.10.0): the Result pattern handles recoverable errors as values; `FAIL(message)` is the explicit escalation to a runtime error (there is still no throw/try — errors stay terminal), and `UNWRAP(res[, msg])` desugars to check-then-FAIL. `UNWRAP`/`IS_RESULT` observe the *genuine Result* origin brand (runtime- or `OK`/`ERR`-created; invisible to `TYPE_OF`/display/JSON; script literals are not genuine). Non-breaking: five built-ins, no new keywords.
+- **Function-name resolution** (spec v0.11.0): host-blocked check → script-defined functions → built-ins/externals. A script-defined function shadows any same-named built-in or external (so new built-ins never break existing scripts); externals cannot replace `FAIL`/`UNWRAP`.
 - **String concatenation coercion**: `+` with at least one string operand auto-coerces the other via `TO_STRING()`. `5 == "5"` is still false (no comparison coercion).
 - **Strict boolean conditions** (spec v0.7.0): `if`/`loop` conditions require a boolean — any other type is a runtime error (`Condition requires a boolean value`). There is no truthiness coercion.
 - **Short-circuit `and`/`or`** (spec v0.7.0): left to right, the right operand is not evaluated (side effects included) when the left side decides; operands are type-checked only when evaluated.
