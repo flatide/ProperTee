@@ -66,7 +66,7 @@ None. If a future breaking item appears, batch it the same way: one spec version
 
 | Item | Resolution |
 |---|---|
-| Unconditional Result envelope on the run-result API (run = "thread #0") — [design-draft-result-handling.md](design-draft-result-handling.md) §5 | TeeBox 1.9.0: `GET /api/client/runs/{id}/result` gains an additive `result` field per the §5 table (`done`/`error`/`running` + `SERVER_RESTARTED`→error). No shape inspection — script-returned Results nest inside `value` (double-wrapping legitimate); value-less runs yield `{}`. Client `TeeBoxClient.getRunEnvelope(runId)` (Java 7 preserved). Admin `RunInfo` and webhook payload deliberately unenveloped. With this, all three tracks of the draft are closed (language: spec v0.10.0; host: TeeBox 1.9.0; escalation block §6.2 stays parked on its own trigger). |
+| Unconditional Result envelope on the run-result API (run = "thread #0") — [design-draft-result-handling.md](design-draft-result-handling.md) §5 | TeeBox 1.9.0: `GET /api/client/runs/{id}/result` gains an additive `result` field per the §5 table (`done`/`error`/`running` + `SERVER_RESTARTED`→error). No shape inspection — script-returned Results nest inside `value` (double-wrapping legitimate); value-less runs yield `{}`. Client `TeeBoxClient.getRunEnvelope(runId)` (Java 7 preserved). Admin `RunInfo` and webhook payload deliberately unenveloped. With this, all tracks of the draft are closed (language: spec v0.10.0; host: TeeBox 1.9.0; the §6.2 escalation block, briefly parked, was **dropped** by user decision on 2026-07-05 — no revisit trigger; UNWRAP remains the answer). |
 
 ## Drafts — analysis done, deliberately not filed as issues
 
