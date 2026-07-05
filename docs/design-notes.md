@@ -2,7 +2,13 @@
 
 Open design questions for the ProperTee language. This file is the **index**; the analysis and discussion live in the [GitHub issues](https://github.com/flatide/ProperTee/issues). Each issue follows the same format: current behavior (spec citation) → problem → proposal → impact/compatibility → alternatives.
 
-Snapshot: **2026-07-05**, spec v0.11.0. Update this file when issues close or new ones are filed.
+Snapshot: **2026-07-05**, spec v0.12.0. Update this file when issues close or new ones are filed.
+
+## Landed — spec v0.12.0: reserved all-uppercase function namespace (2026-07-05)
+
+| Item | Resolution |
+|---|---|
+| ALL-CAPS builtins replaceable by script functions — signal/guarantee mismatch (no issue — grew out of a rejected `sleep`-keyword proposal; analyzed in [design-draft-reserved-uppercase-namespace.md](design-draft-reserved-uppercase-namespace.md), adopted by user decision) | **Breaking**: `function NAME` where NAME matches `^[A-Z][A-Z0-9_]*$` is a definition-time runtime error. The ALL-CAPS convention becomes a guarantee (always built-in/host); future built-in additions become structurally non-breaking; supersedes v0.11.0's shadowing rule for built-ins (the order rule survives for non-reserved host externals). Fixtures: 104 removed, 75 renamed its helper, 105/106 added. The `sleep`-keyword proposal is rejected and recorded in the draft §2; the suspension model is now spec'd in LANGUAGE.md §Blocking and Suspension. |
 
 ## Landed — spec v0.11.0: function-name resolution pinned (2026-07-05)
 
