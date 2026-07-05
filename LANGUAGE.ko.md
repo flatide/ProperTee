@@ -992,7 +992,7 @@ Result 객체는 3개 필드를 가집니다:
 
 스펙 v0.10.0에서 추가.
 
-**Genuine Result.** 런타임이 생성한 Result 객체 — Result를 반환하는 빌트인(`JSON_PARSE`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 그룹), 외부 함수 호출(동기·비동기, 타임아웃 에러 포함), `multi` 스레드 수집 항목 — 과 `OK`/`ERR` 생성자가 만든 Result는 *genuine Result*입니다: 런타임이 그 출처를 기억합니다. 같은 세 필드를 가진 스크립트 객체 리터럴은 일반 객체이지 genuine Result가 **아닙니다**.
+**Genuine Result.** 런타임이 생성한 Result 객체 — Result를 반환하는 빌트인(`JSON_PARSE`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 그룹 — 단 일반 boolean을 반환하는 `FILE_EXISTS`는 제외), 외부 함수 호출(동기·비동기, 타임아웃 에러 포함), `multi` 스레드 수집 항목 — 과 `OK`/`ERR` 생성자가 만든 Result는 *genuine Result*입니다: 런타임이 그 출처를 기억합니다. 같은 세 필드를 가진 스크립트 객체 리터럴은 일반 객체이지 genuine Result가 **아닙니다**.
 
 이 구별은 `TYPE_OF`(여전히 `"object"`), 표시, 동등성, JSON 직렬화에는 보이지 않습니다; 오직 `IS_RESULT`와 `UNWRAP`만 관찰합니다. genuine Result의 복사본(할당, 인자 전달, `PUSH`, 깊은 복사)은 genuine Result이며, 필드를 변경해도 출처는 사라지지 않습니다. 출처는 JSON을 통과하지 못합니다: `JSON_FORMAT`은 genuine Result를 일반 3필드 객체로 렌더링하고, `JSON_PARSE`된 데이터 내부에는 genuine Result가 없습니다 (`JSON_PARSE` 자체가 반환하는 래퍼 Result는 genuine입니다).
 
@@ -1203,7 +1203,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 
 새 빌트인 5종 — `FAIL`, `UNWRAP`, `OK`, `ERR`, `IS_RESULT` — 과 *genuine Result* 출처 규칙 ([Genuine Result와 `FAIL`, `UNWRAP`](#genuine-result와-fail-unwrap) 참고). Result 패턴은 복구 가능한 에러를 다룹니다; 이 배치는 빠져 있던 **승격** 방향을 추가합니다: 스크립트가 이제 에러를 치명적이라고 선언할 수 있고(`FAIL`), `UNWRAP`은 검사-후-승격 체인을 호출 하나로 압축합니다. `OK`/`ERR`는 genuine Result를 생성하며(구조화된 결과 반환과 Result 반환 호출의 mock 작성용), `IS_RESULT`는 출처를 관찰합니다.
 
-**비파괴**: 문법·키워드 변경 없음; 기존 동작 변경 없음; 기존 픽스처는 byte 동일. 이 다섯 이름으로 함수를 정의(또는 등록)한 스크립트·호스트는 새 빌트인을 가리며 기존 동작을 유지합니다 (호스트 주의: 외부 등록된 `FAIL`/`UNWRAP`은 빌트인에 가려집니다 — `PRINT`/`SLEEP`이 원래 그랬던 것과 동일). `UNWRAP`은 genuine Result만 받습니다 — `UNWRAP`과 상호작용해야 하는 수제 `{"status": ..., "ok": ..., "value": ...}` 리터럴은 `OK(v)`/`ERR(v)`로 교체하세요.
+**비파괴**: 문법·키워드 변경 없음; 기존 동작 변경 없음; 기존 픽스처는 byte 동일. `OK`/`ERR`/`IS_RESULT` 이름으로 외부 함수를 등록해 둔 호스트는 기존 동작을 유지합니다(등록이 새 빌트인을 가림); 반면 외부 등록된 `FAIL`/`UNWRAP`은 빌트인에 가려집니다 — `PRINT`/`SLEEP`처럼 인터프리터가 직접 디스패치하기 때문입니다. *스크립트가 정의한* 함수가 빌트인 이름을 가리는지는 구현 정의입니다(스크립트 함수와 빌트인 중 무엇이 이기는지 런타임마다 다름) — 자체 `OK`/`ERR`/`IS_RESULT` 함수를 정의한 스크립트는 이름을 바꾸세요. `UNWRAP`은 genuine Result만 받습니다 — `UNWRAP`과 상호작용해야 하는 수제 `{"status": ..., "ok": ..., "value": ...}` 리터럴은 `OK(v)`/`ERR(v)`로 교체하세요.
 
 ### v0.9.0 — `elseif`
 
