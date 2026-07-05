@@ -1158,6 +1158,8 @@ x = SHELL("echo hello")   // 런타임 에러: 'SHELL' is not available in this 
 
 내장 함수와 외부 함수 모두 무시할 수 있습니다. 일반 함수 호출과 multi 블록 `thread` 생성의 함수 호출 모두에서 검사됩니다.
 
+**두 개의 시행 지점.** 위 제한은 **런타임**에 시행됩니다: 금지된 구문에 도달하거나 금지된 함수가 호출될 때에만 에러가 발생하므로, 실행되지 않은 분기에 있는 금지 구문은 스크립트를 실행해 봐도 탐지되지 않습니다. 샌드박싱을 위해 구현체들은 추가로 **opt-in 정적 검증 패스**(호스트 API — 레퍼런스 런타임의 `Engine.validate(source)`, propertee-java의 `interpreter.validate(tree)`, propertee-js의 `visitor.validate(tree)`)를 제공합니다: 파스 트리 전체를 — 죽은 분기까지 — 스캔해서 숨긴 키워드 구문과 무시된 함수 호출마다 `line L:C: 'X' is not available in this environment` 항목을 하나씩 반환하므로, 호스트가 실행 전에 스크립트를 거부할 수 있습니다. 이 정적 패스는 보수적이며 이 두 제한 유형에 대해 거짓 음성이 없습니다; 런타임 검사는 백스톱으로 그대로 유지됩니다. 기본 동작은 변하지 않습니다 — 검증 시점은 호스트가 선택합니다.
+
 ## 주석
 
 ```

@@ -52,13 +52,15 @@ The five breaking items shipped together in **spec v0.7.0** with a single migrat
 | [#6](https://github.com/flatide/ProperTee/issues/6) | `SLICE` vs `SUBSTRING` range conventions | `SLICE(arr, start, count)` — count-based, unified with SUBSTRING/READ_LINES. (Implementation finding: the old 3rd arg was in practice a 1-based *inclusive* end; the old spec text "end is exclusive" described the 0-based internal bound.) |
 | [#7](https://github.com/flatide/ProperTee/issues/7) | `LEN` silently returned 0 for non-collections | Now a runtime error |
 
+## Landed — host API (no spec version): static validation pass (2026-07-05)
+
+| # | Title | Resolution |
+|---|---|---|
+| [#9](https://github.com/flatide/ProperTee/issues/9) | Host restrictions are runtime-only — opt-in parse-time validation pass | Opt-in host API in all three runtimes, per the issue's proposal: `Engine.validate(source)` (reference 0.9.0), `interpreter.validate(tree)` (propertee-java 1.5.0, under the maintenance line's security exception), `visitor.validate(tree)` (propertee-js). Scans the whole tree — dead branches included — and returns `line L:C: 'X' is not available in this environment` entries; runtime checks stay as the backstop; default behavior unchanged. No spec version bump (like #8) — LANGUAGE.md §Host Environment Restrictions documents the two enforcement points. Unit-tested per runtime (no conformance fixtures: it's a host API call, not script execution). |
+
 ## Open issues
 
-| # | Title | Kind | Breaking? |
-|---|---|---|---|
-| [#9](https://github.com/flatide/ProperTee/issues/9) | Host restrictions are runtime-only — opt-in parse-time validation pass | host API | No (opt-in) |
-
-The open item is non-breaking and can proceed independently at any time. If a future breaking item appears, batch it the same way: one spec version, one migration note, loud failures preferred over silent behavior shifts.
+None. If a future breaking item appears, batch it the same way: one spec version, one migration note, loud failures preferred over silent behavior shifts.
 
 ## Drafts — analysis done, deliberately not filed as issues
 

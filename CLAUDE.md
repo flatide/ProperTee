@@ -9,9 +9,9 @@ ProperTee is a lightweight, dynamically-typed scripting language (v0.12.0) for p
 This repository contains the **language specification, grammar, documentation, and editor extensions**. The interpreter implementations live in separate repositories:
 - **Java (reference implementation)**: [propertee2-java](https://github.com/flatide/propertee2-java) — Java 25, virtual-thread cooperative runtime; consumed by [TeeBox](https://github.com/flatide/TeeBox)
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency; powers the online playground
-- **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **maintenance: language-spec syncs + security/bugfixes only, no runtime features** (policy revised 2026-07; 1.4.0 = spec v0.12.0; the `v1.0.0` tag is the pre-sync spec v0.6.0 baseline)
+- **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **maintenance: language-spec syncs + security/bugfixes only, no runtime features** (policy revised 2026-07; 1.5.0 = spec v0.12.0; the `v1.0.0` tag is the pre-sync spec v0.6.0 baseline)
 
-All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, propertee-js, and propertee-java in sync. Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 103 fixtures (spec v0.12.0), propertee-java 1.4.0 the same 103 (plus its extra 79_task_cancel), the JavaScript runtime 99 (host-dependent SHELL/file-I/O fixtures are Java-only).
+All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, propertee-js, and propertee-java in sync. Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 103 fixtures (spec v0.12.0), propertee-java 1.5.0 the same 103 (plus its extra 79_task_cancel), the JavaScript runtime 99 (host-dependent SHELL/file-I/O fixtures are Java-only).
 
 ## Repository Structure
 
