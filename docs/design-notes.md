@@ -70,7 +70,13 @@ None. If a future breaking item appears, batch it the same way: one spec version
 
 ## Drafts — analysis done, deliberately not filed as issues
 
-None open.
+- **[design-draft-v1.0-gate.md](design-draft-v1.0-gate.md)** — the v1.0-readiness gate (2026-07-06,
+  tracked locally only by user decision — no GitHub issues). Items 1–3 (integer envelope,
+  blocked-spawn worker containment, interpreter-dispatched registration names) shipped as
+  **spec v0.13.0**; item 4 (double display envelope: reference plain-decimal vs v1 scientific
+  ≥1e7 vs js exponential ≥1e21, reachable only via data) is **open — decide before the 1.0
+  stamp**; the stamp itself additionally waits for TeeBox production burn-in. v1.0.0 = content
+  freeze of the last v0.13.x, no new features.
 
 ## What an accepted change touches
 
