@@ -46,8 +46,7 @@ and no silent promotion to a decimal:
 - Integer **arithmetic** (`+`, `-`, `*`, unary `-`) whose result leaves the range is a runtime
   error: `Integer overflow`. (`/` always produces a decimal and cannot overflow; `%` cannot
   overflow.)
-- The built-ins that produce an integer from a decimal — `FLOOR`, `CEIL`, `ROUND` — raise the same
-  `Integer overflow` error when the result does not fit.
+- The built-ins that produce an integer — `FLOOR`, `CEIL`, `ROUND` (from a decimal) and `ABS` (|−2³¹| does not fit) — raise the same `Integer overflow` error when the result does not fit.
 - **Data is unaffected**: `JSON_PARSE` and `TO_NUMBER` keep representing integral values beyond
   the range as decimals — data conversion is not script arithmetic, and JSON keeps round-tripping.
 
@@ -1261,7 +1260,7 @@ Common error conditions:
 | `FAIL` without a message | FAIL() requires a message argument |
 | All-uppercase function definition | Cannot define function 'X': all-uppercase names are reserved for built-in and host functions |
 | Integer literal too large | Integer literal out of range: 9999999999 |
-| Integer arithmetic overflow (`+` `-` `*`, unary `-`, `FLOOR`/`CEIL`/`ROUND`) | Integer overflow |
+| Integer arithmetic overflow (`+` `-` `*`, unary `-`, `FLOOR`/`CEIL`/`ROUND`/`ABS`) | Integer overflow |
 
 ### Resource Limits
 
@@ -1281,7 +1280,7 @@ fixture suite never covered exposed three-way runtime divergence, now specified.
 those corners only** — no fixture-covered behavior changes.
 
 - **The integer range is pinned**: 32-bit signed. Out-of-range integer literals and overflowing
-  integer arithmetic (`+`, `-`, `*`, unary `-`, and the integer-producing `FLOOR`/`CEIL`/`ROUND`)
+  integer arithmetic (`+`, `-`, `*`, unary `-`, and the integer-producing `FLOOR`/`CEIL`/`ROUND`/`ABS`)
   are runtime errors (`Integer literal out of range: …` / `Integer overflow`) — previously the
   reference wrapped (or clamped) silently, v1 promoted to scientific-notation decimals, and js
   produced out-of-range integers. Data conversion (`JSON_PARSE`/`TO_NUMBER`) still promotes to

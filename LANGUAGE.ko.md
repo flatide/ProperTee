@@ -45,7 +45,7 @@ JSON `null`을 다루지 않는 스크립트는 `null`을 볼 일이 없습니�
   산술로 도달하세요: `-2147483647 - 1`.
 - 결과가 범위를 벗어나는 정수 **산술**(`+`, `-`, `*`, 단항 `-`)은 런타임 에러입니다:
   `Integer overflow`. (`/`는 항상 소수를 만들므로 오버플로가 없고, `%`도 오버플로할 수 없습니다.)
-- 소수에서 정수를 만드는 빌트인 — `FLOOR`, `CEIL`, `ROUND` — 도 결과가 범위를 벗어나면 같은
+- 정수를 만드는 빌트인 — `FLOOR`, `CEIL`, `ROUND`(소수에서), 그리고 `ABS`(|−2³¹|는 표현 불가) — 도 결과가 범위를 벗어나면 같은
   `Integer overflow` 에러를 냅니다.
 - **데이터는 영향받지 않습니다**: `JSON_PARSE`/`TO_NUMBER`는 범위를 벗어나는 정수값을 계속 소수로
   표현합니다 — 데이터 변환은 스크립트 산술이 아니고, JSON 왕복은 그대로 유지됩니다.
@@ -1258,7 +1258,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 메시지 없는 `FAIL` | FAIL() requires a message argument |
 | 전부-대문자 함수 정의 | Cannot define function 'X': all-uppercase names are reserved for built-in and host functions |
 | 너무 큰 정수 리터럴 | Integer literal out of range: 9999999999 |
-| 정수 산술 오버플로 (`+` `-` `*`, 단항 `-`, `FLOOR`/`CEIL`/`ROUND`) | Integer overflow |
+| 정수 산술 오버플로 (`+` `-` `*`, 단항 `-`, `FLOOR`/`CEIL`/`ROUND`/`ABS`) | Integer overflow |
 
 ### 자원 한계
 
@@ -1273,7 +1273,7 @@ v1.0 준비 리뷰(`docs/design-draft-v1.0-gate.md`)에서 자람: 픽스처 스
 변하지 않습니다.
 
 - **정수 범위 확정**: 32비트 부호 있는 정수. 범위를 벗어나는 정수 리터럴과 오버플로하는 정수
-  산술(`+`, `-`, `*`, 단항 `-`, 그리고 정수를 만드는 `FLOOR`/`CEIL`/`ROUND`)은 런타임
+  산술(`+`, `-`, `*`, 단항 `-`, 그리고 정수를 만드는 `FLOOR`/`CEIL`/`ROUND`/`ABS`)은 런타임
   에러입니다(`Integer literal out of range: …` / `Integer overflow`) — 이전에는 레퍼런스가 조용히
   랩(또는 클램프)하고, v1은 지수 표기 소수로 승격하고, js는 범위 밖 정수를 만들었습니다. 데이터
   변환(`JSON_PARSE`/`TO_NUMBER`)은 계속 소수로 승격합니다 — JSON 왕복은 그대로입니다.
