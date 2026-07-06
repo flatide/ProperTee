@@ -1,6 +1,8 @@
 # Design draft — the v1.0 gate
 
-> Status: **open — v0.13.0 landed, burn-in pending** (2026-07-06).
+> Status: **open — v0.13.0 landed tri-runtime 2026-07-06** (reference 0.10.0 / propertee-java
+> 1.6.0 / propertee-js; fixtures 107–111 byte-identical, TeeBox suite green on the new runtime).
+> Items 4 (below) and the TeeBox burn-in remain before the 1.0 stamp.
 > Tracked **locally only** by user decision (no GitHub issues); this document is the record.
 
 ## Why
@@ -62,14 +64,25 @@ Decision: registering an external under any interpreter-dispatched name (`PRINT`
 natural extension of the v0.12.0 reserved-namespace philosophy. Host-API surface, so no
 conformance fixture (the #9 precedent); unit-tested per runtime.
 
-### 4. Double display envelope — **open, deferred (decide before the 1.0 stamp)**
+### 4. Decimal envelope: display & number identity — **open, deferred (decide before the 1.0 stamp)**
 
-Large-magnitude decimals display differently per runtime: reference formats plain decimal, v1
-leaks Java scientific notation from ~1e7 (`1.5E7`), js switches to exponential at 1e21. Only
-reachable via data (`JSON_PARSE`/`TO_NUMBER`/host values) — no fixture touches it. Candidate
-decisions: pin plain-decimal display everywhere (v1/js formatting work), or spec an explicit
-display range with documented fallback. **Not in v0.13.0** — needs its own small analysis
-(cost: v1 formatter rework; risk of digit-string explosions for 1e300).
+Two related corners, both reachable only via data or whole-decimal intermediates — no fixture
+touches either:
+
+- **Display**: large-magnitude decimals render differently per runtime — reference formats plain
+  decimal, v1 leaks Java scientific notation from ~1e7 (`1.5E7`), js switches to exponential at
+  1e21. Candidate decisions: pin plain-decimal display everywhere (v1/js formatting work), or
+  spec an explicit display range with a documented fallback (digit-string explosion risk at
+  1e300).
+- **Number identity** (found while implementing v0.13.0): *when is a value an integer* for the
+  overflow rule? The reference types nominally (a `Double` stays a decimal even when whole:
+  `1.5 + 1.5` → decimal `3.0`), while v1 re-boxes every whole in-range result as an integer and
+  js has a single number type (whole + in-range = integer). Observable only through the new
+  overflow rule on whole-decimal intermediates — e.g. `(1.5 + 1.5) * 2000000000` overflows in
+  v1/js but is a plain decimal `6.0e9` in the reference. v0.13.0's fixtures deliberately stay in
+  the unambiguous zone (integer literals and integer-producing built-ins, identical everywhere).
+  Deciding this likely falls out of the display decision (both reduce to "is the int/decimal
+  distinction nominal or value-based?").
 
 ### 5. Resource limits — **decided, documented as host discretion (v0.13.0, non-normative)**
 
