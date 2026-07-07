@@ -853,7 +853,7 @@ The single-argument form `RANDOM(max)` was **removed in v0.7.0** — its exclusi
 | `SPLIT(s, delimiter)` | Split string into array. Preserves trailing empty strings. |
 | `JOIN(arr, [separator])` | Join array elements into string. Default separator is `""`. |
 | `CHARS(s)` | Split string into array of single characters |
-| `CONTAINS(s, sub)` | Returns `true` if `s` contains `sub` |
+| `CONTAINS(s, sub)` | Returns `true` if string `s` contains substring `sub`. Also accepts an array as the first argument — see [Array Functions](#array-functions). |
 | `STARTS_WITH(s, prefix)` | Returns `true` if `s` starts with `prefix` |
 | `ENDS_WITH(s, suffix)` | Returns `true` if `s` ends with `suffix` |
 | `MATCHES(s, pattern)` | Returns `true` if regex `pattern` matches anywhere in `s` |
@@ -873,6 +873,7 @@ The single-argument form `RANDOM(max)` was **removed in v0.7.0** — its exclusi
 | `SORT_BY(arr, key)` | Returns new array of objects sorted ascending by the given key. |
 | `SORT_BY_DESC(arr, key)` | Returns new array of objects sorted descending by the given key. |
 | `REVERSE(arr)` | Returns new array with elements in reverse order. No type restriction. |
+| `CONTAINS(arr, item)` | Returns `true` if `item` is an element of `arr` (spec v0.15.0). Elements are compared with `==` — so it is by value and deep for objects/arrays (`CONTAINS([{"a":1}], {"a":1})` → `true`), and strict across types (`CONTAINS([1,2], "2")` → `false`). Same built-in as the string-substring `CONTAINS` above, dispatched on the first argument's type. |
 
 ### Object Functions
 
@@ -1316,6 +1317,13 @@ implementation-defined. Scripts should not rely on any particular recursion dept
 ---
 
 ## Changelog
+
+### v0.15.0 — CONTAINS checks array membership
+
+Additive, non-breaking. `CONTAINS` now also accepts an **array** as its first argument and
+returns `true` when the second argument is an element of it — `CONTAINS([1, 2, 3], 2)` → `true`.
+Membership uses `==`, so it is by value and deep for objects/arrays and strict across types. The
+existing string-substring form is unchanged; the built-in dispatches on the first argument's type.
 
 ### v0.14.0 — the number model & load-time rejection pinned (the last v1.0-gate item)
 
