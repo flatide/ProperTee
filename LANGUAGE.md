@@ -33,6 +33,28 @@ Scripts that don't touch JSON `null` never see it; check for it explicitly (`if 
 - Division always produces a decimal internally: `7 / 2` → `3.5`
 - Whole-number results of other operations display as integers: `1.0 + 2.0` → `3`
 
+#### Integer vs decimal is nominal (spec v0.14.0)
+
+Whether a number is an **integer** or a **decimal** is fixed *where the value is produced* — by the
+operation's structure, not by whether the runtime value happens to be whole. A decimal that lands on
+a whole value (`1.5 + 1.5`) stays a decimal; it never turns back into an integer.
+
+- **Integers** come from: integer literals; integer-with-integer `+`, `-`, `*`, `%`, and unary `-`
+  (overflow-checked, below); and integer-producing built-ins (`LEN`, `FLOOR`, `CEIL`, `ROUND`,
+  `ABS` of an integer, and the like).
+- **Decimals** come from: decimal literals (including whole ones like `3.0`); any `/`; any operation
+  with a decimal operand (`2 + 3.0` → decimal `5`); decimal-producing built-ins (`RANDOM`, …); and
+  data whose text carries a fraction or exponent — `JSON_PARSE`/`TO_NUMBER` of a token containing
+  `.`, `e`, or `E`, or of an integer literal outside the 32-bit range.
+
+The only places this distinction is observable are the **integer-overflow rule** (next section) and
+**display of extreme magnitudes** (§Output Formatting): whether an expression *can* overflow is
+decided by its structure, never by the data flowing through it, so `2.0 * 1500000000` is the plain
+decimal `3000000000` while `2 * 1500000000` (both integers) overflows. Everything else treats the two
+alike — `TYPE_OF` is `"number"` for both, `2 == 2.0` is `true`, and a whole value displays the same
+either way. Where an **integer is required** (indexing, dynamic keys, integer built-in arguments) a
+whole decimal is accepted by coercion; a non-whole decimal is an error, as before.
+
 #### The integer range (spec v0.13.0)
 
 Integers are **32-bit signed** values: −2,147,483,648 … 2,147,483,647. Like every other type rule
@@ -479,7 +501,7 @@ end
 
 A function call `NAME(...)` resolves in this order (specified since spec v0.11.0):
 
-1. If the host has blocked `NAME` (ignored functions), the call is a runtime error: `'NAME' is not available in this environment`.
+1. If the host has blocked `NAME` (ignored functions), the call is invalid — its mere presence refuses the whole script at load (spec v0.14.0): `'NAME' is not available in this environment`. See [Host Environment Restrictions](#host-environment-restrictions).
 2. A script-defined function named `NAME`.
 3. Built-in functions and host-registered external functions.
 
@@ -1156,28 +1178,30 @@ visitor.setHiddenKeywords(["multi", "loop"]);
 visitor.setIgnoredFunctions(["SHELL"]);
 ```
 
-**Hidden keywords** produce a runtime error when the corresponding statement is encountered:
+**Hidden keywords** make a script that uses the statement refuse to run:
 
 ```
 // With "if" hidden:
 x = 10
-if x == 10 then    // Runtime error: 'if' is not available in this environment
+if x == 10 then    // 'if' is not available in this environment — the whole script is refused
     PRINT(x)
 end
 ```
 
 Keywords that can be hidden: `if`, `loop`, `function`, `multi`, `thread`, `debug`. Hiding `if` covers the whole `if`/`elseif`/`else` statement.
 
-**Ignored functions** produce a runtime error when called:
+**Ignored functions** make a script that calls the function refuse to run:
 
 ```
 // With "SHELL" ignored:
-x = SHELL("echo hello")   // Runtime error: 'SHELL' is not available in this environment
+x = SHELL("echo hello")   // 'SHELL' is not available in this environment — the whole script is refused
 ```
 
 Both built-in and external functions can be ignored. The check applies to normal function calls and to function calls inside multi block `thread` spawns.
 
-**Two enforcement points.** The restrictions above are enforced at **runtime**: the error is raised only when the forbidden construct is reached or the forbidden function is called, so a forbidden construct sitting in an untaken branch is not detected by running the script. When the forbidden call happens **inside a `multi` worker** — including a blocked function named directly in a `thread` spawn (`thread a: blocked_fn()`) — it fails **that worker only**, exactly like any other worker runtime error: a `[THREAD ERROR]` line plus a `{status:"error"}` Result in the collection, and the run continues (spec v0.13.0; previously runtimes diverged between worker containment and failing the whole run during spawn processing). For sandboxing, implementations additionally provide an **opt-in static validation pass** (a host API — `Engine.validate(source)` in the reference runtime, `interpreter.validate(tree)` in propertee-java, `visitor.validate(tree)` in propertee-js): it scans the whole parse tree — dead branches included — and returns one `line L:C: 'X' is not available in this environment` entry per hidden-keyword construct and ignored-function call, so a host can reject a script before executing it. The static pass is conservative and has no false negatives for these two restriction types; the runtime checks stay in place as a backstop. Default behavior is unchanged — hosts choose when to validate.
+**Load-time rejection (spec v0.14.0).** A script that names *any* blocked construct — a hidden keyword or an ignored-function call, **anywhere in the source, dead branches included** — does not run at all. The run is refused **before the first statement executes**, failing on the **first violation in document order** with `Runtime Error at line L:C: 'X' is not available in this environment`. Nothing before the offending construct runs — no output, no side effects — so in the examples above `x = 10` never executes. Because the check scans the whole tree, a blocked construct in an untaken branch (`if false then SHELL(...) end`) still refuses the script, and a blocked function reached only through a `thread` spawn (`thread a: blocked_fn()`) is rejected at load rather than inside the worker (this supersedes the spec v0.13.0 worker-containment behavior — the worker is never reached). The language has no indirect calls (call sites are literal names) and its keywords are static, so this scan is exact.
+
+The same scan is also exposed as a **host API** that returns *all* violations at once — `Engine.validate(source)` in the reference runtime, `interpreter.validate(tree)` in propertee-java, `visitor.validate(tree)` in propertee-js — each yielding one `line L:C: 'X' is not available in this environment` entry per hidden-keyword construct and ignored-function call, for hosts that want to inspect a script (e.g. report every problem in an editor) without running it.
 
 ## Comments
 
@@ -1218,6 +1242,25 @@ When values are printed or displayed:
 | object | braced | `{ "name": 'Alice', "age": 30 }` |
 
 Strings inside arrays and objects are displayed with single quotes. Top-level strings printed via `PRINT` have no quotes.
+
+### Number display (spec v0.14.0)
+
+Numbers render by **ECMA-262 `Number::toString`**, uniformly across `PRINT`, `TO_STRING`,
+`JSON_FORMAT`, and rendering inside arrays/objects. In practice:
+
+- The **shortest decimal digits** that round-trip back to the same value — `10 / 3` →
+  `3.3333333333333335`, `0.1 + 0.2` → `0.30000000000000004`. A whole value shows no fraction
+  (`5`, not `5.0`), which is why the rows above hold.
+- **Plain** (non-exponential) form for magnitudes in the range `[1e-6, 1e21)`: `0.0001`,
+  `15000000.5`, `6000000000`, `123456789012345680000`. This keeps the everyday bands — timestamps,
+  small rates, ids — readable, and the output is valid JSON.
+- **Exponential** form outside that range, written `e+`/`e-` with no superfluous mantissa point:
+  `1e+21`, `1e-7`, `1e+300`.
+
+> Significant digits are the *shortest round-tripping* decimal for the value. A few values at the
+> very edge of the subnormal range (near `5e-324`) are where a host platform's own shortest-digit
+> routine may differ by one digit; those are implementation-defined and outside the conformance
+> suite. No value an ordinary program produces is affected.
 
 ## Runtime Errors
 
@@ -1260,7 +1303,8 @@ Common error conditions:
 | `FAIL` without a message | FAIL() requires a message argument |
 | All-uppercase function definition | Cannot define function 'X': all-uppercase names are reserved for built-in and host functions |
 | Integer literal too large | Integer literal out of range: 9999999999 |
-| Integer arithmetic overflow (`+` `-` `*`, unary `-`, `FLOOR`/`CEIL`/`ROUND`/`ABS`) | Integer overflow |
+| Integer arithmetic overflow (`+` `-` `*`, unary `-`, `FLOOR`/`CEIL`/`ROUND`/`ABS`, `SUM`) | Integer overflow |
+| Blocked construct present (hidden keyword / ignored function, anywhere) | 'X' is not available in this environment |
 
 ### Resource Limits
 
@@ -1272,6 +1316,27 @@ implementation-defined. Scripts should not rely on any particular recursion dept
 ---
 
 ## Changelog
+
+### v0.14.0 — the number model & load-time rejection pinned (the last v1.0-gate item)
+
+Closes the final open corner of the v1.0-readiness review (`docs/design-draft-v1.0-gate.md` item 4,
+plus a revision of item 2). **Breaking only in corners no fixture-covered script reaches.**
+
+- **Integer vs decimal is nominal (provenance-based)**: a number's kind is fixed where it is
+  produced, not by whether its value is whole. `2.0 * 1500000000` is the decimal `3000000000`
+  (never overflows), while `2 * 1500000000` (both integers) overflows; `JSON_PARSE`/`TO_NUMBER` of a
+  token with `.`/`e`/`E` is a decimal even when whole (`"2.0"`, `"2e0"`). Previously v1 re-boxed
+  whole results to integers (and even promoted overflow silently) while js made overflow
+  data-dependent; both now match the reference. `SUM` over integers joins the overflow rule.
+- **Display is ECMA-262 `Number::toString`**, uniform across `PRINT`/`TO_STRING`/`JSON_FORMAT`:
+  shortest round-trip digits, plain form in `[1e-6, 1e21)`, exponential (`1e+21`, `1e-7`) outside.
+  Everyday bands (`0.0001`, epoch-ms timestamps, `6000000000`) now render plain instead of leaking
+  scientific notation.
+- **Blocked constructs are rejected at load** (revises v0.13.0 item 2): a script naming any hidden
+  keyword or ignored function — anywhere, dead branches and `thread` spawns included — does not run
+  at all; it is refused before the first statement, on the first violation in document order. This
+  replaces both the per-call runtime error and the v0.13.0 worker-containment behavior with one
+  rule: presence anywhere means the script is invalid in this environment.
 
 ### v0.13.0 — the edges pinned: integer envelope, spawn containment, dispatch names
 
