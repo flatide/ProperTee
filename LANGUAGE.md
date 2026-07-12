@@ -742,7 +742,7 @@ end
 ```
 
 - The number after `monitor` is the watchdog's **sleep interval** in milliseconds: the watchdog repeatedly sleeps for the interval, then runs its body once. The body's own execution (and any suspension inside it) adds to the cycle — this is a sleep *between* iterations, not a fixed-rate timer.
-- When the watchdog wakes and finds every worker finished, it runs the body **one final time** and ends; the multi block completes after that final iteration. The final run is guaranteed — the watchdog always observes the finished collection at least once, even if an earlier iteration failed.
+- Once every worker has finished, the watchdog runs the body **one final time** and ends; the multi block completes after that final iteration. The final run is guaranteed — the watchdog always observes the finished collection at least once, even if an earlier iteration failed. (*When* the final run starts — immediately on the last worker's completion, or at the watchdog's next wake-up — is implementation timing; the spec promises only that it runs.)
 - The watchdog follows the **same purity rules as worker threads**: globals are a read-only snapshot (`::` reads work; a `::` write is the same runtime error as in a worker), and plain names are locals. It cannot see setup-phase locals.
 - Each iteration runs like a function invocation, in a **fresh local scope** — locals do not carry over between iterations. Local assignment, loops, and function calls are all allowed in the body.
 - The iteration's scope starts with one binding: the result collection variable, holding a **captured snapshot** (deep copy) of the collection taken as the iteration starts.

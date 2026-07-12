@@ -82,9 +82,11 @@ byte-identical).
   iteration still runs.
 - **No setup-locals visibility.**
 - Deliberately **not** done now: waking the watchdog early when the last worker finishes (today
-  the final iteration waits out the in-flight sleep, delaying `multi` completion by up to one
-  interval — v1-compatible, invisible in fixture output). A pure-latency refinement, possible
-  later without a spec change since the spec doesn't promise when the final iteration starts.
+  the reference's final iteration waits out the in-flight sleep, delaying `multi` completion by up
+  to one interval — v1-compatible, invisible in fixture output). A pure-latency refinement,
+  possible later without a spec change — the spec text explicitly leaves the final iteration's
+  start time to implementation timing (js already runs it immediately on the last worker's
+  completion; both behaviors are conformant).
 
 ## Compatibility
 
@@ -92,10 +94,38 @@ Breaking, mildly — in corners no realistic script occupies: (a) scripts relyin
 assignment *error*; (b) scripts reading globals by bare name in a monitor (undocumented) must
 switch to `::`. Everything else is strictly more permissive. The error-message change is pinned
 by rewritten fixture 32; new fixtures 117 (iteration locals, loops, function calls, capture
-read) and 118 (capture vs. live under suspension) pin the new semantics. 20/56 (cadence,
-running→done visibility) are byte-identical.
+read), 118 (capture vs. live under suspension), 119 (nested `::g.x` member write is a global
+write — banned, global untouched), and 120 (fresh scope per iteration — a mid-run local read in
+the final iteration is undefined) pin the new semantics. 20/56 (cadence, running→done
+visibility) are byte-identical.
 
-Runtime scope: reference shipped (0.14.0); js synced best-effort (118 pending — its monitor
-executes synchronously and forbids suspension in the body, so the capture-under-suspension
-fixture cannot run there yet); v1 out of scope (legacy simple-evaluation server, consistent
-with v0.14.0/v0.15.0 practice).
+## Post-ship review findings (2026-07-12)
+
+An adversarial review of the initial ship surfaced three real gaps, all fixed same-day:
+
+1. **js: nested `::` writes escaped to the live globals** (release-blocking). The js monitor's
+   thread context took the *parent thread's* global snapshot — which for a top-level `multi` is
+   the live variables — and js (unlike the reference's `rootLvalue()` guard) never checked the
+   root of a property-assignment chain, so `::g.x = 2` in a monitor silently mutated the real
+   global. Fixed by storing the multi-entry snapshot on the monitor entry and adding the
+   root-`::` guard to property assignment (which also closes the same pre-existing hole for
+   workers). Fixture 119 pins it tri-fold: the error, its position, and the untouched global.
+2. **js: a failed iteration did not stop mid-run iterations** — `[MONITOR ERROR]` repeated every
+   tick (fixture 32 passed only by timing luck). Fixed with an `aborted` flag; the final
+   iteration still runs.
+3. **Fixture 117 could not distinguish fresh from persistent scope** (fast workers → single
+   final iteration; explicit `done = 0` init). Fixture 120 added as the discriminator.
+
+Also folded in: the spec's final-iteration sentence was reworded to promise only *that* the
+final run happens, not *when* (reference: at the in-flight sleep's expiry; js: immediately);
+and the stale spec copies (`grammar/LANGUAGE.md`, propertee-js `LANGUAGE.md` — byte-copies;
+`LANGUAGE.ko.md` and propertee2-java's annotated `docs/LANGUAGE.md` — manual/content syncs,
+which had silently lagged since v0.14.0) were brought up to v0.16.0.
+
+Runtime scope: reference shipped (0.14.0); js synced best-effort — **known js divergences**,
+recorded here rather than papered over: fixture 118 pending (its monitor body executes
+synchronously and cannot suspend — the v1-era async-in-monitor ban is still in place), the
+final iteration runs immediately on completion (allowed by the spec wording above), and its
+mid-run cadence is timer-checked between scheduler steps (fixed-delay measured from body end
+after the review fix, but not a sleeping fiber). v1 out of scope (legacy simple-evaluation
+server, consistent with v0.14.0/v0.15.0 practice).

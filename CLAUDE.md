@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProperTee is a lightweight, dynamically-typed scripting language (v0.13.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
+ProperTee is a lightweight, dynamically-typed scripting language (v0.16.0) for property-based data processing, configuration management, and embedding in host applications. Developed by FLATIDE LC under BSD 3-Clause License.
 
 This repository contains the **language specification, grammar, documentation, and editor extensions**. The interpreter implementations live in separate repositories:
 - **Java (reference implementation)**: [propertee2-java](https://github.com/flatide/propertee2-java) — Java 25, virtual-thread cooperative runtime; consumed by [TeeBox](https://github.com/flatide/TeeBox)
 - **JavaScript**: [propertee-js](https://github.com/flatide/propertee-js) — Node.js, ES modules, generator-based concurrency; powers the online playground
 - **Java (legacy)**: [propertee-java](https://github.com/flatide/propertee-java) — Java 7+, Stepper pattern; **maintenance: language-spec syncs + security/bugfixes only, no runtime features** (policy revised 2026-07; 1.6.0 = spec v0.13.0; the `v1.0.0` tag is the pre-sync spec v0.6.0 baseline)
 
-All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, propertee-js, and propertee-java in sync. Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 108 fixtures (spec v0.13.0), propertee-java 1.6.0 the same 108 (plus its extra 79_task_cancel), the JavaScript runtime 104 (host-dependent SHELL/file-I/O fixtures are Java-only).
+All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this repo, propertee2-java, propertee-js, and propertee-java in sync. Conformance is fixture-based (`.tee`/`.expected` pairs, byte-exact): the reference Java runtime passes 117 fixtures (spec v0.16.0), propertee-java 1.6.0 stays at the spec v0.13.0 set of 108 (plus its extra 79_task_cancel; the legacy line no longer tracks post-v0.13.0 corners), the JavaScript runtime 111 (host-dependent SHELL/file-I/O fixtures are Java-only; 114 nominal-number-identity and 118 monitor-capture-under-suspension are pending there).
 
 ## Repository Structure
 
@@ -25,7 +25,7 @@ All repos share the same ANTLR4 grammar (`grammar/ProperTee.g4`) — keep this r
 
 No build step in this repo — grammar compilation and bundling happens in the implementation repos.
 
-**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.12.0); `grammar/LANGUAGE.md` and propertee-js's `LANGUAGE.md` are byte-identical copies of it. propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy. propertee-java's copy also carries runtime-specific annotations (stepper-era eager-seam notes) — sync it by content too. Update `LANGUAGE.ko.md` manually when the English spec changes.
+**LANGUAGE.md sync workflow:** **this repo's `LANGUAGE.md` is the canonical language spec** (currently v0.16.0); `grammar/LANGUAGE.md` and propertee-js's `LANGUAGE.md` are byte-identical copies of it. propertee2-java's `docs/LANGUAGE.md` deliberately adds runtime-specific annotations (cooperative-suspension notes, `Coop.blocking` external-function behavior) on top of the spec, so sync spec-level changes both ways by content, not by byte-copy. propertee-java's copy also carries runtime-specific annotations (stepper-era eager-seam notes) — sync it by content too. Update `LANGUAGE.ko.md` manually when the English spec changes.
 
 ## Editor Extensions
 
