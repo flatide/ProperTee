@@ -95,13 +95,38 @@ assignment *error*; (b) scripts reading globals by bare name in a monitor (undoc
 switch to `::`. Everything else is strictly more permissive. The error-message change is pinned
 by rewritten fixture 32; new fixtures 117 (iteration locals, loops, function calls, capture
 read), 118 (capture vs. live under suspension), 119 (nested `::g.x` member write is a global
-write — banned, global untouched), and 120 (fresh scope per iteration — a mid-run local read in
-the final iteration is undefined) pin the new semantics. 20/56 (cadence, running→done
+write — banned, global untouched), 120 (fresh scope per iteration — a mid-run local read in
+the final iteration is undefined), and 121 (the snapshot is taken at multi entry — a setup-phase
+`::` write is invisible to the threads) pin the new semantics. 20/56 (cadence, running→done
 visibility) are byte-identical.
 
 ## Post-ship review findings (2026-07-12)
 
-An adversarial review of the initial ship surfaced three real gaps, all fixed same-day:
+Two adversarial review rounds on the initial ship surfaced real gaps, all fixed same-day.
+
+**Round 2:**
+
+4. **The global-snapshot timing diverged between runtimes** — and the *reference* was the
+   outlier. The spec says the snapshot is taken "at multi entry"; v1 and js both snapshot before
+   the setup phase runs, but the v2 rewrite had silently moved it after setup, so a setup-phase
+   `::` write (`multi r do ::g = 2 thread a: readg() end`) was visible to v2's workers (and,
+   via the shared snapshot, its watchdog) while js workers saw the entry value. Per the locked
+   fidelity decision ("value semantics must not differ from v1 — only scheduling changes"), the
+   reference was restored to entry-time snapshotting (`Interpreter.execMulti` — the deep copy
+   now precedes the setup block); the spec sentence gained the explicit "before the setup phase
+   runs / setup `::` writes are not visible to threads" clause; fixture 121 pins it in both
+   runtimes. No existing fixture wrote globals in a setup phase, which is how the drift survived
+   115 fixtures. TeeBox re-verified green against the corrected engine.
+5. Doc-accuracy nits: the changelog's fixture note still credited 117–118 with pinning the new
+   scope semantics (117 cannot discriminate fresh from persistent — that is 120's job; the note
+   now lists each fixture's role, in the Korean copy too), and the ecosystem docs' js suite
+   count was ambiguous (now stated as both fixtures and `npm test` totals). Also corrected the
+   overclaim that v0.16.0 fixtures are "3-runtime byte-identical": they are pinned by **two
+   independent runtimes** (reference + js) — propertee-java stays at its spec v0.13.0 set, and
+   TeeBox runs the same propertee2 engine, so it is adoption evidence, not independent
+   conformance.
+
+**Round 1:**
 
 1. **js: nested `::` writes escaped to the live globals** (release-blocking). The js monitor's
    thread context took the *parent thread's* global snapshot — which for a top-level `multi` is
