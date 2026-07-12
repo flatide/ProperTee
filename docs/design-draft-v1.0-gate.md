@@ -8,7 +8,7 @@
 > v0.13.0 worker-containment is superseded by load-time rejection (§2). **Remaining before the 1.0
 > stamp**: propertee-java v1 is out of scope for these corners (frozen legacy simple-evaluator on
 > JVM 7 — §4); js follows best-effort (playground, new fixtures js-pending); then TeeBox
-> production burn-in with no spec-level findings → v1.0.0 = content freeze of the last v0.14.x.
+> production burn-in with no spec-level findings → v1.0.0 = content freeze of the last v0.x — v0.15.0 (CONTAINS) and v0.16.0 (monitor = watchdog thread) landed after this was written.
 > Tracked **locally only** by user decision (no GitHub issues); this document is the record.
 
 ## Why
@@ -213,7 +213,7 @@ Documented explicitly so 1.0 doesn't imply a promise the spec never made.
    identity + ECMA-262 display → spec v0.14.0, to be shipped tri-runtime, bundled with the
    item-2 revision to mandatory load-time rejection)*
 3. TeeBox production adoption + burn-in with no spec-level findings.
-4. Then **v1.0.0 = content freeze** of the last v0.14.x — a stamp, no new features.
+4. Then **v1.0.0 = content freeze** of the current v0.x line (v0.16.0 as of 2026-07-12) — a stamp, no new features.
 
 ## Rejected along the way
 

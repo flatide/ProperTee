@@ -1,4 +1,4 @@
-# ProperTee Language Specification v0.13.0
+# ProperTee Language Specification v0.16.0
 
 ## Overview
 
@@ -724,13 +724,13 @@ This guarantees no data races — threads never see each other's modifications.
 4. The result collection is pre-built with `"running"` entries at spawn time
 5. Threads execute cooperatively, interleaving at statement boundaries
 6. As each thread completes, its result entry is updated in-place to `"done"` or `"error"`
-7. The monitor clause can read the live result collection during execution
+7. The monitor watchdog observes the result collection through a captured snapshot taken at the start of each of its iterations (spec v0.16.0)
 8. All threads must complete before execution continues past `end`
 9. The result collection is assigned to `resultVar` after **all** threads finish
 
 ### Monitor Clause
 
-An optional `monitor` clause runs code periodically while threads execute:
+An optional `monitor` clause attaches a **watchdog thread** to the multi block — a thread the runtime spawns and manages automatically alongside the workers (spec v0.16.0):
 
 ```
 multi result do
@@ -741,12 +741,12 @@ monitor 100
 end
 ```
 
-- The number after `monitor` is the interval in milliseconds
-- Monitor code is **read-only** — variable assignment inside a monitor is a runtime error
-- Monitor can call built-in functions (e.g., `PRINT`)
-- Monitor can read the result collection variable to check thread status (e.g., `result.key.status`)
-- Monitor can read global variables (via `::` prefix) but **cannot** access setup phase locals — the monitor runs in its own scope containing only globals and the result variable
-- Monitor runs one final time after all threads complete
+- The number after `monitor` is the watchdog's **sleep interval** in milliseconds: the watchdog repeatedly sleeps for the interval, then runs its body once. The body's own execution (and any suspension inside it) adds to the cycle — this is a sleep *between* iterations, not a fixed-rate timer.
+- When the watchdog wakes and finds every worker finished, it runs the body **one final time** and ends; the multi block completes after that final iteration. The final run is guaranteed — the watchdog always observes the finished collection at least once, even if an earlier iteration failed.
+- The watchdog follows the **same purity rules as worker threads**: globals are a read-only snapshot (`::` reads work; a `::` write is the same runtime error as in a worker), and plain names are locals. It cannot see setup-phase locals.
+- Each iteration runs like a function invocation, in a **fresh local scope** — locals do not carry over between iterations. Local assignment, loops, and function calls are all allowed in the body.
+- The iteration's scope starts with one binding: the result collection variable, holding a **captured snapshot** (deep copy) of the collection taken as the iteration starts.
+- If an iteration fails, the error is reported (`[MONITOR ERROR] ...`), remaining mid-run iterations are skipped, and the final iteration still runs.
 
 ```
 multi result do
@@ -756,7 +756,7 @@ monitor 100
 end
 ```
 
-**How the monitor accesses `result`:** In the code above, the monitor body references `result` even though `result` is only assigned after all threads finish (at `end`). This works because the scheduler **injects** the live result collection into the monitor's scope under the `resultVar` name at each monitor tick. The monitor does not read the final assigned variable — it reads a live, in-place-updated map that the scheduler maintains as threads complete. This is why the monitor can see `"running"` entries transition to `"done"` in real time, even though the `result = ...` assignment hasn't happened yet.
+**How the watchdog sees `result`:** In the code above, the monitor body references `result` even though `result` is only assigned after all threads finish (at `end`). Each watchdog iteration starts by **capturing** the in-progress result collection — a deep-copied snapshot bound under the `resultVar` name in the iteration's scope. The capture is consistent for the whole iteration, even if the body suspends (e.g. `SLEEP`, a blocking call) while workers keep completing; the next iteration takes a fresh capture, which is how the watchdog sees `"running"` entries become `"done"` across iterations. The guaranteed final iteration captures the finished collection. (Before spec v0.16.0 the monitor read a live view instead and could not assign at all — see the changelog.)
 
 ### Sequential Multi Blocks
 
@@ -1287,9 +1287,8 @@ Common error conditions:
 | Missing property | Property 'x' does not exist |
 | Array out of bounds | Array index out of bounds |
 | Loop limit exceeded | Loop exceeded maximum iterations (1000) |
-| Global write in multi block | Cannot assign to global variable '::x' inside multi block |
+| Global write in multi block (worker or monitor watchdog) | Cannot assign to global variable '::x' inside multi block |
 | Global without `::` in local scope | Variable 'x' is not defined in local scope. Use ::x to access the global variable |
-| Assignment in monitor | Cannot assign variables in monitor block (read-only) |
 | thread outside multi | thread can only be used inside multi blocks |
 | Duplicate result key | Duplicate result key 'x' in multi block |
 | Too many arguments | Function 'foo' expects 2 argument(s), but 3 were provided |
@@ -1317,6 +1316,35 @@ implementation-defined. Scripts should not rely on any particular recursion dept
 ---
 
 ## Changelog
+
+### v0.16.0 — the monitor is a watchdog thread
+
+The `monitor` clause is re-specified as what its name suggests: a **watchdog thread** the runtime
+spawns and manages automatically alongside the workers (see [Monitor Clause](#monitor-clause)).
+`monitor 500` means the watchdog **sleeps 500 ms between iterations** (fixed-delay, like a thread
+running `SLEEP` in a loop) — not "poll every 500 ms". The watchdog follows the same purity rules
+as worker threads and observes the other threads through **captured snapshots**:
+
+- **Iteration scope**: each iteration runs like a function invocation in a fresh local scope —
+  local assignment, loops, and function calls are now allowed in the body (previously *any*
+  assignment was a runtime error). Locals do not carry over between iterations.
+- **Worker purity**: a `::` global write raises the same error as in a worker
+  (`Cannot assign to global variable '::x' inside multi block. ...`); the dedicated
+  "read-only monitor" error is gone. Globals are readable via `::` only — the undocumented
+  fallthrough that let a monitor read globals by bare name is removed (bare names are locals,
+  exactly as inside a function).
+- **Capture, not live view**: the result collection variable now holds a deep-copied snapshot
+  taken as the iteration starts, so reads are consistent for the whole iteration even if the body
+  suspends; the next iteration captures fresh. (Observable only in bodies that suspend —
+  per-iteration values are unchanged.)
+- **Unchanged**: the sleep-first cadence, the guaranteed final iteration after all workers
+  finish, `[MONITOR ERROR]` reporting (a failing iteration stops mid-run iterations; the final
+  one still runs), and the no-setup-locals rule.
+
+**Breaking, mildly**: scripts that *relied on the error* (none realistically) or read globals
+bare inside a monitor must switch to `::`. Everything else is strictly more permissive.
+Migration: none expected; fixture 32 re-pins the global-write error, fixtures 117–118 pin the
+new scope and capture semantics.
 
 ### v0.15.0 — CONTAINS checks array membership
 
