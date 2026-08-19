@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.17.0
+# ProperTee 언어 명세 v0.18.0
 
 ## 개요
 
@@ -918,8 +918,11 @@ end
 | `FILE_EXISTS(path)` | 파일 또는 디렉터리가 존재하면 `true` 반환. |
 | `FILE_INFO(path)` | Result 반환: `ok`와 `{type, size, modified}`, 미존재 시 `error`. |
 | `READ_LINES(path, [start], [count])` | 파일에서 라인 읽기. `start`는 1-기반 (기본 1). `count`는 읽을 라인 수 제한. Result와 문자열 배열 반환. |
+| `READ_FILE(path)` | 파일 전체를 하나의 문자열로 읽기 (스펙 v0.18.0). Result 반환: 파일 내용(UTF-8, 내용 그대로)이면 `ok`, 읽기 실패면 `error`. `WRITE_FILE`의 대응 함수; 큰 파일에는 윈도우 방식의 `READ_LINES`가 여전히 적합. |
+| `READ_JSON_FILE(path)` | JSON 파일을 읽어서 한 번에 파싱 (스펙 v0.18.0). Result 반환: 파싱된 값(객체·배열·스칼라 — `JSON_PARSE`와 동일한 변환)이면 `ok`, 읽기 실패나 잘못된 JSON이면 `error`. 선행 UTF-8 BOM은 무시. `READ_LINES` + `JOIN` + `JSON_PARSE` 관용구를 대체. |
 | `WRITE_FILE(path, content)` | 파일에 문자열 쓰기 (덮어쓰기). Result 반환. |
 | `WRITE_LINES(path, lines)` | 문자열 배열의 각 요소를 줄 단위로 쓰기 (각 줄 뒤에 줄바꿈). Result 반환. |
+| `WRITE_JSON_FILE(path, value)` | `value`를 JSON으로 직렬화 — `JSON_FORMAT`과 동일한 출력 — 해서 뒤에 줄바꿈 하나를 붙여 파일에 쓰기(덮어쓰기) (스펙 v0.18.0). Result 반환: 성공 시 `{}`와 `ok`. `READ_JSON_FILE`의 대응 함수: 왕복은 일급 `null`을 포함해 무손실. |
 | `APPEND_FILE(path, content)` | 파일에 문자열 추가. Result 반환. |
 | `MKDIR(path)` | 디렉터리 생성 (부모 포함). Result 반환. |
 | `LIST_DIR(path)` | 디렉터리 항목 목록. Result와 `{name, type, size}` 객체 배열 반환. 이름순 정렬. |
@@ -1309,6 +1312,24 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다.
 
 ## 변경 이력
+
+### v0.18.0 — 파일 전체 및 JSON 파일 I/O: READ_FILE, READ_JSON_FILE, WRITE_JSON_FILE
+
+추가적, 비파괴. 파일 I/O 그룹의 대칭을 완성하는 내장 함수 셋 — 모두 그룹의 나머지와 같이
+호스트 게이트 대상이며 Result를 반환합니다:
+
+- `READ_FILE(path)` — `WRITE_FILE`에 없던 대응 함수: 파일 전체를 하나의 문자열로(UTF-8, 내용
+  그대로). 내용이면 `ok`, 읽기 실패면 `error`. 큰 파일에는 윈도우 방식 `READ_LINES`가 여전히
+  적합합니다.
+- `READ_JSON_FILE(path)` — 읽기+JSON 파싱 원콜. 파싱된 값 — `JSON_PARSE`와 동일한 변환(객체·
+  배열·스칼라·일급 `null`) — 이면 `ok`, 파일을 읽을 수 없거나 유효한 JSON이 아니면 `error`
+  (메시지는 읽기 실패 또는 파서의 것). RFC 8259가 허용하는 대로 선행 UTF-8 BOM은 무시합니다.
+  파일 개행을 조용히 정규화하고 Result 대신 무관한 위치 지정 에러로 실패하던 3단계
+  `JSON_PARSE(JOIN(UNWRAP(READ_LINES(path)), "\n"))` 관용구를 대체합니다.
+- `WRITE_JSON_FILE(path, value)` — `READ_JSON_FILE`의 대응 함수: `value`를 `JSON_FORMAT`과
+  정확히 같게 직렬화해 뒤에 줄바꿈 하나를 붙여 파일에 씁니다(덮어쓰기; POSIX 텍스트 파일).
+  `WRITE_JSON_FILE` → `READ_JSON_FILE` 왕복은 일급 `null`을 포함해 무손실입니다. 끝 줄바꿈
+  없는 byte-exact 출력이 필요하면 `WRITE_FILE(path, JSON_FORMAT(value))`를 쓰면 됩니다.
 
 ### v0.17.0 — 리터럴 위치 검색: FIND, FIND_FIRST, FIND_LAST
 
