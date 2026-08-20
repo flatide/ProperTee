@@ -1,8 +1,8 @@
 {
   "name": "propertee",
   "displayName": "ProperTee",
-  "description": "Syntax highlighting and formatting for the ProperTee scripting language",
-  "version": "0.4.0",
+  "description": "Syntax highlighting, formatting, and run/debug for the ProperTee scripting language",
+  "version": "0.5.0",
   "main": "./extension.js",
   "publisher": "flatide",
   "license": "BSD-3-Clause",
@@ -14,11 +14,14 @@
     "vscode": "^1.60.0"
   },
   "activationEvents": [
-    "onLanguage:propertee"
+    "onLanguage:propertee",
+    "onCommand:propertee.runFile",
+    "onDebugResolve:propertee"
   ],
   "categories": [
     "Programming Languages",
-    "Formatters"
+    "Formatters",
+    "Debuggers"
   ],
   "contributes": {
     "languages": [
@@ -39,6 +42,131 @@
         "language": "propertee",
         "scopeName": "source.propertee",
         "path": "./syntaxes/propertee.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "propertee.runFile",
+        "title": "ProperTee: Run Script",
+        "icon": "$(play)"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "propertee.runFile",
+          "when": "resourceLangId == propertee",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "propertee.runFile",
+          "when": "resourceLangId == propertee",
+          "group": "propertee"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ProperTee",
+      "properties": {
+        "propertee.runtime.command": {
+          "type": "string",
+          "default": "propertee2",
+          "description": "The ProperTee runtime executable used by Run and Debug. Either the propertee2 CLI launcher, or e.g. \"java\" combined with propertee.runtime.args [\"-jar\", \"/path/to/propertee2-<version>.jar\"] (requires JDK 25)."
+        },
+        "propertee.runtime.args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Arguments placed before the script path (e.g. [\"-jar\", \"/path/to/propertee2.jar\"])."
+        }
+      }
+    },
+    "debuggers": [
+      {
+        "type": "propertee",
+        "label": "ProperTee",
+        "languages": [
+          "propertee"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "The .tee script to run.",
+                "default": "${file}"
+              },
+              "props": {
+                "type": "object",
+                "description": "Host-injected builtin properties, passed as -p JSON (readable in the script as ::name / _PROPS).",
+                "default": {}
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Extra arguments appended after the script path.",
+                "default": []
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory (defaults to the script's directory)."
+              },
+              "command": {
+                "type": "string",
+                "description": "Runtime executable override (defaults to the propertee.runtime.command setting)."
+              },
+              "commandArgs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Runtime argument override (defaults to the propertee.runtime.args setting)."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "propertee",
+            "request": "launch",
+            "name": "Run ProperTee script",
+            "program": "${file}"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "ProperTee: Run current script",
+            "description": "Run the active .tee file with the propertee2 runtime",
+            "body": {
+              "type": "propertee",
+              "request": "launch",
+              "name": "Run ProperTee script",
+              "program": "^\"\\${file}\""
+            }
+          },
+          {
+            "label": "ProperTee: Run script with props",
+            "description": "Run a .tee file with host-injected -p properties",
+            "body": {
+              "type": "propertee",
+              "request": "launch",
+              "name": "Run with props",
+              "program": "^\"\\${workspaceFolder}/script.tee\"",
+              "props": {
+                "width": 100
+              }
+            }
+          }
+        ]
       }
     ]
   }

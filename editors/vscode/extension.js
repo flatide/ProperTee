@@ -1,6 +1,65 @@
 const vscode = require('vscode');
+const path = require('path');
+const { ProperTeeDebugAdapter } = require('./debugAdapter');
+
+// The runtime invocation: settings first, overridable per launch config.
+// Default assumes the `propertee2` CLI on PATH; a jar works via
+// command "java" + commandArgs ["-jar", "/path/to/propertee2-<version>.jar"].
+function runtimeFor(config) {
+    const settings = vscode.workspace.getConfiguration('propertee');
+    return {
+        command: (config && config.command) || settings.get('runtime.command') || 'propertee2',
+        commandArgs: (config && config.commandArgs) || settings.get('runtime.args') || []
+    };
+}
 
 function activate(context) {
+    // --- Run (integrated terminal) -----------------------------------------------------------
+    context.subscriptions.push(
+        vscode.commands.registerCommand('propertee.runFile', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor || editor.document.languageId !== 'propertee') {
+                vscode.window.showErrorMessage('ProperTee: open a .tee script to run.');
+                return;
+            }
+            await editor.document.save();
+            const file = editor.document.uri.fsPath;
+            const { command, commandArgs } = runtimeFor(null);
+            const quote = (s) => /[\s"']/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s;
+            const line = [command, ...commandArgs, file].map(quote).join(' ');
+            const terminal = vscode.window.terminals.find(t => t.name === 'ProperTee')
+                || vscode.window.createTerminal({ name: 'ProperTee', cwd: path.dirname(file) });
+            terminal.show(true);
+            terminal.sendText(line);
+        })
+    );
+
+    // --- Debug (F5 / Run Without Debugging) --------------------------------------------------
+    context.subscriptions.push(
+        vscode.debug.registerDebugConfigurationProvider('propertee', {
+            resolveDebugConfiguration(folder, config) {
+                // F5 with no launch.json: run the active .tee file
+                if (!config.type && !config.request && !config.name) {
+                    const editor = vscode.window.activeTextEditor;
+                    if (!editor || editor.document.languageId !== 'propertee') return undefined;
+                    config = {
+                        type: 'propertee', name: 'Run ProperTee script', request: 'launch',
+                        program: editor.document.uri.fsPath
+                    };
+                }
+                const runtime = runtimeFor(config);
+                config.command = runtime.command;
+                config.commandArgs = runtime.commandArgs;
+                return config;
+            }
+        }),
+        vscode.debug.registerDebugAdapterDescriptorFactory('propertee', {
+            createDebugAdapterDescriptor() {
+                return new vscode.DebugAdapterInlineImplementation(new ProperTeeDebugAdapter());
+            }
+        })
+    );
+
     context.subscriptions.push(
         vscode.languages.registerDocumentFormattingEditProvider('propertee', {
             provideDocumentFormattingEdits(document, options) {
