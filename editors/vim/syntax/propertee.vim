@@ -11,7 +11,7 @@ syn keyword propertKeyword      if then elseif else end
 syn keyword propertKeyword      loop in do infinite
 syn keyword propertKeyword      break continue return debug
 syn keyword propertKeyword      function thread
-syn keyword propertKeyword      multi monitor
+syn keyword propertKeyword      multi monitor limit
 
 " --- Logical operators ---
 syn keyword propertLogical      not and or

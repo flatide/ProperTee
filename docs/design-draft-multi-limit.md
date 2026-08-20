@@ -1,8 +1,11 @@
 # Design draft — `multi … limit K`: a concurrency cap on the multi block
 
-**Status: proposed** — not yet decided or shipped. No tracker issue — grew out of a user request
-to analyze how the worker-pool pattern (playground example 22 "Worker Pool") could be made
-convenient, at the language-spec level and the helper-function level (2026-08-20).
+**Status: decided & shipped** — spec v0.19.0, reference implementation propertee2-java 0.21.0
+(fixtures 126–129), js synced same-day. No tracker issue — grew out of a user request to analyze
+how the worker-pool pattern (playground example 22 "Worker Pool") could be made convenient, at
+the language-spec level and the helper-function level; proposed and approved for shipping
+in-session (2026-08-20). Of the open questions below, the keyword stayed `limit` and
+PARTITION/FLATTEN were left unshipped (no worker-pool motivation remains; revisit on demand).
 
 ## The problem
 
