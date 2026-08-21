@@ -1,6 +1,5 @@
 const vscode = require('vscode');
 const path = require('path');
-const { ProperTeeDebugAdapter } = require('./debugAdapter');
 
 // The runtime invocation: settings first, overridable per launch config.
 // Default assumes the `propertee2` CLI on PATH; a jar works via
@@ -54,8 +53,13 @@ function activate(context) {
             }
         }),
         vscode.debug.registerDebugAdapterDescriptorFactory('propertee', {
-            createDebugAdapterDescriptor() {
-                return new vscode.DebugAdapterInlineImplementation(new ProperTeeDebugAdapter());
+            // 0.6.0: the runtime IS the debug adapter — `propertee2 --dap` speaks DAP on stdio
+            // (runtime 0.24.0+), giving real breakpoints, stepping, stack, variables, and
+            // hover/REPL evaluation. The launch configuration (program/props/noDebug) is passed
+            // through to it verbatim.
+            createDebugAdapterDescriptor(session) {
+                const { command, commandArgs } = runtimeFor(session.configuration);
+                return new vscode.DebugAdapterExecutable(command, [...commandArgs, '--dap']);
             }
         })
     );

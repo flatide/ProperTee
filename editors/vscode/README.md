@@ -10,7 +10,7 @@ Syntax highlighting, formatting, and run/debug for the [ProperTee](https://githu
 - Document formatting (indentation + keyword spacing)
 - A `not x == y` precedence-pitfall diagnostic
 - **Run**: ▶ button in the editor title (or "ProperTee: Run Script" from the command palette / context menu) — runs the current file in the integrated terminal
-- **Debug (F5)**: launches the runtime and streams its output to the Debug Console, with exit-code reporting. Works with zero configuration on the active `.tee` file, or via a `launch.json` with `"type": "propertee"` — where you can also pass host properties:
+- **Debug (F5)** — a real debugger since 0.6.0 (requires propertee2 **0.24.0+**, whose `--dap` mode speaks the Debug Adapter Protocol directly): **breakpoints** in `.tee` files, the `debug` statement as a scripted breakpoint, **step over/into/out**, the call stack, Locals/Globals variables, and evaluation in the paused scope from the Debug Console or on hover. Works with zero configuration on the active `.tee` file, or via a `launch.json` with `"type": "propertee"` — where you can also pass host properties:
 
 ```jsonc
 {
@@ -22,9 +22,9 @@ Syntax highlighting, formatting, and run/debug for the [ProperTee](https://githu
 }
 ```
 
-> ProperTee runs to completion — there are no breakpoints or stepping (the cooperative
-> scheduler is deterministic; use `PRINT` / the `debug` statement in the script). "Run Without
-> Debugging" and "Start Debugging" behave identically.
+> Notes: the run pauses only between statements (single cooperative thread — the paused world
+> is frozen, workers and monitor included); a breakpoint on a line with no statement never
+> fires; "Run Without Debugging" runs without any stops.
 
 ## Runtime setup
 

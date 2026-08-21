@@ -1,8 +1,8 @@
 {
   "name": "propertee",
   "displayName": "ProperTee",
-  "description": "Syntax highlighting, formatting, and run/debug for the ProperTee scripting language",
-  "version": "0.5.0",
+  "description": "Syntax highlighting, formatting, and run/debug (real breakpoints via the propertee2 DAP server) for the ProperTee scripting language",
+  "version": "0.6.0",
   "main": "./extension.js",
   "publisher": "flatide",
   "license": "BSD-3-Clause",
@@ -167,6 +167,11 @@
             }
           }
         ]
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "propertee"
       }
     ]
   }
