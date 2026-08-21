@@ -18,7 +18,8 @@ Syntax highlighting, formatting, and run/debug for the [ProperTee](https://githu
     "request": "launch",
     "name": "Run with props",
     "program": "${workspaceFolder}/script.tee",
-    "props": { "width": 100 }        // -p JSON → ::width / _PROPS in the script
+    "props": { "width": 100 },       // -p JSON → ::width / _PROPS in the script
+    "args": ["prod", "42"]           // → _ARGS string array (runtime 0.25.0+)
 }
 ```
 

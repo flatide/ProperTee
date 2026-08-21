@@ -2,7 +2,7 @@
   "name": "propertee",
   "displayName": "ProperTee",
   "description": "Syntax highlighting, formatting, and run/debug (real breakpoints via the propertee2 DAP server) for the ProperTee scripting language",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "main": "./extension.js",
   "publisher": "flatide",
   "license": "BSD-3-Clause",
@@ -113,7 +113,7 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "Extra arguments appended after the script path.",
+                "description": "Positional script arguments, exposed to the script as the _ARGS string array (runtime 0.25.0+).",
                 "default": []
               },
               "cwd": {
