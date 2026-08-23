@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.20.0
+# ProperTee 언어 명세 v0.21.0
 
 ## 개요
 
@@ -796,6 +796,48 @@ end
 
 **감시 쓰레드가 `result`를 보는 방식:** 위 코드에서 monitor 본문은 모든 스레드가 완료된 후(`end`에서)에만 할당되는 `result`를 참조합니다. 각 감시 iteration은 진행 중인 결과 컬렉션을 **캡쳐**하며 시작합니다 — 깊은 복사된 스냅샷이 iteration 스코프에 `resultVar` 이름으로 바인딩됩니다. 캡쳐는 iteration 전체에 걸쳐 일관됩니다 — 본문이 중단되어(`SLEEP`, 블로킹 호출) 그 사이 워커들이 완료되더라도 마찬가지입니다; 다음 iteration이 새로 캡쳐하므로, 감시 쓰레드는 iteration을 거치며 `"running"` 항목이 `"done"`이 되는 것을 봅니다. 보장된 최종 iteration은 완료된 컬렉션을 캡쳐합니다. (스펙 v0.16.0 이전에는 monitor가 라이브 뷰를 읽는 대신 할당이 전면 금지였습니다 — 변경 이력 참고.)
 
+**monitor 전용 스레드 값(스펙 v0.21.0):** 캡쳐는 컬렉션의 각 항목을 genuine Result로
+유지하고 `status`/`ok` 필드를 바꾸지 않지만, monitor iteration 동안 복사된 항목의 `value`를
+다음 스레드 정보 객체로 바꿔 보여 줍니다:
+
+```
+{
+    "id": 1,
+    "key": "build",
+    "functionName": "build_worker",
+    "state": "running",
+    "returnValue": {},
+    "shell": {
+        "active": true,
+        "taskId": "task-1",
+        "pid": 1234,
+        "status": "running",
+        "elapsedMs": 850,
+        "exitCode": {},
+        "output": "모듈 42 컴파일 중",
+        "updated": true,
+        "result": {}
+    }
+}
+```
+
+- `state`는 바깥 Result의 `status`를 반복하고, `returnValue`는 캡쳐 시점의 보통 의미론적
+  `value`입니다. 따라서 monitor 안의 `UNWRAP(result.build)`는 스레드 정보 객체를 반환하며,
+  보통 값은 `result.build.value.returnValue`로 접근합니다.
+- `shell`은 해당 워커가 `SHELL`을 호출하기 전에는 `{}`입니다. 이 값은 호출 이력이 아니라
+  관찰 슬롯 하나입니다. 뒤의 순차 `SHELL` 호출이 앞의 값을 대체하며, 마지막 호출은 최종
+  monitor iteration에서도 관찰할 수 있습니다.
+- `output`은 기본 **1라인 tail**입니다. monitor tail 구문이나 라인 수 옵션은 없습니다. 제한된
+  SHELL 출력이 이전 monitor 캡쳐 이후 바뀌었으면 최신 논리 라인(개행으로 아직 끝나지 않은
+  부분 라인도 포함)을 담습니다. 바뀌지 않았으면 `""`이고 `updated`는 `false`입니다.
+  `updated`를 통해 갱신 없음과 새로 출력된 빈 라인을 구별할 수 있습니다.
+- `taskId`, `pid`, `exitCode`, 실행 중 출력은 호스트 기능입니다. 런타임/호스트가 제공할 수 없는
+  필드는 `{}`를 사용하며, 나머지 필드와 최종 SHELL Result 계약은 유지됩니다. 표준 JavaScript
+  런타임의 SHELL은 스텁이므로 portable 필드는 보고하지만 프로세스 메타데이터는 없습니다.
+- 이는 live 컬렉션의 임시 변경이 아니라 투영(projection)입니다. `multi ... end` 뒤에 할당되는
+  결과 컬렉션은 보통 Result 형태와 보통 워커 값을 가지며, 스레드 정보 객체는 스크립트 결과나
+  호스트 결과 데이터로 새어 나오지 않습니다.
+
 ### 순차적 Multi 블록
 
 여러 `multi` 블록을 연결하여 결과를 전달할 수 있습니다:
@@ -1016,6 +1058,12 @@ end
 | `SHELL(ctx, cmd)` | `SHELL_CTX()`에서 받은 컨텍스트를 사용하여 셸 명령을 실행합니다. Result를 직접 전달하세요 — `SHELL`이 자동으로 언래핑합니다. |
 | `SHELL_CTX(cwd)` | 작업 디렉토리 `cwd`로 셸 컨텍스트를 생성합니다. 디렉토리가 존재하면 컨텍스트 객체와 함께 Result `ok`, 없으면 `error`를 반환합니다. |
 | `SHELL_CTX(cwd, env)` | 작업 디렉토리와 환경 변수로 셸 컨텍스트를 생성합니다. `env`는 키-값 쌍 객체입니다. |
+
+SHELL 출력 캡쳐는 호스트/런타임이 정한 상한을 가집니다. 상한을 넘으면 캡쳐된 출력의 오래된
+바이트가 누락될 수 있고, 반환 Result에는 유지된 최신 suffix가 담깁니다. 완전한 대용량 출력이
+필요한 스크립트는 명령 출력을 파일로 redirect하거나 호스트가 제공하는 스트리밍 기능을 사용해
+명시적으로 읽어야 합니다. monitor의 `shell.output`은 진행 표시용 1라인 tail일 뿐이며 완전한
+출력 계약이 아닙니다.
 
 각 `SHELL()` 호출은 `/bin/sh -c <cmd>`를 통해 새 프로세스를 생성합니다. 영속 세션은 없습니다. `SHELL_CTX()`의 컨텍스트는 설정 객체일 뿐으로, 프로세스 상태를 유지하지 않습니다. `SHELL()`에 컨텍스트를 전달할 때는 `SHELL_CTX()`의 Result를 직접 전달하세요 — `SHELL`이 자동으로 Result를 언래핑하여 컨텍스트를 추출합니다.
 
@@ -1383,6 +1431,18 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다.
 
 ## 변경 이력
+
+### v0.21.0 — monitor 스레드 정보와 SHELL 1라인 진행 출력
+
+monitor 안에서 스레드 Result의 `value`를 읽는 코드에 한해 약한 비호환 변경이며, 문법과
+`multi` 종료 뒤의 결과는 바뀌지 않습니다. 각 monitor 캡쳐는 복사된 Result의 value를
+`{id, key, functionName, state, returnValue, shell}`로 투영합니다. 실제 워커 값은
+`returnValue`에 있고 live/최종 컬렉션은 변경하지 않습니다. `shell`은 워커의 현재 또는 가장
+최근 SHELL 호출 하나만 유지합니다. `output`은 앞선 캡쳐 이후 출력이 갱신됐을 때만 최신 1라인
+tail이고(`updated=true`), 아니면 `""`입니다. 별도 `tail` 절은 추가하지 않았습니다. 호스트가
+제공하지 못하는 프로세스 필드는 `{}`입니다. 제한된 SHELL 캡쳐는 상한을 넘으면 최신 suffix를
+유지하므로 과거 출력은 누락될 수 있습니다. 현행 Java 25 및 JavaScript 런타임이 이 스펙을
+구현하며, 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.20.0 — `_ARGS`: 위치 기반 호출 인자
 
