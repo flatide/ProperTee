@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.22.0
+# ProperTee 언어 명세 v0.23.0
 
 ## 개요
 
@@ -522,6 +522,60 @@ end                   //   and host functions
 ```
 
 이 규칙은 현재 빌트인으로 존재하는 이름만이 아니라 **모든** 전부-대문자 이름에 적용됩니다 — 그래서 미래의 스펙 릴리스가 스크립트 코드와 충돌할 걱정 없이 새 빌트인을 추가할 수 있습니다. 이로써 얻는 것: ALL-CAPS 호출은 언제나 빌트인 또는 호스트 제공 함수라는 것이 관례가 아니라 **보장된 사실**이 됩니다. 소문자가 섞인 이름(`Foo`, `getBalance`, `get_balance`)은 제한이 없습니다. 변수 이름은 영향받지 않습니다(`MAX = 10`은 합법 — 변수와 함수는 별도 네임스페이스).
+
+## Import와 모듈
+
+Import를 사용하면 외부 전역을 노출하지 않고 다른 ProperTee 소스의 재사용 함수를 호출할 수
+있습니다.
+
+```
+import util.file as file
+import util.file.1 as file_v1
+
+file::init("/data")
+text = file::read("input.txt")
+```
+
+### 문법과 로드 규칙
+
+- 문법은 `import ID ('.' ID)* ('.' N)? as alias`입니다. 각 segment는 따옴표 없는
+  식별자이며 동적·quoted segment는 허용하지 않습니다.
+- 마지막 숫자 segment는 정확한 버전입니다. `N`은 정규형 양의 32비트 정수입니다.
+  `.1`은 유효하지만 `.0`, `.01`은 유효하지 않습니다.
+- import는 소스 맨 앞, 모든 statement보다 앞에만 올 수 있습니다. `import`와 `as`는
+  예약어입니다.
+- import된 소스에는 import가 있을 수 없습니다. Import depth는 정확히 1입니다.
+- `library` 선언은 없습니다. Import가 없는 모든 소스는 직접 실행할 수도, import할 수도
+  있습니다.
+- Entry의 첫 statement를 실행하기 전에 모든 import를 resolve·parse·validate합니다. resolver나
+  module 부재, 잘못된 module, alias 중복, 동일 resolved module/version 중복은 출력·부수효과
+  전에 전체 run을 거부합니다.
+
+호스트 resolver는 `(moduleId, requestedVersion)`을 변경 불가능한 소스, 안정적인 source id,
+resolved version으로 바꿉니다. 버전 생략은 호스트의 active/latest 선택이고, `.N`은 정확한
+버전을 요구합니다. Reference CLI는 `util.file`을 `util/file.N.tee`에 매핑하여 가장 큰
+숫자 `N`을 고르고 version 파일이 하나도 없을 때만 `util/file.tee`로 fallback합니다.
+TeeBox는 module id를 그대로 `scriptId`로 사용하고, 생략 시 active version을 사용하며,
+script version은 숫자만 허용합니다.
+
+### 실행과 가시성
+
+직접 실행은 변하지 않아 모든 top-level statement가 실행됩니다. Import mode에서는 top-level
+statement를 실행하지 않고 source root 바로 아래의 함수 정의만 등록합니다. 따라서 같은 소스에
+top-level 자체 테스트 코드를 두어도 import 시에는 실행되지 않습니다. 초기화가 필요하면
+`file::init(...)` 같은 일반 함수를 명시적으로 호출합니다.
+
+경계를 넘어 보이는 것은 `alias::function(...)`뿐입니다. Entry는 외부 전역을 읽거나 쓸 수
+없고, import된 코드는 Entry 함수나 Entry의 import alias를 호출할 수 없습니다. 각 resolved
+module/version은 처음에 비어 있는 독립 전역을 가지며, 모듈 내부의 qualifier 없는 helper 호출은
+같은 모듈에서 해석합니다. 함수 인자와 반환값은 모듈 경계에서 deep copy합니다.
+
+`multi` 진입 시 Entry 전역과 로드된 모든 module 전역을 함께 snapshot합니다. Worker가 import
+함수를 호출하면 해당 module snapshot을 읽으며 module 전역을 쓸 수 없습니다. Entry 함수의
+`::` 쓰기와 같은 purity error를 사용합니다. Monitor iteration도 같은 snapshot을 사용하고
+계속 디버깅에서 제외됩니다. 디버그 가능 호스트는 stop·error·call site를 source id와 line,
+column으로 식별하므로 worker에서 실행되는 함수를 포함한 import 함수의 라인을 Entry와 혼동하지
+않고 조사할 수 있습니다.
 
 ## 변수 스코프
 
@@ -1437,6 +1491,19 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다.
 
 ## 변경 이력
+
+### v0.23.0 — import와 함수 전용 모듈
+
+최상위 `import module.path[.N] as alias`와 `alias::function(...)` 호출을 추가합니다. Import된
+소스는 root-level 함수만 공개하고 top-level 코드는 실행하지 않으며, 전역은 격리되고 중첩
+import는 Entry 실행 전에 거부됩니다. 모듈 경계에서 인자와 반환값을 deep copy하고, `multi`는
+기존 worker/monitor purity 모델 아래 module 전역도 함께 snapshot합니다. Module/version 해석은
+호스트가 담당합니다. 현행 Java 25 및 JavaScript 런타임이 구현하며 동결된 Java 7/8 런타임은
+구현하지 않습니다.
+
+문법 수준에서 약한 비호환 변경입니다. `import`와 `as`가 예약어가 되므로 변수, 함수, parameter 등
+식별자로 사용한 script는 이름을 바꿔야 합니다. v0.9.0의 `elseif`, v0.19.0의 `limit`와 같은
+호환성 등급입니다.
 
 ### v0.22.0 — 워커 스레드 디버깅, monitor 제외
 
