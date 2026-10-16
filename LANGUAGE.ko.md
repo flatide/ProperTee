@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.25.0
+# ProperTee 언어 명세 v0.26.0
 
 ## 개요
 
@@ -927,7 +927,7 @@ end
 
 ### 블로킹과 중단
 
-내장 함수는 **런타임 프리미티브**입니다 — 런타임 또는 호스트가 제공하는 것이지, ProperTee로 작성된 것이 아닙니다. 그중 일부는 **중단(suspend)** 합니다: 기다려야 하는 호출 — `SLEEP`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 내장 함수, 그리고 호스트가 등록한 비동기 외부 함수 — 은 호출한 스레드만 일시 정지시키고, 대기가 끝날 때까지 형제 스레드에 양보합니다. `await` 같은 표시는 없습니다: 중단은 구문의 성질이 아니라 호출의 성질이며, 어떤 함수든 이들을 호출함으로써 전이적으로 중단할 수 있습니다.
+내장 함수는 **런타임 프리미티브**입니다 — 런타임 또는 호스트가 제공하는 것이지, ProperTee로 작성된 것이 아닙니다. 그중 일부는 **중단(suspend)** 합니다: 기다려야 하는 호출 — `SLEEP`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 내장 함수(`FILE_LINES` 배열 읽기 포함), 그리고 호스트가 등록한 비동기 외부 함수 — 은 호출한 스레드만 일시 정지시키고, 대기가 끝날 때까지 형제 스레드에 양보합니다. `await` 같은 표시는 없습니다: 중단은 구문의 성질이 아니라 호출의 성질이며, 어떤 함수든 이들을 호출함으로써 전이적으로 중단할 수 있습니다.
 
 `SLEEP`은 단지 가장 작은 중단 프리미티브(순수 타이머)일 뿐입니다. 스크립트는 다른 방법으로 중단할 수 없습니다 — 대기 추상화는 `SLEEP` *위에 합성*합니다:
 
@@ -1103,8 +1103,9 @@ end
 |---|---|
 | `FILE_EXISTS(path)` | 파일 또는 디렉터리가 존재하면 `true` 반환. |
 | `FILE_INFO(path)` | Result 반환: `ok`와 `{type, size, modified}`, 미존재 시 `error`. |
-| `READ_LINES(path, [start], [count])` | 파일에서 라인 읽기. `start`는 1-기반 (기본 1). `count`는 읽을 라인 수 제한. Result와 문자열 배열 반환. |
-| `READ_FILE(path)` | 파일 전체를 하나의 문자열로 읽기 (스펙 v0.18.0). Result 반환: 파일 내용(UTF-8, 내용 그대로)이면 `ok`, 읽기 실패면 `error`. `WRITE_FILE`의 대응 함수; 큰 파일에는 윈도우 방식의 `READ_LINES`가 여전히 적합. |
+| `READ_LINES(path, [start], [count])` | 파일에서 라인 읽기. `start`는 1-기반 (기본 1). `count`는 읽을 라인 수 제한. Result와 문자열 배열 반환. 파일 전체를 한 줄씩 처리하려면 `FILE_LINES`가 더 간단. |
+| `FILE_LINES(path)` | 파일의 줄들을 문자열 배열로 반환 (스펙 v0.26.0) — Result가 아닌 일반 배열: 읽을 수 없는 파일은 런타임 에러. 파일은 배열이 쓰이는 만큼만 읽으므로 크기와 상관없이 루프로 처리할 수 있음; [파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기) 참고. |
+| `READ_FILE(path)` | 파일 전체를 하나의 문자열로 읽기 (스펙 v0.18.0). Result 반환: 파일 내용(UTF-8, 내용 그대로)이면 `ok`, 읽기 실패면 `error`. `WRITE_FILE`의 대응 함수; 큰 파일에는 `FILE_LINES`를 사용. |
 | `READ_JSON_FILE(path)` | JSON 파일을 읽어서 한 번에 파싱 (스펙 v0.18.0). Result 반환: 파싱된 값(객체·배열·스칼라 — `JSON_PARSE`와 동일한 변환)이면 `ok`, 읽기 실패나 잘못된 JSON이면 `error`. 선행 UTF-8 BOM은 무시. `READ_LINES` + `JOIN` + `JSON_PARSE` 관용구를 대체. |
 | `WRITE_FILE(path, content)` | 파일에 문자열 쓰기 (덮어쓰기). Result 반환. |
 | `WRITE_LINES(path, lines)` | 문자열 배열의 각 요소를 줄 단위로 쓰기 (각 줄 뒤에 줄바꿈). Result 반환. |
@@ -1120,19 +1121,11 @@ WRITE_LINES("/data/output.csv", ["name,age", "Alice,30", "Bob,25"])
 res = READ_LINES("/data/output.csv", 2, 1)    // 헤더 건너뛰고 1줄 읽기
 PRINT(res.value.1)                              // "Alice,30"
 
-// 대용량 파일 순회
-offset = 1
-loop true infinite do
-    res = READ_LINES("/data/big.log", offset, 500)
-    if res.ok == false then break end
-    lines = res.value
-    if LEN(lines) == 0 then break end
-    loop line in lines do
-        if CONTAINS(line, "ERROR") == true then
-            PRINT(line)
-        end
+// 대용량 파일 순회: FILE_LINES는 루프가 진행되는 만큼 읽음
+loop line in FILE_LINES("/data/big.log") infinite do
+    if CONTAINS(line, "ERROR") then
+        PRINT(line)
     end
-    offset = offset + LEN(lines)
 end
 
 // 디렉터리 작업
@@ -1142,6 +1135,58 @@ loop entry in res.value do
     PRINT(entry.name, entry.type)
 end
 ```
+
+#### 파일을 한 줄씩 처리하기
+
+`FILE_LINES(path)`는 파일의 줄들을 평범한 문자열 배열로 반환합니다 — `UNWRAP(READ_LINES(path))`가
+주는 것과 같은 배열이며, 차이는 두 가지뿐입니다: 읽을 수 없는 파일은 error Result가 아니라
+런타임 에러이고, 선행 UTF-8 BOM(byte-order mark)은 제거됩니다.
+
+```
+lines = FILE_LINES("/data/users.csv")
+PRINT(LEN(lines), lines.1)
+loop n, line in lines infinite do
+    if n == 1 then continue end        // 헤더
+    PRINT(n, line)
+end
+```
+
+다른 점은 파일을 *언제* 읽느냐입니다: 호출 시점이 아니라 배열이 쓰일 때, 그 쓰임에 필요한 만큼만
+읽습니다. 배열을 도는 루프는 파일을 조각 단위로 읽으면서 현재 줄만 유지하고, `LEN`은 줄을 보관하지
+않고 세기만 하므로, 파일 크기와 상관없이 루프로 처리할 수 있습니다 — 큰 파일을 처리하는 방법은
+이것입니다. 배열을 복사해도(할당, 인자, 반환값, 스레드 스냅샷) 파일에서 읽는 것은 없습니다.
+
+배열을 **통째로** 쓰면 — 요소(`lines.3`), `SLICE`, `SORT`, `JOIN`, `PRINT`, `JSON_FORMAT`, `==`,
+요소 할당, 외부 함수에 전달, 스크립트 결과로 반환 — 먼저 파일 전체를 메모리로 읽습니다. 호스트의
+통째 사용 상한(기본 64 MB)보다 큰 파일이면 런타임 에러입니다: `FILE_LINES() '/data/big.log' is too
+large to use as a whole (494 MB, the limit is 64 MB) — go through it with a loop: loop line in ...
+do`. 상한 아래에서는 다른 배열과 똑같이 동작합니다.
+
+배열은 **호출 시점의 파일**입니다:
+
+- 그 뒤에 파일에 추가된 줄은 배열의 일부가 아닙니다 — 루프는 그 줄을 보지 않으므로, 아직 쓰이고
+  있는 파일(실시간 로그)을 안전하게 읽을 수 있고, 루프 중인 파일에 추가해도 루프가 길어지지
+  않습니다.
+- 그 밖의 변경 — 잘림, 다시 쓰기, 교체, 삭제 — 이 있으면, 런타임이 그 파일을 읽으려 할 때 섞인
+  내용을 내놓는 대신 런타임 에러로 실패합니다(`FILE_LINES() cannot read '...': it was modified after
+  FILE_LINES() was called — call FILE_LINES() again`; 런타임이 구분할 수 있으면 `truncated` /
+  `rewritten` / `deleted`). 런타임은 파일 크기, 수정 시각, 내용 표본을 호출 시점과 비교하므로 이
+  셋이 모두 같은 변경은 알아채지 못합니다.
+- `multi` 블록의 다른 스레드가 같은 파일에 쓰는 것은 읽기와 동기화되지 않습니다 — 모든 파일 내장
+  함수와 같습니다.
+
+그 밖의 규칙:
+
+- 줄은 `\n`, `\r\n`, `\r`에서 끝나며 줄 끝 문자는 줄에 포함되지 않습니다. 줄 끝 문자 없이 끝나는
+  마지막 줄도 한 줄이고, 끝의 줄 끝 문자가 빈 줄을 하나 더 만들지는 않습니다. 빈 파일은 줄이
+  없습니다.
+- 존재하지 않거나, 디렉터리이거나, 열 수 없는 파일은 호출 시점의 런타임 에러입니다
+  (`FILE_LINES() cannot read '/data/users.csv': no such file`). 잘못된 UTF-8과 호스트의 줄 길이
+  상한(기본 16 MB)을 넘는 줄은 그 줄에 도달했을 때의 런타임 에러이며 — 루프는 그 앞의 줄들을 이미
+  처리한 뒤입니다.
+- 파일 읽기는 다른 파일 내장 함수처럼 호출한 스레드를 중단시킵니다([블로킹과
+  중단](#블로킹과-중단)); 파일을 도는 `multi` 워커가 형제 스레드를 멈추지 않습니다.
+- 루프 반복 상한은 다른 배열과 똑같이 적용됩니다: 1000줄을 넘으면 `infinite`가 필요합니다.
 
 ### 타이밍
 
@@ -1298,7 +1343,7 @@ Result 객체는 3개 필드를 가집니다:
 
 스펙 v0.10.0에서 추가.
 
-**Genuine Result.** 런타임이 생성한 Result 객체 — Result를 반환하는 빌트인(`JSON_PARSE`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 그룹 — 단 일반 boolean을 반환하는 `FILE_EXISTS`는 제외), 외부 함수 호출(동기·비동기, 타임아웃 에러 포함), `multi` 스레드 수집 항목 — 과 `OK`/`ERR` 생성자가 만든 Result는 *genuine Result*입니다: 런타임이 그 출처를 기억합니다. 같은 세 필드를 가진 스크립트 객체 리터럴은 일반 객체이지 genuine Result가 **아닙니다**.
+**Genuine Result.** 런타임이 생성한 Result 객체 — Result를 반환하는 빌트인(`JSON_PARSE`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 그룹 — 단 일반 boolean을 반환하는 `FILE_EXISTS`와 일반 배열을 반환하는 `FILE_LINES`는 제외), 외부 함수 호출(동기·비동기, 타임아웃 에러 포함), `multi` 스레드 수집 항목 — 과 `OK`/`ERR` 생성자가 만든 Result는 *genuine Result*입니다: 런타임이 그 출처를 기억합니다. 같은 세 필드를 가진 스크립트 객체 리터럴은 일반 객체이지 genuine Result가 **아닙니다**.
 
 이 구별은 `TYPE_OF`(여전히 `"object"`), 표시, 동등성, JSON 직렬화에는 보이지 않습니다; 오직 `IS_RESULT`와 `UNWRAP`만 관찰합니다. genuine Result의 복사본(할당, 인자 전달, `PUSH`, 깊은 복사)은 genuine Result이며, 필드를 변경해도 출처는 사라지지 않습니다. 출처는 JSON을 통과하지 못합니다: `JSON_FORMAT`은 genuine Result를 일반 3필드 객체로 렌더링하고, `JSON_PARSE`된 데이터 내부에는 genuine Result가 없습니다 (`JSON_PARSE` 자체가 반환하는 래퍼 Result는 genuine입니다).
 
@@ -1528,13 +1573,42 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 정수 산술 오버플로 (`+` `-` `*`, 단항 `-`, `FLOOR`/`CEIL`/`ROUND`/`ABS`, `SUM`) | Integer overflow |
 | 10진수 표기가 아닌 텍스트의 `TO_NUMBER` | TO_NUMBER() cannot convert 'x' to number |
 | 표현할 수 없을 만큼 큰 표기의 `TO_NUMBER` | TO_NUMBER() value out of range: 'x' |
+| 읽을 수 없는 파일의 `FILE_LINES` | FILE_LINES() cannot read 'x': no such file |
+| 호스트 상한을 넘는 파일의 `FILE_LINES` 배열을 통째로 사용 | FILE_LINES() 'x' is too large to use as a whole (494 MB, the limit is 64 MB) — go through it with a loop: loop line in ... do |
+| 호출 뒤 바뀐 파일의 `FILE_LINES` 배열 읽기 | FILE_LINES() cannot read 'x': it was modified after FILE_LINES() was called — call FILE_LINES() again |
 | 차단 구문 존재 (숨김 키워드 / 무시된 함수, 위치 무관) | 'X' is not available in this environment |
 
 ### 자원 한계
 
-루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다.
+루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)).
 
 ## 변경 이력
+
+### v0.26.0 — `FILE_LINES`: 쓰이는 만큼 읽히는 배열로서의 파일
+
+비파괴 변경: 내장 함수 하나, 문법 변경 없음. 메모리에 담을 수 없을 만큼 큰 파일을 지나가는 방법은
+`READ_LINES` 윈도우뿐이었는데, 그 관용구 — 오프셋, 개수, 안쪽 루프, 빈 윈도우 검사 — 는 어색할 뿐
+아니라 느립니다(윈도우마다 파일을 처음부터 다시 읽으므로 전체 한 번 지나가는 데 제곱 시간이
+듭니다). 새 내장 함수는 평범한 루프를 올바른 도구로 만듭니다:
+
+- **`FILE_LINES(path)`**는 파일의 줄들을 평범한 문자열 배열로 반환합니다 — `TYPE_OF`는
+  `"array"`, `LEN`, 인덱싱, `SLICE`, `==`, `JSON_FORMAT`, 루프, 복사 — 다만 런타임은 파일을 *배열이
+  쓰일 때* 읽습니다: 루프는 조각 단위로 읽으며 현재 줄만 유지하고, `LEN`은 보관 없이 세고, 복사는
+  아무것도 읽지 않습니다. 크기와 상관없이 `loop line in FILE_LINES(path) infinite do`로 파일을
+  처리할 수 있습니다. 배열을 통째로 쓰면(요소, 정렬, 출력, 호스트로 반환) 파일 전체를 읽으며,
+  호스트의 통째 사용 상한(기본 64 MB)을 넘으면 런타임 에러입니다.
+  [파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기) 참고.
+- 배열은 호출 시점의 파일입니다: 그 뒤에 추가된 줄은 배열의 일부가 아니고, 그 뒤에 잘리거나 다시
+  쓰이거나 교체되거나 삭제된 파일은 다음 읽기에서 섞인 내용 대신 `FILE_LINES() cannot read '...':
+  it was modified after FILE_LINES() was called — call FILE_LINES() again`으로 실패합니다.
+- 다른 파일 내장 함수와 달리 Result를 반환하지 않습니다: 읽을 수 없는 파일은 호출 시점의 런타임
+  에러(`FILE_LINES() cannot read '...': no such file`)이고, 잘못된 UTF-8이나 호스트의 줄 길이
+  상한(기본 16 MB)을 넘는 줄은 그 줄에 도달했을 때의 런타임 에러입니다. 선행 UTF-8 BOM은
+  제거됩니다. 읽기는 다른 파일 내장 함수처럼 호출한 스레드를 중단시킵니다.
+
+`READ_LINES`, `READ_FILE`, `READ_JSON_FILE`은 그대로입니다. Java 25 런타임이 구현합니다.
+JavaScript 런타임에는 파일 시스템이 없으므로 호스트가 제공하지 않는 한(playground는 가상 파일
+위에 제공합니다) 이 내장 함수는 런타임 에러이며, 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.25.0 — `TO_NUMBER`는 정확히 10진수 표기만 읽음
 
