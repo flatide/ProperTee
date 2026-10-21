@@ -29,7 +29,7 @@ syn keyword propertBuiltin      SPLIT WORDS JOIN SUBSTRING
 syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM HAS_KEY KEYS
 syn keyword propertBuiltin      MILTIME DATE TIME
 syn keyword propertBuiltin      SHELL SHELL_CTX
-syn keyword propertBuiltin      FILE_LINES
+syn keyword propertBuiltin      FILE_LINES LIST_DIR LIST_DIR_NAMES
 syn keyword propertBuiltin      FAIL UNWRAP OK ERR IS_RESULT
 
 " --- Numbers ---
