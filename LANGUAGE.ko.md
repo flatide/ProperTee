@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.27.0
+# ProperTee 언어 명세 v0.28.0
 
 ## 개요
 
@@ -1113,7 +1113,7 @@ end
 | `APPEND_FILE(path, content)` | 파일에 문자열 추가. Result 반환. |
 | `MKDIR(path)` | 디렉터리 생성 (부모 포함). Result 반환. |
 | `LIST_DIR(path, [pattern])` | 디렉터리 항목 목록. Result와 `{name, type, size}` 객체 배열 반환. 이름순 정렬. `type`은 `"dir"`, `"file"`, `"link"` 중 하나; `pattern`을 주면 이름이 그 패턴에 맞는 항목만 남김. 예: `"*.csv"` (스펙 v0.27.0). [디렉터리 나열하기](#디렉터리-나열하기) 참고. |
-| `LIST_DIR_NAMES(path, [pattern])` | 항목 이름만 정렬된 문자열 배열로 반환 (스펙 v0.27.0). Result 반환. 항목을 하나하나 확인하지 않으므로 항목이 아주 많거나 링크가 많은 디렉터리에서 `LIST_DIR`보다 훨씬 빠름. |
+| `LIST_DIR_NAMES(path, [pattern])` | 각 항목의 이름과 그 항목 자체의 종류를 이름순으로 정렬된 `{name, type}` 객체 배열로 반환 (스펙 v0.28.0; v0.27.0에서는 이름만). Result 반환. 링크를 따라가지 않으므로 — 링크는 모두 `"link"` — 항목이 아주 많거나 링크가 많은 디렉터리에서 `LIST_DIR`보다 훨씬 빠름. [디렉터리 나열하기](#디렉터리-나열하기) 참고. |
 | `DELETE_FILE(path)` | 단일 파일 삭제. 디렉터리는 거부. Result 반환. |
 
 ```
@@ -1136,9 +1136,9 @@ loop entry in res.value do
     PRINT(entry.name, entry.type)
 end
 
-// CSV 파일만, 이름만
-loop name in UNWRAP(LIST_DIR_NAMES("/data/reports", "*.csv")) do
-    PRINT(name)
+// CSV 파일만, 링크는 따라가지 않고
+loop entry in UNWRAP(LIST_DIR_NAMES("/data/reports", "*.csv")) do
+    PRINT(entry.name, entry.type)
 end
 ```
 
@@ -1209,10 +1209,18 @@ do`. 상한 아래에서는 다른 배열과 똑같이 동작합니다.
 - `path`가 존재하지 않거나, 디렉터리가 아니거나, 읽을 수 없으면 이유와 경로를 담은 메시지의 error
   Result를 반환합니다. 예: `No such file or directory: /data/in`.
 
-`LIST_DIR_NAMES(path)`는 같은 디렉터리의 항목 이름만 정렬된 문자열 배열로 반환합니다. 항목 자체는
-들여다보지 않으므로 — 파일·디렉터리·링크 모두 그냥 이름이고, 링크도 따라가지 않습니다 — 항목이
-아주 많거나 다른 곳의 파일을 가리키는 링크가 많은 디렉터리에서 `LIST_DIR`보다 훨씬 빠릅니다. 이름만
-필요할 때 사용합니다.
+`LIST_DIR_NAMES(path)`는 같은 항목들을 이름순으로, 각각 `{name, type}`으로 나열합니다 — 링크는
+따라가지 않습니다(스펙 v0.28.0):
+
+- `type`은 그 항목 자체의 종류입니다: 디렉터리는 `"dir"`, 심볼릭 링크는 `"link"`, 그 밖에는
+  `"file"`. 링크는 파일을 가리키든 디렉터리를 가리키든 아무것도 가리키지 않든 모두 `"link"`입니다 —
+  따라갈 수 없는 링크만 `"link"`로 표시하는 `LIST_DIR`과 다릅니다.
+- 링크가 가리키는 대상은 전혀 확인하지 않으며, `size`도 없습니다. `LIST_DIR`가 다른 곳의 파일을
+  가리키는 링크가 많은 디렉터리에서 느린 것은 링크를 하나하나 따라가기 때문이므로, 그런 곳에서
+  `LIST_DIR_NAMES`가 훨씬 빠릅니다. 이름과 종류만으로 충분할 때 사용합니다.
+- `LIST_DIR`과 마찬가지로 디렉터리를 읽는 도중 삭제된 항목은 빠지고, 나열할 수 없는 `path`는 error
+  Result입니다 — 읽기 권한은 있지만 실행 권한이 없는 디렉터리처럼 항목을 확인할 수 없는 디렉터리도
+  마찬가지입니다.
 
 두 함수 모두 선택 인자 `pattern`을 받습니다: 각 항목의 이름에 맞춰 보는 glob으로, 맞는 항목만
 남깁니다.
@@ -1227,7 +1235,7 @@ do`. 상한 아래에서는 다른 배열과 똑같이 동작합니다.
 | `\` | 다음 문자를 글자 그대로: `"\\[x].csv"`는 이름 `[x].csv`에 맞음 |
 
 ```
-names = UNWRAP(LIST_DIR_NAMES("/data/in", "*.csv"))
+csvs = UNWRAP(LIST_DIR_NAMES("/data/in", "*.csv"))
 logs = UNWRAP(LIST_DIR("/data/logs", "app-2024-0?.{log,txt}"))
 ```
 
@@ -1631,6 +1639,22 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)).
 
 ## 변경 이력
+
+### v0.28.0 — `LIST_DIR_NAMES`가 각 항목의 종류를 알려줌
+
+`LIST_DIR_NAMES`만 파괴적 변경, 문법 변경 없음. v0.27.0의 `LIST_DIR_NAMES`는 이름만 반환했기
+때문에, 링크가 많은 큰 디렉터리에서 디렉터리와 파일을 구별해야 하는 스크립트는 링크를 모두
+따라가는 느린 `LIST_DIR`로 돌아가야 했습니다. 이제 `LIST_DIR_NAMES`는 이름순으로 정렬된
+`{name, type}` 객체를 반환하며, `type`은 항목 자체의 종류입니다: `"dir"`, `"file"`, 그리고 모든
+심볼릭 링크는 `"link"` — 링크는 여전히 따라가지 않습니다. 이제 항목마다 확인하므로 이름만 반환하던
+때보다는 다소 느리지만, 링크가 가리키는 대상은 전혀 확인하지 않습니다.
+
+마이그레이션: v0.27.0 스크립트에서 원소를 이름으로 쓰던 곳은 그 원소의 `name` 필드를 씁니다 —
+`loop entry in UNWRAP(LIST_DIR_NAMES(dir)) do PRINT(entry.name) end`. 원소를 `+`로 문자열에 이어
+붙이던 곳은 실패하지 않고 객체의 텍스트가 대신 붙으므로, 그런 곳을 찾아 고쳐야 합니다. 읽을 수는
+있지만 항목을 확인할 수 없는 디렉터리는 이제 `LIST_DIR`처럼 error Result를 반환합니다.
+[디렉터리 나열하기](#디렉터리-나열하기) 참고. Java 25 런타임이 구현합니다. JavaScript playground는
+링크가 없는 가상 파일을 같은 방식으로 나열합니다. 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.27.0 — `LIST_DIR`: 따라갈 수 없는 링크, 이름 패턴, 이름만 나열
 
