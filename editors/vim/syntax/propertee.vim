@@ -26,6 +26,7 @@ syn keyword propertBuiltin      SUM MAX MIN ABS FLOOR CEIL ROUND RANDOM LEN
 syn keyword propertBuiltin      TO_NUMBER TO_STRING
 syn keyword propertBuiltin      PUSH POP CONCAT SLICE CHARS SORT SORT_DESC SORT_BY SORT_BY_DESC REVERSE
 syn keyword propertBuiltin      SPLIT WORDS JOIN SUBSTRING
+syn keyword propertBuiltin      MATCHES REGEX_FIND REGEX_FIND_ALL
 syn keyword propertBuiltin      UPPERCASE LOWERCASE TRIM HAS_KEY KEYS
 syn keyword propertBuiltin      MILTIME DATE TIME
 syn keyword propertBuiltin      SHELL SHELL_CTX

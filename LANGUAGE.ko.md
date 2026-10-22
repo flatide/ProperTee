@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.28.0
+# ProperTee 언어 명세 v0.29.0
 
 ## 개요
 
@@ -1030,7 +1030,8 @@ end
 | `FIND_FIRST(s, sub)` | `s`에서 `sub`의 첫 발생 위치(1-기반), 없으면 `0` (스펙 v0.17.0). 항상 `FIND(s, sub)`의 첫 요소와 같음. 빈 `sub`는 런타임 에러. |
 | `FIND_LAST(s, sub)` | `s`에서 `sub`의 마지막 발생 위치(1-기반), 없으면 `0` (스펙 v0.17.0). 항상 `FIND(s, sub)`의 마지막 요소와 같음. 빈 `sub`는 런타임 에러. |
 | `MATCHES(s, pattern)` | 정규식 `pattern`이 `s`의 어디에든 매치하면 `true` 반환 |
-| `REGEX_FIND(s, pattern)` | [전체매치, 그룹1, 그룹2, ...] 배열 반환. 매치 없으면 `{}`. 1-기반 배열. |
+| `REGEX_FIND(s, pattern)` | `s`에서 정규식 `pattern`의 첫 매치를 [매치 객체](#정규식) `{match, position, groups, named}`로 반환. 매치가 없으면 `{}` (스펙 v0.29.0). |
+| `REGEX_FIND_ALL(s, pattern)` | `s`에서 `pattern`의 모든 매치를 왼쪽부터 겹치지 않게 찾아 매치 객체의 배열로 반환. 매치가 없으면 `[]` (스펙 v0.29.0). |
 | `REPLACE(s, target, replacement)` | `target`의 모든 발생을 `replacement`로 치환. 리터럴 문자열 매치 (정규식 아님). |
 
 #### 공백
@@ -1044,6 +1045,65 @@ end
 `SPLIT(s, " ")`과 `WORDS(s)`는 용도가 다릅니다. `SPLIT`은 빈 필드를 모두 유지하는 무손실 필드
 분리(CSV류 데이터에 필요한 동작)이고, `WORDS`는 텍스트를 단어로 나누며 빈 문자열을 만들지
 않습니다.
+
+#### 정규식
+
+`MATCHES`, `REGEX_FIND`, `REGEX_FIND_ALL`은 정규식을 받습니다. 올바르지 않은 패턴은 그 패턴을 밝히는
+런타임 에러입니다 — `REGEX_FIND() invalid regex pattern: ([a-z]`. 매치가 없는 것은 에러가 아닙니다.
+
+`REGEX_FIND`와 `REGEX_FIND_ALL`은 각 매치를 **매치 객체**(스펙 v0.29.0)로 나타냅니다. 필드는 다음 네
+개이며 이 순서입니다:
+
+| 필드 | 값 |
+|---|---|
+| `match` | 패턴 전체가 매치한 텍스트. |
+| `position` | `match`가 시작하는 1-기반 위치. `LEN`, `SUBSTRING`, `FIND`와 같은 방식으로 셉니다. `s` 끝의 빈 매치는 `LEN(s) + 1`에 있습니다. |
+| `groups` | 캡처 그룹을 순서대로 담은 배열 — `groups.N`이 그룹 N입니다. 이름 붙은 그룹도 번호가 있어 여기에도 들어갑니다. 매치에 참여하지 않은 그룹은 `{}`, 그룹이 없는 패턴은 `[]`입니다. |
+| `named` | 이름 붙은 그룹 `(?<name>…)`을 패턴에 나온 순서대로 이름으로 담은 객체. 매치에 참여하지 않은 그룹은 `{}`, 이름 붙은 그룹이 없는 패턴은 `{}`입니다. |
+
+```
+m = REGEX_FIND("2024-01-15", "(?<year>[0-9]{4})-(?<month>[0-9]{2})")
+PRINT(m.match, m.position)          // 2024-01 1
+PRINT(m.groups.1, m.named.month)    // 2024 01
+PRINT(REGEX_FIND("abc", "x") == {}) // true
+```
+
+`SUBSTRING(s, m.position, LEN(m.match)) == m.match`는 항상 성립하며, `name`이라는 이름의 그룹이 그룹
+N이면 `m.groups.N == m.named.name`도 성립합니다.
+
+`REGEX_FIND_ALL`은 `s`의 처음부터 찾습니다. 그다음 검색은 앞 매치가 끝난 곳에서, 앞 매치가 빈
+매치였으면 한 위치 뒤에서 시작합니다. 따라서 매치는 겹치지 않으며, 빈 문자열에 매치될 수 있는 패턴도
+끝납니다: `REGEX_FIND_ALL("aaa", "aa")`는 매치가 하나입니다 — 겹치는 위치까지 세는 문자열 검색
+`FIND("aaa", "aa")`(`[1, 2]`)와 다릅니다 — 그리고 `REGEX_FIND_ALL("baaac", "a*")`는 1의 `""`, 2의
+`"aaa"`, 5의 `""`, 6의 `""`를 찾습니다. `^`는 `s`의 맨 앞에서만 매치되며, 나중 검색이 시작되는
+위치에서는 매치되지 않습니다. 매치가 있으면 `REGEX_FIND(s, p) == REGEX_FIND_ALL(s, p).1`입니다.
+
+```
+loop m in REGEX_FIND_ALL("2026-10-22 2027-01-05", "(?<year>[0-9]{4})-(?<month>[0-9]{2})") do
+    PRINT(m.position, m.named.year, m.named.month)
+end
+// 1 2026 10
+// 12 2027 01
+```
+
+**패턴 문법.** 패턴은 런타임 자체의 정규식 엔진이 읽습니다 — Java 런타임은 `java.util.regex`,
+JavaScript 런타임은 플래그 없는 ECMAScript `RegExp`. 문자 클래스, 수량자, 그룹, 선택(`|`), `^`, `$`,
+`\b`, 전방·후방 탐색, 이름 붙은 그룹, 역참조 `\1`·`\k<name>`은 두 런타임에서 똑같이 읽힙니다. 그룹
+이름은 ASCII 영문자로 시작해 ASCII 영문자와 숫자만 쓰고, 한 이름은 한 번만 씁니다: `first_name` 같은
+이름과, 다른 선택지 안이라도 두 번 쓴 이름은 Java 런타임이 거부하지만 JavaScript는 둘 다 받아들입니다.
+
+위치와 길이는 두 런타임 모두 UTF-16 코드 단위로 셉니다. `LEN`, `SUBSTRING`, `FIND`와 같으며 이모지
+하나는 2입니다. **기본 다국어 평면(BMP) 밖의 문자** — 대부분의 이모지, 일부 한자 확장 문자 — 는 다르게
+매치됩니다: Java 런타임은 이런 문자를 `.`, `[^…]` 등에서 한 글자로 읽고, JavaScript 런타임은 두 반쪽을
+각각 한 글자로 읽습니다. `REGEX_FIND("😀!", ".")`는 Java에서 이모지 전체(`LEN(m.match)`는 2)에,
+JavaScript에서 그 반쪽(1)에 매치되며, `REGEX_FIND_ALL`은 찾는 매치 개수가 달라질 수 있습니다. 두
+런타임에서 똑같이 동작해야 하는 스크립트는 이런 텍스트에 `.`이나 부정 클래스를 쓰지 말고 문자를 직접
+적어야 합니다.
+
+그 밖에 알려진 차이: Java의 `$`는 끝 줄바꿈 바로 앞에서도 매치되므로 `REGEX_FIND("a\n", "a$")`는
+Java에서만 매치됩니다. `a{`는 JavaScript에서 문자 그대로, Java에서는 올바르지 않은 패턴입니다. 소유
+수량자 `a++`와 `(?i)` 같은 인라인 플래그는 Java에만 있고 JavaScript에서는 올바르지 않은 패턴입니다.
+`\A`와 `\Z`는 Java에서 입력의 처음과 끝이지만 JavaScript에서는 글자 `A`와 `Z`로 읽힙니다.
 
 ### 배열 함수
 
@@ -1639,6 +1699,29 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)).
 
 ## 변경 이력
+
+### v0.29.0 — 정규식 매치를 객체로, 그리고 `REGEX_FIND_ALL`
+
+`REGEX_FIND`만 파괴적 변경, 내장 함수 하나 추가, 문법 변경 없음. `REGEX_FIND`는
+`[전체매치, 그룹1, …]`을 반환했기 때문에, 1부터 세는 언어에서 그룹 1이 `.2`였습니다. 첫 매치만 위치
+없이 돌려주었고, 이름 붙은 그룹은 이름을 잃었습니다.
+
+- **`REGEX_FIND(s, pattern)`**은 첫 매치를 매치 객체 `{match, position, groups, named}`로
+  반환합니다 — `groups.N`이 그룹 N이고, `named`에 이름 붙은 그룹이 이름으로 들어갑니다. 매치가
+  없으면 `{}`입니다.
+- **`REGEX_FIND_ALL(s, pattern)`**은 모든 매치를 왼쪽부터 겹치지 않게 찾아 매치 객체의 배열로
+  반환합니다(매치가 없으면 `[]`).
+- 새 [정규식](#정규식) 절이 매치 객체, 검색 순서와 빈 매치를 고정합니다. 두 런타임의 패턴 엔진이 다른
+  점도 — 기본 다국어 평면 밖의 문자를 포함해 — 어느 쪽도 바꾸지 않고 문서로 밝힙니다.
+- `MATCHES`, `REGEX_FIND`, `REGEX_FIND_ALL`은 두 런타임에서 같은 에러를 냅니다:
+  `REGEX_FIND() requires a string argument`, `REGEX_FIND() invalid regex pattern: <pattern>`.
+
+마이그레이션: `res.1`은 `res.match`가 되고, 그룹 — `res.2`, `res.3`, … — 은 `res.groups.1`,
+`res.groups.2`, …(또는 `res.named.name`)가 됩니다. 이런 예전 접근은 `Property '1' does not exist` 등으로
+실패하지만, 실패하지 않는 쓰임이 세 가지 있습니다: `loop v in res`는 이제 네 필드를 돌고,
+`"…" + res`는 객체의 텍스트를 이어 붙이며, `LEN(res)`는 4입니다. 매치가 없는지 `res == {}`로 보는
+것은 그대로 동작합니다. Java 25 런타임과 JavaScript 런타임이 구현합니다. 동결된 Java 7/8 런타임은
+구현하지 않습니다.
 
 ### v0.28.0 — `LIST_DIR_NAMES`가 각 항목의 종류를 알려줌
 
