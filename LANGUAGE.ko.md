@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.31.0
+# ProperTee 언어 명세 v0.32.0
 
 ## 개요
 
@@ -32,6 +32,11 @@ JSON `null`을 다루지 않는 스크립트는 `null`을 볼 일이 없습니�
 - 정수 결과를 만드는 산술은 소수점 없이 표시: `10 / 2`는 `5`로 표시
 - 나눗셈은 항상 내부적으로 소수를 생성: `7 / 2` → `3.5`
 - 다른 연산의 정수 결과도 정수로 표시: `1.0 + 2.0` → `3`
+- 수의 범위를 넘는 소수 산술은 `Infinity`나 `-Infinity`가 되고(`TO_NUMBER("1e308") * 10`),
+  `Infinity - Infinity`는 `NaN`이 됩니다. `JSON_PARSE`도 `1e999`처럼 표현할 수 없을 만큼 큰 수를
+  `Infinity`로 읽습니다. 표시는 `Infinity`, `-Infinity`, `NaN`이지만 JSON에는 이
+  수들을 쓸 방법이 없습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수)). 0으로 나누기는
+  무한대가 아니라 에러입니다.
 
 #### 정수·소수 구분은 명목적 (스펙 v0.14.0)
 
@@ -1381,7 +1386,30 @@ Java에서만 매치됩니다. `a{`는 JavaScript에서 문자 그대로, Java�
 | 함수 | 설명 |
 |---|---|
 | `JSON_PARSE(s)` | JSON 문자열 파싱. Result 반환: 성공 시 `ok`와 파싱된 값, 실패 시 `error`. JSON `null`은 `null`로 보존 (spec v0.7.0까지는 `{}`로 정규화). |
-| `JSON_FORMAT(v)` | 모든 값을 JSON 문자열로 변환. `null`은 `null`로 직렬화되어 `JSON_PARSE`/`JSON_FORMAT`이 무손실로 왕복합니다. |
+| `JSON_FORMAT(v)` | 모든 값을 JSON 문자열로 변환. `null`은 `null`로 직렬화되어 `JSON_PARSE`/`JSON_FORMAT`이 무손실로 왕복합니다(표현할 수 없을 만큼 큰 수는 예외). `Infinity`, `-Infinity`, `NaN`이 든 값은 런타임 에러입니다(스펙 v0.32.0). [아래](#json으로-쓸-수-없는-수) 참고. |
+
+#### JSON으로 쓸 수 없는 수
+
+JSON에는 `Infinity`, `-Infinity`, `NaN`을 쓸 방법이 없습니다. 이 수들은 수의 범위를 넘는 소수
+산술에서 생깁니다. `JSON_PARSE`와 `READ_JSON_FILE`도 `1e999`처럼 표현할 수 없을 만큼 큰 수를
+`Infinity`로 읽으므로, 그런 JSON 글은 왕복하지 않습니다. 그래서 이런 수가 든 값을 JSON으로 바꾸는 것은 어디서든 런타임 에러입니다(스펙
+v0.32.0): `JSON_FORMAT`, `WRITE_JSON_FILE`(이때 아무것도 쓰지 않음), 문자열이 아닌 HTTP 요청
+본문(이때 요청을 보내지 않음). 에러는 JSON을 쓰는 순서로 첫 번째인 수와 그 위치를 알려 줍니다:
+
+```
+data = {"rows": [{"rate": 0.5}, {"rate": TO_NUMBER("1e308") * 10}]}
+PRINT(JSON_FORMAT(data))
+// Runtime Error: JSON_FORMAT() value.rows.2.rate is Infinity, which JSON cannot represent
+```
+
+- 위치는 `value`(HTTP 요청 본문이면 `body`)에서 시작해, 스크립트가 값에 닿는 방식대로 한 단계씩
+  내려갑니다: `value.rows.2.rate`는 `data.rows.2.rate`입니다. 배열 위치는 1부터 셉니다.
+- 평범한 이름인 키 — ASCII 영문자나 `_`로 시작하고 ASCII 영문자·숫자·`_`만 있는 키 — 는 그대로
+  씁니다. 다른 키는 JSON이 문자열을 쓰듯 큰따옴표로 감쌉니다: `value."unit price"`, `value."2"`,
+  `value."합계"`.
+- 이런 수가 없는 값은 전과 똑같이 씁니다. `PRINT`, `FORMAT`, `TEXT`는 여전히 세 수를 `Infinity`,
+  `-Infinity`, `NaN`으로 보여 주므로, JSON에 남기고 싶다면 그 수를 글자로 저장할 수 있습니다:
+  `TO_STRING(x)`는 `"Infinity"`입니다.
 
 ### 파일 I/O
 
@@ -1395,7 +1423,7 @@ Java에서만 매치됩니다. `a{`는 JavaScript에서 문자 그대로, Java�
 | `READ_JSON_FILE(path)` | JSON 파일을 읽어서 한 번에 파싱 (스펙 v0.18.0). Result 반환: 파싱된 값(객체·배열·스칼라 — `JSON_PARSE`와 동일한 변환)이면 `ok`, 읽기 실패나 잘못된 JSON이면 `error`. 선행 UTF-8 BOM은 무시. `READ_LINES` + `JOIN` + `JSON_PARSE` 관용구를 대체. |
 | `WRITE_FILE(path, content)` | 파일에 문자열 쓰기 (덮어쓰기). Result 반환. |
 | `WRITE_LINES(path, lines)` | 문자열 배열의 각 요소를 줄 단위로 쓰기 (각 줄 뒤에 줄바꿈). Result 반환. |
-| `WRITE_JSON_FILE(path, value)` | `value`를 JSON으로 직렬화 — `JSON_FORMAT`과 동일한 출력 — 해서 뒤에 줄바꿈 하나를 붙여 파일에 쓰기(덮어쓰기) (스펙 v0.18.0). Result 반환: 성공 시 `{}`와 `ok`. `READ_JSON_FILE`의 대응 함수: 왕복은 일급 `null`을 포함해 무손실. |
+| `WRITE_JSON_FILE(path, value)` | `value`를 JSON으로 직렬화 — `JSON_FORMAT`과 동일한 출력 — 해서 뒤에 줄바꿈 하나를 붙여 파일에 쓰기(덮어쓰기) (스펙 v0.18.0). Result 반환: 성공 시 `{}`와 `ok`. `READ_JSON_FILE`의 대응 함수: 왕복은 일급 `null`을 포함해 무손실. `Infinity`, `-Infinity`, `NaN`이 든 값은 런타임 에러이고, 아무것도 쓰지 않습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수), 스펙 v0.32.0). |
 | `APPEND_FILE(path, content)` | 파일에 문자열 추가. Result 반환. |
 | `MKDIR(path)` | 디렉터리 생성 (부모 포함). Result 반환. |
 | `LIST_DIR(path, [pattern])` | 디렉터리 항목 목록. Result와 `{name, type, size}` 객체 배열 반환. 이름순 정렬. `type`은 `"dir"`, `"file"`, `"link"` 중 하나; `pattern`을 주면 이름이 그 패턴에 맞는 항목만 남김. 예: `"*.csv"` (스펙 v0.27.0). [디렉터리 나열하기](#디렉터리-나열하기) 참고. |
@@ -1566,7 +1594,7 @@ SHELL 출력 캡쳐는 호스트/런타임이 정한 상한을 가집니다. 상
 
 `options`는 객체입니다: `{"headers": {"Key": "Value", ...}, "timeout": <ms>, "body": <HTTP()용>}` — 모두 선택. (`"headers"` 대신 `"header"` 도 허용.)
 
-**요청 본문.** 문자열 body 는 그대로 전송되고, 그 외 값(객체/배열/숫자/불리언)은 **JSON 으로 직렬화**됩니다. 즉 `HTTP_POST(url, {"a": 1})` 는 `{"a":1}` 을 보냅니다(`a=1` 형태가 아님). 서버가 요구하면 `headers` 에 `"Content-Type": "application/json"` 을 넣으세요.
+**요청 본문.** 문자열 body 는 그대로 전송되고, 그 외 값(객체/배열/숫자/불리언)은 **JSON 으로 직렬화**됩니다. 즉 `HTTP_POST(url, {"a": 1})` 는 `{"a":1}` 을 보냅니다(`a=1` 형태가 아님). 서버가 요구하면 `headers` 에 `"Content-Type": "application/json"` 을 넣으세요. `Infinity`, `-Infinity`, `NaN`이 든 본문은 런타임 에러이고, 요청을 보내지 않습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수), 스펙 v0.32.0).
 
 **Result 형태.** 요청이 완료되면 `value = {status, body, headers}`이고 `ok`는 2xx일 때만 true입니다(4xx/5xx도 `value`는 그대로 유지하되 `ok`는 false). 전송 단계 실패(잘못된 URL, DNS, 연결 거부, 타임아웃)는 `ok` false와 `value = {"status": 0, "body": "<에러 메시지>", "headers": {}}`를 반환합니다. 즉 `res.value`는 항상 이 객체이며 — `res.ok`와 `res.value.status`를 확인하세요.
 
@@ -1925,6 +1953,7 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 0부터 999까지의 정수가 아닌 `ALIGN_LEFT`/`ALIGN_RIGHT`/`ALIGN_CENTER`의 너비 | ALIGN_LEFT() width must be an integer from 0 to 999 |
 | 10진수 표기가 아닌 텍스트의 `TO_NUMBER` | TO_NUMBER() cannot convert 'x' to number |
 | 표현할 수 없을 만큼 큰 표기의 `TO_NUMBER` | TO_NUMBER() value out of range: 'x' |
+| `Infinity`, `-Infinity`, `NaN`이 든 값을 받은 `JSON_FORMAT`, `WRITE_JSON_FILE`, HTTP 요청 본문 | JSON_FORMAT() value.rows.2.rate is Infinity, which JSON cannot represent |
 | 읽을 수 없는 파일의 `FILE_LINES` | FILE_LINES() cannot read 'x': no such file |
 | 호스트 상한을 넘는 파일의 `FILE_LINES` 배열을 통째로 사용 | FILE_LINES() 'x' is too large to use as a whole (494 MB, the limit is 64 MB) — go through it with a loop: loop line in ... do |
 | 호출 뒤 바뀐 파일의 `FILE_LINES` 배열 읽기 | FILE_LINES() cannot read 'x': it was modified after FILE_LINES() was called — call FILE_LINES() again |
@@ -1935,6 +1964,29 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)).
 
 ## 변경 이력
+
+### v0.32.0 — JSON에는 `Infinity`와 `NaN`이 없음
+
+약간의 파괴적 변경, 문법 변경 없음. 수의 범위를 넘는 소수 산술은 `Infinity`나 `-Infinity`가 되고
+`Infinity - Infinity`는 `NaN`이 되지만, JSON에는 이 수들을 쓸 방법이 없습니다. 지금까지는 런타임마다
+제 방식대로 썼고, 둘 다 JSON이 아니었습니다:
+
+- Java 25 런타임은 JSON 리더가 거부하는 토큰 `Infinity`, `-Infinity`, `NaN`을 썼습니다.
+  `READ_JSON_FILE`도 이를 거부해서, `WRITE_JSON_FILE`이 방금 쓴 파일을 다시 읽을 수 없었습니다.
+- JavaScript 런타임은 `null`을 썼습니다. 수가 아무 말 없이 다른 값으로 바뀌었고, 언어는 스스로
+  `null`을 만들지 않는다는 원칙과도 맞지 않았습니다([암묵적 null 없음](#값과-타입)).
+
+이제 `JSON_FORMAT`, `WRITE_JSON_FILE`, 문자열이 아닌 HTTP 요청 본문은 첫 번째로 만난 그런 수와 그
+위치를 알리는 런타임 에러로 실패합니다:
+`JSON_FORMAT() value.rows.2.rate is Infinity, which JSON cannot represent`. `WRITE_JSON_FILE`은
+아무것도 쓰지 않고, HTTP 요청은 보내지 않습니다. [JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수)
+참고.
+
+마이그레이션: 그런 값을 쓰던 스크립트는 이제 JSON이 아닌 글을 만드는 대신 그 자리에서 멈춥니다.
+에러가 수의 위치를 알려 주므로 그 수가 생긴 곳을 고치면 됩니다. 수를 남기고 싶다면 `TO_STRING`으로
+글자로 저장하세요. 이런 수가 없는 값은 전과 똑같이 씁니다.
+
+Java 25 런타임과 JavaScript 런타임이 구현합니다. 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.31.0 — 숫자 모양, `TEXT`, 그리고 `ALIGN_LEFT`·`ALIGN_RIGHT`·`ALIGN_CENTER`
 
@@ -2107,7 +2159,8 @@ JavaScript 런타임에는 파일 시스템이 없으므로 호스트가 제공�
   먼저(예: `REPLACE`로) 제거해야 합니다.
 - **무한대 없음.** 두 런타임 모두 `"Infinity"`, `"-Infinity"`, 표현할 수 없을 만큼 큰
   표기(`"1e999"`)를 무한대로 바꿨고, `JSON_FORMAT`은 이 값을 Java 25에서는 JSON으로 올바르지
-  않은 토큰 `Infinity`로, JavaScript에서는 `null`로 썼습니다. 이제 `"Infinity"`는 다른 비숫자
+  않은 토큰 `Infinity`로, JavaScript에서는 `null`로 썼습니다(v0.32.0부터는
+  [에러](#v0320--json에는-infinity와-nan이-없음)). 이제 `"Infinity"`는 다른 비숫자
   텍스트처럼 실패하고, 표현할 수 없을 만큼 큰 표기는 `TO_NUMBER() value out of range: '1e999'`로
   실패합니다. 두 런타임이 공유하던 동작이 바뀌는 것은 이 항목뿐입니다.
 - **메시지 하나.** 변환되지 않는 텍스트는 받은 인자를 그대로 넣어
