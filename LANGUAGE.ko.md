@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.35.0
+# ProperTee 언어 명세 v0.36.0
 
 ## 개요
 
@@ -34,12 +34,12 @@ JSON `null`을 다루지 않는 스크립트는 `null`을 볼 일이 없습니�
 - 정수 결과를 만드는 산술은 소수점 없이 표시: `10 / 2`는 `5`로 표시
 - 나눗셈은 항상 내부적으로 소수를 생성: `7 / 2` → `3.5`
 - 다른 연산의 정수 결과도 정수로 표시: `1.0 + 2.0` → `3`
-- 수의 범위를 넘는 소수 산술은 `Infinity`나 `-Infinity`가 되고(`TO_NUMBER("1e308") * 10`),
-  `Infinity - Infinity`는 `NaN`이 됩니다. 글자가 이 수들로 바뀌지는 않습니다: `TO_NUMBER`,
-  `JSON_PARSE`, `READ_JSON_FILE`은 `1e999`처럼 표현할 수 없을 만큼 큰 수를 거부합니다. 표시는
-  `Infinity`, `-Infinity`, `NaN`이지만 JSON에는 이
-  수들을 쓸 방법이 없습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수)). 0으로 나누기는
-  무한대가 아니라 에러입니다.
+- 수는 항상 유한합니다(스펙 v0.36.0). 결과가 표현할 수 없을 만큼 큰 소수 산술은 런타임 에러
+  `Number overflow: the result is too large to represent`입니다. 정수 범위를 벗어나는 정수 산술,
+  0으로 나누기와 같습니다: `TO_NUMBER("1e308") * 10`은 스크립트를 멈춥니다. 가장 큰 소수는 약
+  1.8 × 10³⁰⁸(`1.7976931348623157e+308`)입니다. `Infinity`와 `NaN`은 없습니다: 글자가 이 수들로
+  바뀌지 않고 — `TO_NUMBER`, `JSON_PARSE`, `READ_JSON_FILE`은 `1e999`처럼 표현할 수 없을 만큼 큰
+  수를 거부합니다 — 이런 수가 든 호스트 값은 들어오는 곳에서 거부됩니다([수와 JSON](#수와-json)).
 
 #### 정수·소수 구분은 명목적 (스펙 v0.14.0)
 
@@ -90,7 +90,10 @@ ProperTee의 다른 모든 타입 규칙처럼, 범위를 벗어나면 사용 �
   소수로 읽습니다 — 데이터 변환은 스크립트 산술이 아니고, JSON 왕복은 그대로 유지됩니다. 소수는
   유효숫자 약 16자리를 담으므로 그런 표기는 가장 가까운 소수가 됩니다: `9007199254740993`은
   `9007199254740992`로 읽힙니다. 호스트가 주는 수 — `MILTIME()`, 파일의 크기와 시각, 넘겨받은
-  값 — 도 범위 안이면 정수입니다.
+  값 — 도 범위 안이면 정수입니다. 이 수들은 유한해야 합니다(스펙 v0.36.0): `Infinity`나 `NaN`이 든
+  속성이나 주입된 전역 변수는 실행이 시작되기 전에 멈추고, 외부 함수의 결과에 있으면 에러 Result,
+  호스트 내장 함수의 결과에 있으면 런타임 에러입니다 —
+  `rates.2 is Infinity, which ProperTee numbers cannot represent`.
 
 범위를 넘어 계산하려면 소수를 쓰세요: `MILTIME() * 1000000`(나노초)은 오버플로이고,
 `MILTIME() * 1000000.0`은 유효숫자 약 16자리의 소수입니다. (JavaScript 런타임은 아직
@@ -1063,7 +1066,6 @@ line = FORMAT("주문번호 {00000}", 42)           // "주문번호 00042"
   이진값에 100을 곱하면 14.499999999999998이 됩니다.
 - 0으로 반올림된 수에는 부호를 붙이지 않습니다: `-0.004`에 `0.00`은 `0.00`입니다. 큰 수도 지수 표기
   없이 끝까지 씁니다: `1e21`에 `#,##0`은 `1,000,000,000,000,000,000,000`입니다.
-- `Infinity`, `-Infinity`, `NaN`은 모양과 관계없이 `PRINT`가 보여 주는 대로 씁니다.
 - 정수 부분은 `#`들 다음에 `0`들을 쓰고, 쉼표는 두 기호 사이에만 넣습니다 — 맨 앞이나 맨 끝, 두 개
   연속은 안 됩니다. 소수 부분은 `0`들 다음에 `#`들을 씁니다. 정확히는 정규식
   `(#(,?#)*(,?0)*|0(,?0)*)(\.(0+#*|#+))?%?`에 맞는 것이 모양입니다. 그 밖의 것은 모양이 아닙니다 —
@@ -1136,9 +1138,9 @@ end
 
 | 함수 | 설명 |
 |---|---|
-| `SUM(args...)` | 모든 숫자 인자의 합 |
-| `MAX(args...)` | 모든 숫자 인자의 최댓값 |
-| `MIN(args...)` | 모든 숫자 인자의 최솟값 |
+| `SUM(args...)` | 주어진 수의 합. 각 인자는 수이거나 수의 배열입니다. 스프레드시트의 `SUM(A1:A10)`이 범위를 받듯이: `SUM(prices)`, `SUM(prices, 5)` (스펙 v0.36.0). `SUM()`과 `SUM([])`은 `0`. |
+| `MAX(args...)` | 같은 방식으로 받은 수 중 가장 큰 수: `MAX(sizes)`, `MAX(0, sizes)`. 수가 하나도 없으면 — `MAX()`, `MAX([])` — 런타임 에러. |
+| `MIN(args...)` | 같은 방식으로 받은 수 중 가장 작은 수: `MIN(prices)`. |
 | `ABS(n)` | 절대값 |
 | `ROUND(n, [digits])` | 반올림 — 가까운 쪽으로, 동점은 0에서 먼 쪽: `ROUND(2.5)` → `3`, `ROUND(-2.5)` → `-3` |
 | `FLOOR(n, [digits])` | 내림 — −∞ 쪽으로 |
@@ -1151,8 +1153,23 @@ end
 남깁니다 — [자릿수 반올림](#자릿수-반올림) 참고.
 
 `SUM`, `MAX`, `MIN`, `ABS`, `ROUND`, `FLOOR`, `CEIL`, `TRUNC`는 수를 받습니다: 수가 아닌 값은
-에러이고 — `SUM("a", 1)` → `SUM() requires numeric arguments` — `MAX`와 `MIN`은 인자가 하나 이상
-필요합니다: `MAX() requires at least one argument`.
+에러이고 — `SUM("a", 1)` → `SUM() requires numeric arguments` — `MAX`와 `MIN`은 수가 하나 이상
+필요합니다: `MAX() requires at least one number`. `SUM`, `MAX`, `MIN`은 수의 배열도 받으므로(스펙
+v0.36.0), 조건에 맞는 것 중 가장 작은 값은 먼저 모은 뒤 구합니다:
+
+```
+inStock = []
+loop item in items do
+    if item.stock > 0 then
+        inStock = PUSH(inStock, item.price)
+    end
+end
+cheapest = MIN(inStock)       // 재고가 하나도 없으면 에러
+```
+
+지금까지의 최솟값을 들고 도는 루프는 첫 원소 `best = prices.1`에서 시작합니다. 목록이 비어 있으면
+지어낸 값을 남기지 않고 실패합니다. 값이 아니라 항목 자체 — 가격이 아니라 가장 싼 상품 — 는
+`SORT_BY(items, "price").1`입니다.
 
 단일 인자 형태 `RANDOM(max)`는 **v0.7.0에서 제거**되었습니다 — 배타적 상한이 포함 규약인 2-인자 형태와 충돌했기 때문입니다. 단일 인자 호출은 런타임 에러이며, 기존 의미가 필요하면 `RANDOM(0, max - 1)`을 사용하세요.
 
@@ -1205,9 +1222,9 @@ PRINT(CEIL(0.1 + 0.2, 1))                   // 0.4 — 0.1 + 0.2는 0.3000000000
   정수든 됩니다. 수의 마지막 자리보다 아래인 자리는 아무것도 바꾸지 않고(`ROUND(3.48, 400)` →
   `3.48`), 첫 자리보다 위인 자리는 `0`이나 그 자리의 한 단위를 남깁니다(`ROUND(3.48, -5)` → `0`,
   `CEIL(3.48, -5)` → `100000`).
-- 수의 범위를 넘는 결과는 산술처럼 `Infinity`입니다:
-  `CEIL(TO_NUMBER("1.7976931348623157e308"), -308)` → `Infinity`. `digits`를 주면 `Infinity`,
-  `-Infinity`, `NaN`은 그대로 돌아옵니다.
+- 표현할 수 없을 만큼 큰 결과는 산술처럼 에러입니다:
+  `CEIL(TO_NUMBER("1.7976931348623157e308"), -308)`은 `Number overflow`로 실패합니다(스펙
+  v0.36.0, 전에는 `Infinity`).
 - 0인 결과에는 부호가 없습니다: `CEIL(-0.001, 2)` → `0`.
 
 | 경우 | 에러 |
@@ -1411,8 +1428,8 @@ Java에서만 매치됩니다. `a{`는 JavaScript에서 문자 그대로, Java�
 
 | 함수 | 설명 |
 |---|---|
-| `JSON_PARSE(s)` | JSON 문자열 파싱. Result 반환: 성공 시 `ok`와 파싱된 값, 잘못된 JSON([JSON 글](#json-글))이나 표현할 수 없을 만큼 큰 수([아래](#json으로-쓸-수-없는-수), 스펙 v0.35.0)면 `error`. JSON `null`은 `null`로 보존 (spec v0.7.0까지는 `{}`로 정규화). |
-| `JSON_FORMAT(v)` | 모든 값을 JSON 문자열로 변환. `null`은 `null`로 직렬화되어 `JSON_PARSE`/`JSON_FORMAT`이 무손실로 왕복합니다. `Infinity`, `-Infinity`, `NaN`이 든 값은 런타임 에러입니다(스펙 v0.32.0). [아래](#json으로-쓸-수-없는-수) 참고. |
+| `JSON_PARSE(s)` | JSON 문자열 파싱. Result 반환: 성공 시 `ok`와 파싱된 값, 잘못된 JSON([JSON 글](#json-글))이나 표현할 수 없을 만큼 큰 수([아래](#수와-json), 스펙 v0.35.0)면 `error`. JSON `null`은 `null`로 보존 (spec v0.7.0까지는 `{}`로 정규화). |
+| `JSON_FORMAT(v)` | 모든 값을 JSON 문자열로 변환. `null`은 `null`로 직렬화되어 `JSON_PARSE`/`JSON_FORMAT`이 무손실로 왕복합니다. 수는 유한하므로 모든 수를 쓸 수 있습니다([아래](#수와-json)). |
 
 #### JSON 글
 
@@ -1433,31 +1450,12 @@ v0.35.0):
 잘못된 JSON은 `Invalid JSON: `으로 시작하는 메시지의 에러 Result가 됩니다. 중첩 메시지를 빼면, 나머지
 문구는 런타임마다 다릅니다.
 
-#### JSON으로 쓸 수 없는 수
+#### 수와 JSON
 
-JSON에는 `Infinity`, `-Infinity`, `NaN`을 쓸 방법이 없습니다. 이 수들은 수의 범위를 넘는 소수
-산술에서 생깁니다. 그래서 이런 수가 든 값을 JSON으로 바꾸는 것은 어디서든 런타임 에러입니다(스펙
-v0.32.0): `JSON_FORMAT`, `WRITE_JSON_FILE`(이때 아무것도 쓰지 않음), 문자열이 아닌 HTTP 요청
-본문(이때 요청을 보내지 않음). 에러는 JSON을 쓰는 순서로 첫 번째인 수와 그 위치를 알려 줍니다:
-
-```
-data = {"rows": [{"rate": 0.5}, {"rate": TO_NUMBER("1e308") * 10}]}
-PRINT(JSON_FORMAT(data))
-// Runtime Error: JSON_FORMAT() value.rows.2.rate is Infinity, which JSON cannot represent
-```
-
-- 위치는 `value`(HTTP 요청 본문이면 `body`)에서 시작해, 스크립트가 값에 닿는 방식대로 한 단계씩
-  내려갑니다: `value.rows.2.rate`는 `data.rows.2.rate`입니다. 배열 위치는 1부터 셉니다.
-- 평범한 이름인 키 — ASCII 영문자나 `_`로 시작하고 ASCII 영문자·숫자·`_`만 있는 키 — 는 그대로
-  씁니다. 다른 키는 JSON이 문자열을 쓰듯 큰따옴표로 감쌉니다: `value."unit price"`, `value."2"`,
-  `value."합계"`.
-- 이런 수가 없는 값은 전과 똑같이 씁니다. `PRINT`, `FORMAT`, `TEXT`는 여전히 세 수를 `Infinity`,
-  `-Infinity`, `NaN`으로 보여 주므로, JSON에 남기고 싶다면 그 수를 글자로 저장할 수 있습니다:
-  `TO_STRING(x)`는 `"Infinity"`입니다.
-
-읽을 때는 같은 틈을 반대쪽에서 만납니다. `1e999`처럼 표현할 수 없을 만큼 큰 수는 올바른 JSON이지만
-어떤 수로도 담을 수 없으므로, `JSON_PARSE`와 `READ_JSON_FILE`은 첫 번째 그런 수와 그 위치를 위와
-같은 방식으로 알리는 에러 Result를 돌려줍니다(스펙 v0.35.0):
+수는 유한하므로(스펙 v0.36.0) JSON은 스크립트가 가진 모든 수를 쓸 수 있습니다. 읽을 때는 틈이 하나
+있습니다: `1e999`처럼 표현할 수 없을 만큼 큰 수는 올바른 JSON이지만 어떤 수로도 담을 수 없으므로,
+`JSON_PARSE`와 `READ_JSON_FILE`은 첫 번째 그런 수와 그 위치를 알리는 에러 Result를
+돌려줍니다(스펙 v0.35.0):
 
 ```
 res = JSON_PARSE("{\"rows\": [{\"size\": 1}, {\"size\": 1e999}]}")
@@ -1465,8 +1463,19 @@ PRINT(res.ok, res.value)
 // false JSON_PARSE() value.rows.2.size is a number too large to represent
 ```
 
+- 위치는 `value`에서 시작해, 스크립트가 값에 닿을 방식대로 한 단계씩 내려갑니다. 배열 위치는
+  1부터 셉니다.
+- 평범한 이름인 키 — ASCII 영문자나 `_`로 시작하고 ASCII 영문자·숫자·`_`만 있는 키 — 는 그대로
+  씁니다. 다른 키는 JSON이 문자열을 쓰듯 큰따옴표로 감쌉니다: `value."unit price"`, `value."2"`,
+  `value."합계"`.
+
 `1e-999`처럼 표현할 수 없을 만큼 작은 수는 `0`으로, 정수 범위 밖의 정수는 가장 가까운 소수로 읽습니다.
 `TO_NUMBER`와 같습니다.
+
+v0.36.0 전에는 수의 범위를 넘는 소수 산술이 `Infinity`, `-Infinity`, `NaN`을 만들었고, JSON에는 이
+수들을 쓸 방법도 없습니다. v0.32.0부터 `JSON_FORMAT`, `WRITE_JSON_FILE`, HTTP 요청 본문은 이런 수에서
+실패했습니다(`JSON_FORMAT() value.rows.2.rate is Infinity, which JSON cannot represent`). 이제
+스크립트는 이런 수를 만들 수 없습니다.
 
 ### 파일 I/O
 
@@ -1480,7 +1489,7 @@ PRINT(res.ok, res.value)
 | `READ_JSON_FILE(path)` | JSON 파일을 읽어서 한 번에 파싱 (스펙 v0.18.0). Result 반환: 파싱된 값(객체·배열·스칼라 — `JSON_PARSE`와 동일한 변환)이면 `ok`, 읽기 실패나 잘못된 JSON, 표현할 수 없을 만큼 큰 수면 `error`(`READ_JSON_FILE() value.size is a number too large to represent`, 스펙 v0.35.0). 선행 UTF-8 BOM은 무시. `READ_LINES` + `JOIN` + `JSON_PARSE` 관용구를 대체. |
 | `WRITE_FILE(path, content)` | 파일에 문자열 쓰기 (덮어쓰기). Result 반환. |
 | `WRITE_LINES(path, lines)` | 문자열 배열의 각 요소를 줄 단위로 쓰기 (각 줄 뒤에 줄바꿈). Result 반환. |
-| `WRITE_JSON_FILE(path, value)` | `value`를 JSON으로 직렬화 — `JSON_FORMAT`과 동일한 출력 — 해서 뒤에 줄바꿈 하나를 붙여 파일에 쓰기(덮어쓰기) (스펙 v0.18.0). Result 반환: 성공 시 `{}`와 `ok`. `READ_JSON_FILE`의 대응 함수: 왕복은 일급 `null`을 포함해 무손실. `Infinity`, `-Infinity`, `NaN`이 든 값은 런타임 에러이고, 아무것도 쓰지 않습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수), 스펙 v0.32.0). |
+| `WRITE_JSON_FILE(path, value)` | `value`를 JSON으로 직렬화 — `JSON_FORMAT`과 동일한 출력 — 해서 뒤에 줄바꿈 하나를 붙여 파일에 쓰기(덮어쓰기) (스펙 v0.18.0). Result 반환: 성공 시 `{}`와 `ok`. `READ_JSON_FILE`의 대응 함수: 왕복은 일급 `null`을 포함해 무손실. |
 | `APPEND_FILE(path, content)` | 파일에 문자열 추가. Result 반환. |
 | `MKDIR(path)` | 디렉터리 생성 (부모 포함). Result 반환. |
 | `LIST_DIR(path, [pattern])` | 디렉터리 항목 목록. Result와 `{name, type, size}` 객체 배열 반환. 이름순 정렬. `type`은 `"dir"`, `"file"`, `"link"` 중 하나; `pattern`을 주면 이름이 그 패턴에 맞는 항목만 남김. 예: `"*.csv"` (스펙 v0.27.0). [디렉터리 나열하기](#디렉터리-나열하기) 참고. |
@@ -1619,7 +1628,7 @@ logs = UNWRAP(LIST_DIR("/data/logs", "app-2024-0?.{log,txt}"))
 
 | 함수 | 설명 |
 |---|---|
-| `SLEEP(ms)` | 현재 스레드를 `ms` 밀리초 동안 일시 중지 |
+| `SLEEP(ms)` | 현재 스레드를 `ms` 밀리초 동안 일시 중지. 음수 `ms`는 런타임 에러 `SLEEP() duration cannot be negative` (스펙 v0.36.0). |
 | `MILTIME()` | 현재 시간을 에포크 밀리초(정수)로 반환 |
 | `DATE()` | 현재 날짜를 `"YYYY-MM-DD"` 문자열로 반환 |
 | `TIME()` | 현재 시각을 `"HH:MM:SS"` 문자열로 반환 |
@@ -1651,7 +1660,7 @@ SHELL 출력 캡쳐는 호스트/런타임이 정한 상한을 가집니다. 상
 
 `options`는 객체입니다: `{"headers": {"Key": "Value", ...}, "timeout": <ms>, "body": <HTTP()용>}` — 모두 선택. (`"headers"` 대신 `"header"` 도 허용.)
 
-**요청 본문.** 문자열 body 는 그대로 전송되고, 그 외 값(객체/배열/숫자/불리언)은 **JSON 으로 직렬화**됩니다. 즉 `HTTP_POST(url, {"a": 1})` 는 `{"a":1}` 을 보냅니다(`a=1` 형태가 아님). 서버가 요구하면 `headers` 에 `"Content-Type": "application/json"` 을 넣으세요. `Infinity`, `-Infinity`, `NaN`이 든 본문은 런타임 에러이고, 요청을 보내지 않습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수), 스펙 v0.32.0).
+**요청 본문.** 문자열 body 는 그대로 전송되고, 그 외 값(객체/배열/숫자/불리언)은 **JSON 으로 직렬화**됩니다. 즉 `HTTP_POST(url, {"a": 1})` 는 `{"a":1}` 을 보냅니다(`a=1` 형태가 아님). 서버가 요구하면 `headers` 에 `"Content-Type": "application/json"` 을 넣으세요.
 
 **Result 형태.** 요청이 완료되면 `value = {status, body, headers}`이고 `ok`는 2xx일 때만 true입니다(4xx/5xx도 `value`는 그대로 유지하되 `ok`는 false). 전송 단계 실패(잘못된 URL, DNS, 연결 거부, 타임아웃)는 `ok` false와 `value = {"status": 0, "body": "<에러 메시지>", "headers": {}}`를 반환합니다. 즉 `res.value`는 항상 이 객체이며 — `res.ok`와 `res.value.status`를 확인하세요.
 
@@ -2007,7 +2016,11 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 전부-대문자 함수 정의 | Cannot define function 'X': all-uppercase names are reserved for built-in and host functions |
 | 너무 큰 정수 리터럴 | Integer literal out of range: 9007199254740992 is larger than 9,007,199,254,740,991 |
 | 정수 산술 오버플로 (`+` `-` `*`, `digits` 없는 `FLOOR`/`CEIL`/`ROUND`/`TRUNC`, `SUM`) | Integer overflow: the result is outside ±9,007,199,254,740,991 |
-| 수가 아닌 값을 받은 `SUM`/`MAX`/`MIN`/`ABS`/`ROUND`/`FLOOR`/`CEIL`/`TRUNC` | SUM() requires numeric arguments |
+| 표현할 수 없을 만큼 큰 소수 산술 (`+` `-` `*` `/`, `SUM`, `digits` 있는 `FLOOR`/`CEIL`/`ROUND`/`TRUNC`) | Number overflow: the result is too large to represent |
+| 수가 아닌 값(`SUM`/`MAX`/`MIN`은 수의 배열도 아닌 값)을 받은 `SUM`/`MAX`/`MIN`/`ABS`/`ROUND`/`FLOOR`/`CEIL`/`TRUNC` | SUM() requires numeric arguments |
+| 수를 하나도 받지 못한 `MAX`/`MIN` | MAX() requires at least one number |
+| 수가 아니거나 음수인 `SLEEP` 인자 | SLEEP() requires a number argument / SLEEP() duration cannot be negative |
+| `Infinity`나 `NaN`이 든 호스트 값 — 속성, 주입된 전역 변수, 호스트 내장 함수의 결과(외부 함수의 결과는 에러 Result) | rates.2 is Infinity, which ProperTee numbers cannot represent |
 | 정수가 아닌 `digits` | ROUND() digits must be an integer |
 | `ROUND`/`FLOOR`/`CEIL`/`TRUNC`의 세 번째 인자 | ROUND() takes at most 2 arguments |
 | 올바르지 않은 `FORMAT`/`PRINTF` 서식 | FORMAT() invalid format: {:.2f} |
@@ -2016,7 +2029,6 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 0부터 999까지의 정수가 아닌 `ALIGN_LEFT`/`ALIGN_RIGHT`/`ALIGN_CENTER`의 너비 | ALIGN_LEFT() width must be an integer from 0 to 999 |
 | 10진수 표기가 아닌 텍스트의 `TO_NUMBER` | TO_NUMBER() cannot convert 'x' to number |
 | 표현할 수 없을 만큼 큰 표기의 `TO_NUMBER` | TO_NUMBER() value out of range: 'x' |
-| `Infinity`, `-Infinity`, `NaN`이 든 값을 받은 `JSON_FORMAT`, `WRITE_JSON_FILE`, HTTP 요청 본문 | JSON_FORMAT() value.rows.2.rate is Infinity, which JSON cannot represent |
 | 읽을 수 없는 파일의 `FILE_LINES` | FILE_LINES() cannot read 'x': no such file |
 | 호스트 상한을 넘는 파일의 `FILE_LINES` 배열을 통째로 사용 | FILE_LINES() 'x' is too large to use as a whole (494 MB, the limit is 64 MB) — go through it with a loop: loop line in ... do |
 | 호출 뒤 바뀐 파일의 `FILE_LINES` 배열 읽기 | FILE_LINES() cannot read 'x': it was modified after FILE_LINES() was called — call FILE_LINES() again |
@@ -2027,6 +2039,40 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)). JSON 글은 모든 런타임에서 고정된 1000단계 깊이까지 읽습니다([JSON 글](#json-글)).
 
 ## 변경 이력
+
+### v0.36.0 — 수는 유한함, `SUM`·`MAX`·`MIN`은 배열을 받음
+
+파괴적 변경, 문법 변경 없음. `Infinity`와 `NaN`은 언어에 설계된 적이 없습니다 — 쓸 방법도, 확인할
+방법도, 어떻게 비교되는지에 대한 규칙도 없었습니다. 그런데도 약 1.8 × 10³⁰⁸을 넘는 소수 산술은
+`Infinity`를, `Infinity - Infinity`는 `NaN`을 만들었습니다. 두 런타임이 소수를 IEEE 754 double로
+저장하기 때문입니다. 스펙은 나중에야 이 수들을 기록했고(v0.25.0, v0.30.0, v0.32.0), 두 런타임은
+서로 다르게 다뤘습니다: `FLOOR(NaN)`은 Java 25 런타임에서 `0`, JavaScript 런타임에서 `NaN`이었고,
+`NaN == NaN`은 한쪽에서 `true`, 다른 쪽에서 `false`였으며, `NaN`이 섞인 정렬은 JavaScript 런타임에서
+정렬되지 않은 배열을 남겼고, `SLEEP(NaN)`은 그쪽 스크립트를 아무 말 없이 끝냈습니다. 사용자는 0으로
+나누기가 늘 그랬듯이 이 수들이 생기는 곳에서 막기로 했습니다.
+
+- 결과가 표현할 수 없을 만큼 큰 소수 산술은 런타임 에러
+  `Number overflow: the result is too large to represent`입니다: `+`, `-`, `*`, `/`, `SUM`,
+  `digits` 있는 `FLOOR`/`CEIL`/`ROUND`/`TRUNC`. 이제 `Infinity`나 `NaN`은 없습니다.
+- `Infinity`나 `NaN`이 든 호스트 값은 들어오는 곳에서 거부됩니다: 속성이나 주입된 전역 변수는 실행이
+  시작되기 전에, 외부 함수의 결과는 에러 Result로, 호스트 내장 함수의 결과는 런타임 에러로 —
+  `rates.2 is Infinity, which ProperTee numbers cannot represent`.
+- `SUM`, `MAX`, `MIN`은 스프레드시트의 `MIN(A1:A10)`이 범위를 받듯이 배열을 받습니다: 각 인자는
+  수이거나 수의 배열이라 `MIN(prices)`가 가장 낮은 가격입니다. `SUM([])`은 `0`이고, `MAX()`와
+  `MIN([])`은 `MAX() requires at least one number`로 실패합니다. 이 문구가
+  `MAX() requires at least one argument`를 대신합니다. 스크립트가 아주 큰 시작값을 썼던 곳 —
+  지금까지의 최솟값을 들고 도는 루프 — 이 바로 이것이었고, 넘치는 산술로는 이제 그런 값을 만들 수
+  없습니다.
+- 음수 시간의 `SLEEP`은 두 런타임 모두 `SLEEP() duration cannot be negative`로, 수가 아닌 값은
+  `SLEEP() requires a number argument`로, 둘 다 호출 위치와 함께 실패합니다. Java 25 런타임은 0 ms
+  잤고 `SLEEP() requires a numeric millisecond argument`라고 했습니다. `thread t: SLEEP(300)`로
+  띄운 스레드는 이제 JavaScript 런타임에서도 잡니다. 전에는 곧바로 돌아왔습니다.
+
+마이그레이션: `Infinity`를 일부러 계산하던 스크립트 — 보통 최솟값을 찾는 검색의 시작값 — 는 이제 그
+줄에서 멈춥니다. `MIN(list)`을 쓰거나, 빈 목록에서 크게 실패하는 첫 원소(`best = list.1`)에서
+시작하세요. `MAX()` 에러의 문구와 비교하던 스크립트는 새 문구에 맞춰야 합니다.
+
+Java 25 런타임과 JavaScript 런타임이 구현합니다. 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.35.0 — `JSON_PARSE`는 표현할 수 없을 만큼 큰 수를 거부함
 
@@ -2142,8 +2188,7 @@ JavaScript 런타임은 아직 `1000000.0` 같은 정합 소수를 정수로 다
 이제 `JSON_FORMAT`, `WRITE_JSON_FILE`, 문자열이 아닌 HTTP 요청 본문은 첫 번째로 만난 그런 수와 그
 위치를 알리는 런타임 에러로 실패합니다:
 `JSON_FORMAT() value.rows.2.rate is Infinity, which JSON cannot represent`. `WRITE_JSON_FILE`은
-아무것도 쓰지 않고, HTTP 요청은 보내지 않습니다. [JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수)
-참고.
+아무것도 쓰지 않고, HTTP 요청은 보내지 않습니다. [수와 JSON](#수와-json) 참고.
 
 마이그레이션: 그런 값을 쓰던 스크립트는 이제 JSON이 아닌 글을 만드는 대신 그 자리에서 멈춥니다.
 에러가 수의 위치를 알려 주므로 그 수가 생긴 곳을 고치면 됩니다. 수를 남기고 싶다면 `TO_STRING`으로
