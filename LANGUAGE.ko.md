@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.34.0
+# ProperTee 언어 명세 v0.35.0
 
 ## 개요
 
@@ -35,8 +35,9 @@ JSON `null`을 다루지 않는 스크립트는 `null`을 볼 일이 없습니�
 - 나눗셈은 항상 내부적으로 소수를 생성: `7 / 2` → `3.5`
 - 다른 연산의 정수 결과도 정수로 표시: `1.0 + 2.0` → `3`
 - 수의 범위를 넘는 소수 산술은 `Infinity`나 `-Infinity`가 되고(`TO_NUMBER("1e308") * 10`),
-  `Infinity - Infinity`는 `NaN`이 됩니다. `JSON_PARSE`도 `1e999`처럼 표현할 수 없을 만큼 큰 수를
-  `Infinity`로 읽습니다. 표시는 `Infinity`, `-Infinity`, `NaN`이지만 JSON에는 이
+  `Infinity - Infinity`는 `NaN`이 됩니다. 글자가 이 수들로 바뀌지는 않습니다: `TO_NUMBER`,
+  `JSON_PARSE`, `READ_JSON_FILE`은 `1e999`처럼 표현할 수 없을 만큼 큰 수를 거부합니다. 표시는
+  `Infinity`, `-Infinity`, `NaN`이지만 JSON에는 이
   수들을 쓸 방법이 없습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수)). 0으로 나누기는
   무한대가 아니라 에러입니다.
 
@@ -1410,14 +1411,32 @@ Java에서만 매치됩니다. `a{`는 JavaScript에서 문자 그대로, Java�
 
 | 함수 | 설명 |
 |---|---|
-| `JSON_PARSE(s)` | JSON 문자열 파싱. Result 반환: 성공 시 `ok`와 파싱된 값, 실패 시 `error`. JSON `null`은 `null`로 보존 (spec v0.7.0까지는 `{}`로 정규화). |
-| `JSON_FORMAT(v)` | 모든 값을 JSON 문자열로 변환. `null`은 `null`로 직렬화되어 `JSON_PARSE`/`JSON_FORMAT`이 무손실로 왕복합니다(표현할 수 없을 만큼 큰 수는 예외). `Infinity`, `-Infinity`, `NaN`이 든 값은 런타임 에러입니다(스펙 v0.32.0). [아래](#json으로-쓸-수-없는-수) 참고. |
+| `JSON_PARSE(s)` | JSON 문자열 파싱. Result 반환: 성공 시 `ok`와 파싱된 값, 잘못된 JSON([JSON 글](#json-글))이나 표현할 수 없을 만큼 큰 수([아래](#json으로-쓸-수-없는-수), 스펙 v0.35.0)면 `error`. JSON `null`은 `null`로 보존 (spec v0.7.0까지는 `{}`로 정규화). |
+| `JSON_FORMAT(v)` | 모든 값을 JSON 문자열로 변환. `null`은 `null`로 직렬화되어 `JSON_PARSE`/`JSON_FORMAT`이 무손실로 왕복합니다. `Infinity`, `-Infinity`, `NaN`이 든 값은 런타임 에러입니다(스펙 v0.32.0). [아래](#json으로-쓸-수-없는-수) 참고. |
+
+#### JSON 글
+
+`JSON_PARSE`와 `READ_JSON_FILE`은 RFC 8259가 정한 JSON만 읽고, 그 밖의 글은 잘못된 JSON입니다(스펙
+v0.35.0):
+
+- 수는 선택적인 `-`, 그다음 `0`이나 `0`으로 시작하지 않는 숫자들, 그다음 선택적인 소수부(`.`와
+  숫자 하나 이상)와 선택적인 지수부(`e`나 `E`, 선택적인 부호, 숫자 하나 이상)입니다. `01`, `.5`,
+  `1.`, `+1`, `1e`는 수가 아니고, `Infinity`와 `NaN`도 아닙니다.
+- 토큰 사이의 공백은 스페이스, 탭, 줄바꿈(LF), 캐리지 리턴(CR)뿐입니다. (`READ_JSON_FILE`은
+  앞머리의 UTF-8 BOM도 무시합니다.)
+- 문자열에는 제어 문자(U+0000–U+001F)를 그대로 넣을 수 없고 `\t`나 `\u0009` 같은 이스케이프로
+  씁니다. `\u` 뒤에는 정확히 16진 숫자 네 개가 옵니다.
+- 중첩은 1000단계까지입니다. 한 단계 더 깊으면
+  `Invalid JSON: nested more than 1000 levels deep at position 1000`으로 실패합니다. 위치는 너무
+  깊어지는 괄호의 위치이고, JSON 리더들이 세듯 0부터 셉니다.
+
+잘못된 JSON은 `Invalid JSON: `으로 시작하는 메시지의 에러 Result가 됩니다. 중첩 메시지를 빼면, 나머지
+문구는 런타임마다 다릅니다.
 
 #### JSON으로 쓸 수 없는 수
 
 JSON에는 `Infinity`, `-Infinity`, `NaN`을 쓸 방법이 없습니다. 이 수들은 수의 범위를 넘는 소수
-산술에서 생깁니다. `JSON_PARSE`와 `READ_JSON_FILE`도 `1e999`처럼 표현할 수 없을 만큼 큰 수를
-`Infinity`로 읽으므로, 그런 JSON 글은 왕복하지 않습니다. 그래서 이런 수가 든 값을 JSON으로 바꾸는 것은 어디서든 런타임 에러입니다(스펙
+산술에서 생깁니다. 그래서 이런 수가 든 값을 JSON으로 바꾸는 것은 어디서든 런타임 에러입니다(스펙
 v0.32.0): `JSON_FORMAT`, `WRITE_JSON_FILE`(이때 아무것도 쓰지 않음), 문자열이 아닌 HTTP 요청
 본문(이때 요청을 보내지 않음). 에러는 JSON을 쓰는 순서로 첫 번째인 수와 그 위치를 알려 줍니다:
 
@@ -1436,6 +1455,19 @@ PRINT(JSON_FORMAT(data))
   `-Infinity`, `NaN`으로 보여 주므로, JSON에 남기고 싶다면 그 수를 글자로 저장할 수 있습니다:
   `TO_STRING(x)`는 `"Infinity"`입니다.
 
+읽을 때는 같은 틈을 반대쪽에서 만납니다. `1e999`처럼 표현할 수 없을 만큼 큰 수는 올바른 JSON이지만
+어떤 수로도 담을 수 없으므로, `JSON_PARSE`와 `READ_JSON_FILE`은 첫 번째 그런 수와 그 위치를 위와
+같은 방식으로 알리는 에러 Result를 돌려줍니다(스펙 v0.35.0):
+
+```
+res = JSON_PARSE("{\"rows\": [{\"size\": 1}, {\"size\": 1e999}]}")
+PRINT(res.ok, res.value)
+// false JSON_PARSE() value.rows.2.size is a number too large to represent
+```
+
+`1e-999`처럼 표현할 수 없을 만큼 작은 수는 `0`으로, 정수 범위 밖의 정수는 가장 가까운 소수로 읽습니다.
+`TO_NUMBER`와 같습니다.
+
 ### 파일 I/O
 
 | 함수 | 설명 |
@@ -1445,7 +1477,7 @@ PRINT(JSON_FORMAT(data))
 | `READ_LINES(path, [start], [count])` | 파일에서 라인 읽기. `start`는 1-기반 (기본 1). `count`는 읽을 라인 수 제한. Result와 문자열 배열 반환. 파일 전체를 한 줄씩 처리하려면 `FILE_LINES`가 더 간단. |
 | `FILE_LINES(path)` | 파일의 줄들을 문자열 배열로 반환 (스펙 v0.26.0) — Result가 아닌 일반 배열: 읽을 수 없는 파일은 런타임 에러. 파일은 배열이 쓰이는 만큼만 읽으므로 크기와 상관없이 루프로 처리할 수 있음; [파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기) 참고. |
 | `READ_FILE(path)` | 파일 전체를 하나의 문자열로 읽기 (스펙 v0.18.0). Result 반환: 파일 내용(UTF-8, 내용 그대로)이면 `ok`, 읽기 실패면 `error`. `WRITE_FILE`의 대응 함수; 큰 파일에는 `FILE_LINES`를 사용. |
-| `READ_JSON_FILE(path)` | JSON 파일을 읽어서 한 번에 파싱 (스펙 v0.18.0). Result 반환: 파싱된 값(객체·배열·스칼라 — `JSON_PARSE`와 동일한 변환)이면 `ok`, 읽기 실패나 잘못된 JSON이면 `error`. 선행 UTF-8 BOM은 무시. `READ_LINES` + `JOIN` + `JSON_PARSE` 관용구를 대체. |
+| `READ_JSON_FILE(path)` | JSON 파일을 읽어서 한 번에 파싱 (스펙 v0.18.0). Result 반환: 파싱된 값(객체·배열·스칼라 — `JSON_PARSE`와 동일한 변환)이면 `ok`, 읽기 실패나 잘못된 JSON, 표현할 수 없을 만큼 큰 수면 `error`(`READ_JSON_FILE() value.size is a number too large to represent`, 스펙 v0.35.0). 선행 UTF-8 BOM은 무시. `READ_LINES` + `JOIN` + `JSON_PARSE` 관용구를 대체. |
 | `WRITE_FILE(path, content)` | 파일에 문자열 쓰기 (덮어쓰기). Result 반환. |
 | `WRITE_LINES(path, lines)` | 문자열 배열의 각 요소를 줄 단위로 쓰기 (각 줄 뒤에 줄바꿈). Result 반환. |
 | `WRITE_JSON_FILE(path, value)` | `value`를 JSON으로 직렬화 — `JSON_FORMAT`과 동일한 출력 — 해서 뒤에 줄바꿈 하나를 붙여 파일에 쓰기(덮어쓰기) (스펙 v0.18.0). Result 반환: 성공 시 `{}`와 `ok`. `READ_JSON_FILE`의 대응 함수: 왕복은 일급 `null`을 포함해 무손실. `Infinity`, `-Infinity`, `NaN`이 든 값은 런타임 에러이고, 아무것도 쓰지 않습니다([JSON으로 쓸 수 없는 수](#json으로-쓸-수-없는-수), 스펙 v0.32.0). |
@@ -1992,9 +2024,38 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 
 ### 자원 한계
 
-루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)).
+루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)). JSON 글은 모든 런타임에서 고정된 1000단계 깊이까지 읽습니다([JSON 글](#json-글)).
 
 ## 변경 이력
+
+### v0.35.0 — `JSON_PARSE`는 표현할 수 없을 만큼 큰 수를 거부함
+
+약간의 파괴적 변경, 문법 변경 없음. `1e999`는 올바른 JSON이지만 어떤 수로도 담을 수 없고,
+`JSON_PARSE`와 `READ_JSON_FILE`은 이를 `Infinity`로 읽었습니다. 아무 말 없이 들어와서 들어온 곳과 먼
+곳에서야 드러났습니다: 산술은 `Infinity`나 `NaN`이 되었고, `FLOOR`는 정수 넘침을 알렸으며, 데이터를
+다시 JSON으로 쓰면 실패했습니다(스펙 v0.32.0). `TO_NUMBER`는 v0.25.0부터 이런 수를 거부해 왔습니다.
+
+- `JSON_PARSE`와 `READ_JSON_FILE`은 표현할 수 없을 만큼 큰 수에 대해, JSON 쓰기 함수들처럼 첫 번째
+  그런 수와 그 위치를 알리는 에러 Result를 돌려줍니다:
+  `JSON_PARSE() value.rows.2.size is a number too large to represent`. 표현할 수 없을 만큼 작은
+  수는 여전히 `0`으로 읽습니다.
+- 글은 RFC 8259가 정한 JSON이어야 합니다([JSON 글](#json-글)). JavaScript 런타임은 이미 그렇게
+  읽었습니다. Java 25 런타임은 `01`, `.5`, `1.`, `1.e5`, 토큰 사이의 유니코드 공백, 문자열 안의 제어
+  문자, `\u+041`도 받아들였고, `1e`나 `[1, 2e]` 같은 잘못된 수, 잘못된 `\u` 이스케이프, 아주 깊은
+  중첩은 에러 Result 대신 Java 예외로 실행 전체를 끝냈습니다.
+- 중첩은 두 런타임 모두 1000단계까지입니다:
+  `Invalid JSON: nested more than 1000 levels deep at position 1000`. 전에는 Java 25 런타임은
+  스택이 넘쳤고 JavaScript 런타임은 자기 에러를 냈으며, 그 깊이는 기계마다 달랐습니다.
+- 명령줄 런타임도 `-p` 속성에서 이런 수를 거부합니다. TeeBox는 실행 입력에서 이미 거부했습니다.
+- 루프 반복 상한 에러는 두 런타임 모두 모든 루프에 `Use 'loop ... infinite do'`를 안내합니다. Java
+  25 런타임은 모든 루프에 `loop condition infinite do`를 안내해 배열이나 객체를 도는 루프에는 맞지
+  않았고, JavaScript 런타임은 조건 루프에 그렇게 안내했습니다.
+
+마이그레이션: 이런 수를 읽던 스크립트는 `Infinity`를 받았지만, 이제 에러 Result를 받습니다. 잘못된
+JSON에 대비해 이미 쓰고 있는 `res.ok` 검사나 `UNWRAP`이 그대로 처리합니다. Java 25 런타임만
+받아들이던 JSON은 올바른 JSON으로 고쳐야 합니다.
+
+Java 25 런타임과 JavaScript 런타임이 구현합니다. 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.34.0 — 위치는 범위 안의 정수여야 함
 
