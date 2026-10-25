@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.33.0
+# ProperTee 언어 명세 v0.34.0
 
 ## 개요
 
@@ -274,6 +274,9 @@ s.1     // "h"
 s.5     // "o"
 ```
 
+위치는 1부터 `LEN(s)`까지의 정수여야 합니다: `s.0`, `s.6`, 그리고 `i = 1.5`일 때 `s.$i`는
+런타임 에러입니다(`String index out of bounds`, `String index must be an integer`).
+
 ## 배열
 
 배열은 순서가 있고, 1-기반이며, 혼합 타입을 포함할 수 있습니다.
@@ -291,7 +294,9 @@ nums.1      // 10 (첫 번째 요소)
 nums.3      // 30 (세 번째 요소)
 ```
 
-범위를 벗어난 접근은 런타임 에러입니다.
+인덱스는 읽을 때나 대입할 때나 1부터 `LEN(nums)`까지의 정수여야 합니다: `nums.0`, `nums.4`, 그리고
+`i = 1.5`일 때 `nums.$i`는 런타임 에러입니다(`Array index out of bounds`,
+`Array index must be an integer`). `2.0` 같은 정합 소수는 인덱스 `2`입니다.
 
 ### 배열 변경
 
@@ -1139,7 +1144,7 @@ end
 | `CEIL(n, [digits])` | 올림 — +∞ 쪽으로 |
 | `TRUNC(n, [digits])` | 버림 — 0 쪽으로, 자릿수를 잘라 냄 (스펙 v0.30.0) |
 | `RANDOM()` | 0.0 (포함) ~ 1.0 (미포함) 사이의 랜덤 소수 |
-| `RANDOM(min, max)` | `min` ~ `max` (양쪽 포함) 사이의 랜덤 정수. 둘 다 [정수 범위](#정수-범위-스펙-v0130-v0330에서-확대) 안의 정수여야 하고(`2.0` 같은 정합 소수도 됨), `min`이 `max`보다 클 수 없습니다. |
+| `RANDOM(min, max)` | `min` ~ `max` (양쪽 포함) 사이의 랜덤 정수이고, 모든 정수가 같은 확률로 나옵니다. 둘 다 [정수 범위](#정수-범위-스펙-v0130-v0330에서-확대) 안의 정수여야 하고(`2.0` 같은 정합 소수도 됨), `min`이 `max`보다 클 수 없습니다. |
 
 `ROUND`, `FLOOR`, `CEIL`, `TRUNC`는 `digits`가 없으면 정수를 반환하고, 있으면 그만큼의 소수 자릿수를
 남깁니다 — [자릿수 반올림](#자릿수-반올림) 참고.
@@ -1264,7 +1269,7 @@ PRINT(CEIL(0.1 + 0.2, 1))                   // 0.4 — 0.1 + 0.2는 0.3000000000
 | `UPPERCASE(s)` | 대문자로 변환 |
 | `LOWERCASE(s)` | 소문자로 변환 |
 | `TRIM(s)` | 앞뒤 공백 제거 — 공백은 [아래](#공백)에 정의한 ASCII 문자 6개 (스펙 v0.24.0). |
-| `SUBSTRING(s, start, [length])` | 부분 문자열 추출. `start`는 1-기반. |
+| `SUBSTRING(s, start, [length])` | `s`의 위치 `start`(1-기반)부터 최대 `length`글자. `length` 생략 시 `s` 끝까지. `start`는 1 이상의 정수, `length`는 0 이상의 정수여야 하며 아니면 런타임 에러입니다(스펙 v0.34.0): `SUBSTRING("hello", 0, 3)`은 무엇을 뜻했는지 짐작하지 않고 실패합니다. 끝을 넘으면 그만큼 덜 나올 뿐입니다: `SUBSTRING("hello", 4, 10)` → `"lo"`, `SUBSTRING("hello", 6)` → `""`. |
 | `SPLIT(s, delimiter)` | `s`를 리터럴 `delimiter`(정규식 아님)가 나타나는 모든 위치에서 분리. 발생 위치는 왼쪽부터 겹치지 않게 찾음 — `SPLIT("aaa", "aa")` → `["", "a"]`. 앞·중간·뒤의 빈 문자열까지 **모든** 필드를 유지하므로 `SPLIT(",a,,b,", ",")` → `["", "a", "", "b", ""]`, `SPLIT("", ",")` → `[""]`이고 `JOIN(SPLIT(s, d), d) == s`가 항상 성립. 빈 `delimiter`는 런타임 에러 (스펙 v0.24.0) — 문자 단위 분리는 `CHARS` 사용. |
 | `WORDS(s)` | `s`를 공백으로 구분된 단어 배열로 분리 (스펙 v0.24.0). 연속된 [공백](#공백)을 하나의 구분으로 보고 앞뒤 공백은 무시하므로 빈 문자열 원소가 생기지 않음 — `WORDS("    test 1  2")` → `["test", "1", "2"]`. 빈 문자열이나 공백뿐인 `s` → `[]`. |
 | `JOIN(arr, [separator])` | 배열 요소를 문자열로 합침. 기본 구분자는 `""`. |
@@ -1363,7 +1368,7 @@ Java에서만 매치됩니다. `a{`는 JavaScript에서 문자 그대로, Java�
 | `PUSH(arr, values...)` | 값이 추가된 새 배열 반환. 원본 변경 없음. |
 | `POP(arr)` | 마지막 요소가 제거된 새 배열 반환. 원본 변경 없음. |
 | `CONCAT(arrs...)` | 모든 입력 배열을 연결한 새 배열 반환 |
-| `SLICE(arr, start, [count])` | `start`(1-기반)부터 최대 `count`개 요소의 부분 배열 반환. `count` 생략 시 배열 끝까지. `SUBSTRING`·`READ_LINES`와 동일한 start+count 규약. |
+| `SLICE(arr, start, [count])` | `start`(1-기반)부터 최대 `count`개 요소의 부분 배열 반환. `count` 생략 시 배열 끝까지. `SUBSTRING`·`READ_LINES`와 동일한 start+count 규약: `start`는 1 이상의 정수, `count`는 0 이상의 정수여야 하고(스펙 v0.34.0), 끝을 넘으면 요소가 그만큼 적을 뿐입니다. |
 | `SORT(arr)` | 오름차순 정렬된 새 배열 반환. 모든 요소가 같은 타입(숫자 또는 문자열)이어야 합니다. |
 | `SORT_DESC(arr)` | 내림차순 정렬된 새 배열 반환. `SORT`와 동일한 타입 제한. |
 | `SORT_BY(arr, key)` | 주어진 키로 오름차순 정렬된 객체 배열 반환. |
@@ -1948,6 +1953,10 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 0으로 나누기 | Division by zero |
 | 누락된 프로퍼티 | Property 'x' does not exist |
 | 배열 범위 초과 | Array index out of bounds |
+| 정수가 아닌 배열 인덱스 | Array index must be an integer |
+| 문자열 인덱스 범위 초과, 또는 정수가 아님 | String index out of bounds, String index must be an integer |
+| 1 이상의 정수가 아닌 `SUBSTRING`/`SLICE`의 start | SUBSTRING() start must be an integer of 1 or more |
+| 0 이상의 정수가 아닌 `SUBSTRING`의 length 또는 `SLICE`의 count | SUBSTRING() length must be an integer of 0 or more (SLICE() count must be …) |
 | 루프 제한 초과 | Loop exceeded maximum iterations (1000) |
 | multi 블록 내 전역 쓰기 (워커 또는 monitor 감시 쓰레드) | Cannot assign to global variable '::x' inside multi block |
 | 지역 스코프에서 :: 없이 전역 접근 | Variable 'x' is not defined in local scope. Use ::x to access the global variable |
@@ -1986,6 +1995,40 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)).
 
 ## 변경 이력
+
+### v0.34.0 — 위치는 범위 안의 정수여야 함
+
+파괴적 변경, 문법 변경 없음. 뜻했을 리 없는 위치가 조용히 그럴듯한 위치로 바뀌었고, 어떻게 바뀌는지는
+런타임마다 달랐습니다: `SUBSTRING("hello", 0, 3)`과 `SUBSTRING("hello", -1, 3)`은 Java 25
+런타임에서 `"hel"`, JavaScript 런타임에서 `"he"`와 `"h"`였고, 배열 인덱스 `1.5`는 한쪽에서는 첫
+요소를, 다른 쪽에서는 `null`을 읽었습니다. 위치를 계산하다 생긴 실수가 드러나지 않았습니다. 이제는
+`nums.0`과 `READ_LINES(path, 0)`이 이미 그랬듯이, 실수가 생긴 곳에서 스크립트가 멈춥니다.
+
+- `SUBSTRING(s, start, [length])`와 `SLICE(arr, start, [count])`: `start`는 1 이상의 정수,
+  `length`나 `count`는 0 이상의 정수여야 합니다. `2.0` 같은 정합 소수도 됩니다. 에러는
+  `SUBSTRING() start must be an integer of 1 or more`와
+  `SUBSTRING() length must be an integer of 0 or more`이고, `SLICE()`도 `count`로 같습니다. 끝을
+  넘는 것은 여전히 괜찮고 덜 나올 뿐입니다: `p`가 마지막 위치이면 `SUBSTRING(s, p + 1)`은 `""`이고,
+  `SUBSTRING(name, 1, 20)`은 짧은 이름을 그대로 둡니다. 음수 `length`는 Java 25 런타임에서 `""`,
+  JavaScript 런타임에서 `start` 앞의 글자들이었습니다.
+- 배열과 문자열의 인덱스는 읽을 때나 대입할 때나 정수여야 합니다: `i = 1.5`일 때 `nums.$i`는
+  `Array index must be an integer`로 실패합니다. Java 25 런타임은 이를 `1`로 잘랐고, JavaScript
+  런타임은 `null`을 읽고 대입은 무시했습니다. 문자열은 `String index must be an integer`입니다.
+- 문자열 인덱스 에러는 두 런타임 모두 `String index …`라고 말합니다. Java 25 런타임은 문자열에도
+  `Array index out of bounds`와 `Array index must be a number`라고 했습니다. JavaScript 런타임의
+  `must be a number` 에러는 Java 25 런타임에 없던 힌트(`, got string. Use arr.1 not arr."1"`)를
+  뺍니다.
+
+마이그레이션: 1보다 작은 start, 음수 length나 count, 소수 위치를 주던 스크립트는 이제 그 줄에서 이
+에러들 중 하나로 멈춥니다. 뜻했던 start를 주세요 — `1`, 또는 계산이 그 아래로 내려갈 수 있는 곳에서는
+Java 25 런타임이 하던 대로 `MAX(1, start)`. 소수가 나올 수 있는 곳에서는 `FLOOR`, `ROUND`, `TRUNC`로
+정수로 만드세요. 옛 인덱스 에러 문구와 정확히 비교하던 코드는 새 문구에 맞춰야 합니다.
+
+규칙 변경 없이 두 런타임에서 함께 고친 것: `RANDOM(min, max)`는 무작위 소수를 늘려 썼기 때문에 구간이
+2⁵³을 넘으면 정수를 건너뛰었습니다 — `RANDOM(-9007199254740991, 9007199254740991)`은 홀수만
+냈습니다. 이제 `min`부터 `max`까지 모든 정수가 같은 확률로 나옵니다.
+
+Java 25 런타임과 JavaScript 런타임이 구현합니다. 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.33.0 — 정수는 9,007,199,254,740,991까지
 
