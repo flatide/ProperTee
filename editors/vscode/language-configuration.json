@@ -23,7 +23,7 @@
   ],
   "folding": {
     "markers": {
-      "start": "\\b(if|loop|function|multi)\\b",
+      "start": "\\b(if|loop|function|multi)\\b|^\\s*on\\s+error\\b|\\botherwise\\b.*\\bdo\\s*(//.*)?$",
       "end": "\\bend\\b"
     }
   },

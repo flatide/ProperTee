@@ -1,4 +1,4 @@
-# ProperTee 언어 명세 v0.36.0
+# ProperTee 언어 명세 v0.37.0
 
 ## 개요
 
@@ -134,6 +134,8 @@ PRINT(a.x)      // 1 — a는 변경되지 않음
 ```
 
 이는 값이 경계를 넘는 모든 곳에 적용됩니다: 변수 할당, 프로퍼티/요소 할당, 함수 인자, 루프 변수, 스레드 전역 스냅샷.
+
+할당은 우변을 먼저 계산하고 그다음 대상의 자리를 계산합니다. 그래서 `rows.$i = next()`에서 설정되는 요소는 `next()`가 실행된 뒤의 `i`가 가리키는 요소입니다 (스펙 v0.37.0부터 순서를 명시; 두 런타임 모두 이미 이렇게 동작했음).
 
 ### `::` 전역 변수 접두사
 
@@ -477,7 +479,7 @@ loop i < 100 do
 end
 ```
 
-`break`와 `continue`는 가장 안쪽의 루프에만 영향을 줍니다.
+`break`와 `continue`는 가장 안쪽의 루프에만 영향을 줍니다. *둘러싼* 루프는 어휘적입니다: 같은 함수 본문에서 문장을 둘러싼 루프이며, 호출자의 루프는 절대 아닙니다. monitor 본문은 각 iteration이 함수 호출처럼 실행되므로 함수 본문으로 칩니다. `multi` 설정 단계는 경계가 아닙니다 — 거기서 `break`나 `continue`는 설정 단계 안이든 블록 바깥이든 자기 루프에 작용합니다. 그런 루프가 없는 `break`나 `continue`는 첫 문장 전에 로드 시점에서 거부됩니다 (스펙 v0.37.0): `'break' must be inside a loop`, `'continue' must be inside a loop`. 그 전에는 함수의 `break`가 호출자의 루프를 끝냈고, 어떤 루프에도 없는 것은 런타임에 따라 무시되거나 실행을 끝냈습니다.
 
 ### 디버그 문
 
@@ -504,6 +506,10 @@ result = add(3, 4)    // 7
 - `return value` — 지정된 값을 반환
 - `return` (단독) — `{}`를 반환
 - return 문 없음 — `{}`를 반환
+
+`return`의 값은 `return` 줄에서 시작합니다 (스펙 v0.37.0). 줄바꿈은 문장을 끝내지 않으므로([세미콜론](#세미콜론)) 단독 `return`은 다음 줄을 값으로 가져갑니다 — `return` 다음 줄에 `PRINT("x")`가 있으면 `x`를 출력하고 `{}`를 반환했습니다. 값이 다음 줄에서 시작하는 `return`은 로드 시점에 거부됩니다: `The value of 'return' must start on the same line`. 단독 `return`은 여전히 블록을 끝낼 수 있습니다: `return` 다음에 `end`, `else`, `elseif`.
+
+함수는 그 정의가 실행된 뒤에 존재합니다: 정의는 실행이 닿을 때 실행되는 문장이고, 같은 이름의 뒤쪽 정의가 앞쪽 정의를 대체합니다 (스펙 v0.37.0부터 명시). 유일한 예외는 [`on error` 핸들러](#on-error)이며, 핸들러 전에 런타임은 실행이 닿지 않은 root 정의들을 실행합니다.
 
 ### 인자
 
@@ -596,7 +602,9 @@ script version은 숫자만 허용합니다.
 ### 실행과 가시성
 
 직접 실행은 변하지 않아 모든 top-level statement가 실행됩니다. Import mode에서는 top-level
-statement를 실행하지 않고 source root 바로 아래의 함수 정의만 등록합니다. 따라서 같은 소스에
+statement를 실행하지 않고 source root 바로 아래의 함수 정의만 등록합니다. 모듈의 `on error`
+핸들러는 import mode에서 건너뛰며 (스펙 v0.37.0), 로드 시점 검사는 entry 스크립트처럼 모듈에도
+적용됩니다. 따라서 같은 소스에
 top-level 자체 테스트 코드를 두어도 import 시에는 실행되지 않습니다. 초기화가 필요하면
 `file::init(...)` 같은 일반 함수를 명시적으로 호출합니다.
 
@@ -860,6 +868,8 @@ multi 블록 내에서 실행되는 함수는 순수성 모델을 적용합니�
 8. 모든 스레드가 완료되어야 `end` 이후로 실행이 계속됨
 9. 결과 컬렉션은 **모든** 스레드 완료 후 `resultVar`에 할당
 
+monitor 간격은 `multi` 진입 시 `limit` 절과 함께, 스냅샷과 설정 단계 전에 검사합니다 (스펙 v0.37.0). 그래서 간격이 범위를 벗어난 블록은 워커를 하나도 시작하지 않습니다. 설정 단계의 `return`, 또는 블록 바깥 루프에 대한 `break`나 `continue`는 설정 단계를 벗어나며, 그때까지 모은 스레드는 시작하지 않습니다. 설정 단계 안 루프에 대한 `break`나 `continue`는 그 루프에만 작용하고 설정 단계는 계속됩니다.
+
 ### Monitor 절
 
 선택적 `monitor` 절은 multi 블록에 **감시(watchdog) 쓰레드**를 붙입니다 — 런타임이 워커들과 나란히 자동으로 생성·관리하는 쓰레드입니다(스펙 v0.16.0):
@@ -879,6 +889,7 @@ end
 - 각 iteration은 함수 호출처럼 **새 지역 스코프**에서 실행됩니다 — 지역 변수는 iteration 간에 이월되지 않습니다. 지역 할당, 루프, 함수 호출 모두 본문에서 허용됩니다.
 - iteration의 스코프는 바인딩 하나로 시작합니다: 결과 컬렉션 변수 — iteration 시작 시점에 찍은 컬렉션의 **캡쳐 스냅샷**(깊은 복사)을 담습니다.
 - iteration이 실패하면 에러가 보고되고(`[MONITOR ERROR] ...`), 남은 중간 iteration은 건너뛰며, 최종 iteration은 여전히 실행됩니다.
+- 본문의 `return`은 함수에서처럼 그 iteration을 끝내고, 감시 쓰레드는 계속 동작합니다 (스펙 v0.37.0). `break`와 `continue`는 본문 안에 루프가 있어야 하며, 없으면 로드 시점에 거부됩니다.
 - 감시 쓰레드는 블록의 `limit` 절에서 면제됩니다(스펙 v0.19.0): 동시성 슬롯을 소비하지 않으며, 투입 대기 중인 스레드를 평범한 `"running"` 항목으로 관찰합니다.
 
 ```
@@ -1027,8 +1038,8 @@ line = FORMAT("주문번호 {00000}", 42)           // "주문번호 00042"
 | 값이 자리 표시보다 많거나 적음 | `FORMAT() format has 2 placeholders, got 3 values` |
 | 모양 자리 표시에 수가 아닌 값 | `FORMAT() {0.00} requires a number, got string` |
 
-`PRINTF`는 같은 에러를 자기 이름으로 보고하고 — `PRINTF() invalid format: {x}` — 다른 내장 함수의
-에러처럼 줄 번호를 붙이지 않습니다.
+`PRINTF`는 같은 에러를 자기 이름으로 보고하고 — `PRINTF() invalid format: {x}` — 스펙 v0.37.0부터
+모든 런타임 에러처럼 호출 위치를 붙입니다.
 
 #### 숫자 모양
 
@@ -1407,7 +1418,7 @@ Java에서만 매치됩니다. `a{`는 JavaScript에서 문자 그대로, Java�
 
 ### Result와 에러 승격
 
-스펙 v0.10.0에서 추가. 의미론은 [Genuine Result와 `FAIL`, `UNWRAP`](#genuine-result와-fail-unwrap)을 참고하세요.
+스펙 v0.10.0에서 추가. 의미론은 [Genuine Result와 `FAIL`, `UNWRAP`](#genuine-result와-fail-unwrap)을, `otherwise`·`on error`와 함께 쓰는 `UNWRAP`은 [실패 다루기](#실패-다루기)를 참고하세요 (스펙 v0.37.0).
 
 | 함수 | 설명 |
 |---|---|
@@ -1775,13 +1786,15 @@ Result 객체는 3개 필드를 가집니다:
 
 외부 함수 결과에는 `ok`로 충분합니다 — `res.ok == true`를 확인하세요. `status` 필드는 주로 multi 블록 스레드 결과를 위해 존재하며, `"running"` (아직 완료되지 않음)과 `"error"` (실패로 완료됨)를 구분합니다 — 둘 다 `ok: false`입니다.
 
+외부 호출의 Result는 런타임이 만듭니다: 호스트 함수가 무엇을 반환하든 ok Result의 `value`가 되며 — 호스트가 만든 Result도 그 안에 들어감 — 던진 것은 그 메시지를 담은 에러 Result가 됩니다. 호스트 함수는 `Result.ok(value)`가 아니라 값 자체를 반환합니다 (스펙 v0.37.0부터 명시; 레퍼런스 런타임은 늘 이렇게 했고, JavaScript 런타임도 이제 같음).
+
 ### Genuine Result와 `FAIL`, `UNWRAP`
 
 스펙 v0.10.0에서 추가.
 
 **Genuine Result.** 런타임이 생성한 Result 객체 — Result를 반환하는 빌트인(`JSON_PARSE`, `SHELL`/`SHELL_CTX`, `HTTP`/`HTTP_GET`/`HTTP_POST`, 파일 I/O 그룹 — 단 일반 boolean을 반환하는 `FILE_EXISTS`와 일반 배열을 반환하는 `FILE_LINES`는 제외), 외부 함수 호출(동기·비동기, 타임아웃 에러 포함), `multi` 스레드 수집 항목 — 과 `OK`/`ERR` 생성자가 만든 Result는 *genuine Result*입니다: 런타임이 그 출처를 기억합니다. 같은 세 필드를 가진 스크립트 객체 리터럴은 일반 객체이지 genuine Result가 **아닙니다**.
 
-이 구별은 `TYPE_OF`(여전히 `"object"`), 표시, 동등성, JSON 직렬화에는 보이지 않습니다; 오직 `IS_RESULT`와 `UNWRAP`만 관찰합니다. genuine Result의 복사본(할당, 인자 전달, `PUSH`, 깊은 복사)은 genuine Result이며, 필드를 변경해도 출처는 사라지지 않습니다. 출처는 JSON을 통과하지 못합니다: `JSON_FORMAT`은 genuine Result를 일반 3필드 객체로 렌더링하고, `JSON_PARSE`된 데이터 내부에는 genuine Result가 없습니다 (`JSON_PARSE` 자체가 반환하는 래퍼 Result는 genuine입니다).
+이 구별은 `TYPE_OF`(여전히 `"object"`), 표시, 동등성, JSON 직렬화에는 보이지 않습니다; 오직 `IS_RESULT`, `UNWRAP`, `otherwise`만 관찰합니다 (스펙 v0.37.0). genuine Result의 복사본(할당, 인자 전달, `PUSH`, 깊은 복사)은 genuine Result이며, 필드를 변경해도 출처는 사라지지 않습니다. 출처는 JSON을 통과하지 못합니다: `JSON_FORMAT`은 genuine Result를 일반 3필드 객체로 렌더링하고, `JSON_PARSE`된 데이터 내부에는 genuine Result가 없습니다 (`JSON_PARSE` 자체가 반환하는 래퍼 Result는 genuine입니다).
 
 **승격(escalation).** Result 패턴은 복구 가능한 에러를 명시적 값으로 만듭니다; `FAIL`은 스크립트가 치명적이라고 판단한 에러를 위한 명시적 승격입니다 — 호출 지점에서 일반 런타임 에러를 발생시켜, 다른 런타임 에러와 정확히 동일하게 런이 실패합니다:
 
@@ -1813,8 +1826,8 @@ data = UNWRAP(JSON_PARSE(text), "config parse")   // 에러 메시지: "config p
 interpreter.builtins.registerExternalAsync("DB_QUERY", new BuiltinFunction() {
     public Object call(List<Object> args) {
         String sql = (String) args.get(0);
-        // 백그라운드 스레드에서 실행 — 블로킹 가능
-        return Result.ok(database.execute(sql));
+        // 백그라운드 스레드에서 실행 — 블로킹 가능; Result는 런타임이 만듦
+        return database.execute(sql);
     }
 }, 5000);
 ```
@@ -1823,7 +1836,7 @@ interpreter.builtins.registerExternalAsync("DB_QUERY", new BuiltinFunction() {
 // JavaScript 호스트 — 비동기 함수 (타임아웃 없음)
 visitor.registerExternalAsync("HTTP_GET", (url) => {
     const response = await fetch(url);
-    return Result.ok(response.json());
+    return response.json();
 });
 ```
 
@@ -1842,7 +1855,7 @@ end
 - `multi` 블록 내의 다른 스레드는 **계속 실행**됩니다 — 호출 스레드만 일시 정지
 - `multi` 블록 외부에서는 스크립트가 단순히 대기합니다 (실행할 다른 스레드 없음)
 - 결과는 동일한 Result 패턴 사용: 성공 시 `{ok: true, value: ...}`, 실패 시 `{ok: false, value: "에러 메시지"}`
-- 비동기 함수 내부에서 발생한 예외는 자동으로 `Result.error(message)`로 래핑됩니다
+- 함수가 반환한 것은 ok Result의 값이 되고, 던진 예외는 그 메시지를 담은 에러 Result가 됩니다
 
 **타임아웃:** 선택적 타임아웃 매개변수(밀리초)는 스레드 대기 시간을 제한합니다. 작업이 타임아웃을 초과하면 함수는 `{status: "error", ok: false, value: "timeout"}`을 반환합니다:
 
@@ -1893,7 +1906,7 @@ if x == 10 then    // 'if' is not available in this environment — 스크립트
 end
 ```
 
-숨길 수 있는 키워드: `if`, `loop`, `function`, `multi`, `thread`, `debug`. `if`를 숨기면 `if`/`elseif`/`else` 문 전체가 막힙니다.
+숨길 수 있는 키워드: `if`, `loop`, `function`, `multi`, `thread`, `debug`. `if`를 숨기면 `if`/`elseif`/`else` 문 전체가 막힙니다. `on`과 `otherwise`는 숨길 수 없습니다: 핸들러나 fallback이 실행하는 것도 호스트의 제한 아래에 있습니다.
 
 **무시된 함수**는 그 함수를 호출하는 스크립트를 실행 자체가 거부되게 합니다:
 
@@ -1904,9 +1917,264 @@ x = SHELL("echo hello")   // 'SHELL' is not available in this environment — �
 
 내장 함수와 외부 함수 모두 무시할 수 있습니다. 일반 함수 호출과 multi 블록 `thread` 생성의 함수 호출 모두에서 검사됩니다. 이름마다 따로 막습니다: `PRINT`를 무시해도 `PRINTF`는 쓸 수 있으므로, 스크립트 출력을 막으려는 호스트는 둘 다 무시해야 합니다.
 
-**로드 시점 거부 (스펙 v0.14.0).** 차단된 구문 — 숨김 키워드나 무시된 함수 호출 — 을 소스 **어디에서든**(죽은 분기 포함) 이름으로 언급하는 스크립트는 아예 실행되지 않습니다. 런은 **첫 문장이 실행되기 전에** 거부되며, 문서 순서상 **첫 번째 위반**으로 `Runtime Error at line L:C: 'X' is not available in this environment` 형태로 실패합니다. 위반 구문 앞의 어떤 것도 실행되지 않습니다 — 출력도, 부수 효과도 없습니다 — 그래서 위 예시의 `x = 10`은 결코 실행되지 않습니다. 검사가 트리 전체를 스캔하므로 실행되지 않는 분기의 차단 구문(`if false then SHELL(...) end`)도 스크립트를 거부시키고, `thread` spawn을 통해서만 도달하는 차단 함수(`thread a: blocked_fn()`)도 워커 안이 아니라 로드 시점에 거부됩니다(스펙 v0.13.0의 워커-격리 동작을 대체 — 워커에 도달하지 않습니다). 언어에 간접 호출이 없고(호출 지점은 리터럴 이름) 키워드는 정적이므로 이 스캔은 정확합니다.
+**로드 시점 거부 (스펙 v0.14.0).** 차단된 구문 — 숨김 키워드나 무시된 함수 호출 — 을 소스 **어디에서든**(죽은 분기 포함) 이름으로 언급하는 스크립트는 아예 실행되지 않습니다. 런은 **첫 문장이 실행되기 전에** 거부되며, 문서 순서상 **첫 번째 위반**으로 `Runtime Error at line L:C: 'X' is not available in this environment` 형태로 실패합니다. 위반 구문 앞의 어떤 것도 실행되지 않습니다 — 출력도, 부수 효과도 없습니다 — 그래서 위 예시의 `x = 10`은 결코 실행되지 않습니다. 검사가 트리 전체를 스캔하므로 실행되지 않는 분기의 차단 구문(`if false then SHELL(...) end`)도 스크립트를 거부시키고, `thread` spawn을 통해서만 도달하는 차단 함수(`thread a: blocked_fn()`)도 워커 안이 아니라 로드 시점에 거부됩니다(스펙 v0.13.0의 워커-격리 동작을 대체 — 워커에 도달하지 않습니다). 언어에 간접 호출이 없고(호출 지점은 리터럴 이름) 키워드는 정적이므로 이 스캔은 정확합니다. 스펙 v0.37.0의 로드 시점 검사 — 잘못 놓인 `on error`, 다음 줄에서 시작하는 `return` 값, 루프 밖의 `break`나 `continue` — 도 같은 방식으로 스크립트를 거부하며, 두 종류를 통틀어 문서 순서상 첫 위반이 보고됩니다.
 
 같은 스캔은 *모든* 위반을 한 번에 반환하는 **호스트 API**로도 노출됩니다 — 레퍼런스 런타임의 `Engine.validate(source)`, propertee-java의 `interpreter.validate(tree)`, propertee-js의 `visitor.validate(tree)` — 숨김 키워드 구문과 무시된 함수 호출마다 `line L:C: 'X' is not available in this environment` 항목을 하나씩 내며, 스크립트를 실행하지 않고 점검하려는(예: 에디터에서 모든 문제를 보고) 호스트를 위한 것입니다.
+
+## 실패 다루기
+
+스펙 v0.37.0에서 추가. 실패는 두 가지 방식으로 스크립트에 닿고, 각각 자기 도구가 있습니다.
+아무도 대비하지 않은 실패는 실행을 멈추고, `on error`는 실행이 끝나기 직전에 기록하고 알리고
+보고할 한 곳을 줍니다. 스크립트가 예상한 실패는 그 줄에서 다루고, `otherwise`가 대신 쓸 값이나
+할 일을 말합니다. `UNWRAP`은 그 곁에 그대로 남습니다:
+
+| 도구 | 용도 | 쓰는 자리 |
+|---|---|---|
+| `UNWRAP` | 반드시 있어야 하는 값: 그 값, 아니면 실행이 멈춤 | 식 안 어디서나 |
+| `otherwise` | 스크립트가 예상한 실패: 대신 쓸 값이나 할 일 | 문장 끝 |
+| `on error` | 실행이 멈출 때 할 일 | import 바로 뒤에 한 번 |
+
+```
+on error do
+    PRINT("Job failed:", _ERROR.message, "at line", _ERROR.line)
+    APPEND_FILE("/logs/job.log", DATE() + " " + _ERROR.message + "\n")
+    return {"failed": true, "reason": _ERROR.message}
+end
+
+input = _ARGS.1
+loop line in FILE_LINES(input) infinite do      // 읽을 수 없는 파일은 실행을 멈춤
+    record = JSON_PARSE(line) otherwise err do  // JSON이 아닌 줄은 건너뜀
+        PRINT("skipped:", err.message)
+        continue
+    end
+    PRINT(record.id)
+end
+```
+
+둘 다 try/catch가 아닙니다. 런타임 에러 뒤에 다시 이어지는 것은 없고, `otherwise`는 Result만
+봅니다 — 왼쪽을 계산하다 난 에러는 전처럼 실행을 멈춥니다.
+
+### `otherwise`
+
+```
+lines = READ_LINES(f) otherwise []                  // 대신 쓸 값
+lines = READ_LINES(f) otherwise continue            // 다음 항목으로; break, return도 가능
+lines = READ_LINES(f) otherwise err do              // 블록; err가 실패를 설명
+    PRINT("skipped", f, err.message)
+    continue
+end
+WRITE_FILE(path, text) otherwise PRINT("not saved") // 문장: 값을 계산한 뒤 버림
+```
+
+값 형태는 스프레드시트의 `IFERROR`가 하는 일을 합니다. `or`는 여전히 boolean 전용입니다.
+
+**문법.**
+
+- `otherwise`는 문장을 끝냅니다: 할당, 값이 있는 `return`, 식 문장. 식 안에는 절대 오지 않습니다:
+  `PRINT(f() otherwise 0)`은 문법 에러입니다.
+- fallback은 값, `continue`, `break`, 값이 있거나 없는 `return`, 또는 블록 `do ... end`이며, 블록은
+  실패에 이름을 붙일 수 있습니다: `otherwise err do ... end`.
+- `thread` 문에는 붙지 않습니다: 워커의 실패는 그 항목이 됩니다.
+
+```
+statement       : assignment otherwiseClause?                # AssignStmt
+                | ...
+                | expression otherwiseClause?                # ExprStmt
+                ;
+flowControl     : ...
+                | K_RETURN (expression otherwiseClause?)?    # ReturnStmt
+                ;
+otherwiseClause : K_OTHERWISE fallback ;
+fallback        : K_CONTINUE                                 # FallbackContinue
+                | K_BREAK                                    # FallbackBreak
+                | K_RETURN (expression otherwiseClause?)?    # FallbackReturn
+                | name=ID? K_DO block K_END                  # FallbackBlock
+                | expression otherwiseClause?                # FallbackValue
+                ;
+```
+
+**규칙.**
+
+1. **보는 것**은 왼쪽 값입니다:
+   - `ok`가 true인 genuine Result는 그 `value`를 줍니다;
+   - `ok`가 false인 genuine Result는, `"running"`도 포함해, fallback을 줍니다;
+   - 그 밖의 값은 아무것도 실패하지 않았어도 런타임 에러입니다:
+     `'otherwise' needs a Result, but TO_NUMBER() gave a number`. Result를 돌려주지 않는 함수는
+     첫 실패가 아니라 첫 실행에서 드러납니다.
+
+   genuine은 v0.10.0의 표식입니다([Genuine Result](#genuine-result와-fail-unwrap)): `ok`와 `value`
+   필드가 있는 일반 객체는 Result가 아닙니다.
+2. **try가 아님.** 왼쪽을 계산하는 동안 난 에러 — 인자, 멤버 접근, 호출한 함수의 본문 — 는 평소처럼
+   실행을 멈춥니다. `READ_JSON_FILE(f).enabled otherwise false`는
+   `Property 'enabled' does not exist`로 멈춥니다.
+3. **fallback은 실패했을 때만 실행됩니다.** `otherwise defaultLines()`는 읽기가 실패했을 때만
+   `defaultLines`를 부릅니다. 정상적으로 돌아온 값 — `false`, `0`, `""`, `[]`, `null` — 은 실패가
+   아닙니다.
+4. **fallback인 Result는 `UNWRAP`처럼 풀립니다**: 그 값, 아니면 그 메시지로 실행이 멈춥니다.
+   `x = READ_FILE(a) otherwise READ_FILE(b)`는 "a, 안 되면 b, 그것도 안 되면 멈춤"으로 읽힙니다.
+   fallback은 이어 쓸 수 있습니다: `READ_FILE(a) otherwise READ_FILE(b) otherwise ""`. `UNWRAP`처럼
+   `otherwise` 양쪽 모두 한 겹만 벗깁니다: 값 안의 Result는 Result로 남으므로
+   `x = ERR("a") otherwise OK(OK(1))`은 `x`를 `OK(1)`로 둡니다.
+5. **블록**은 문장에 따라 정해진 방식으로 끝나야 합니다:
+
+   | 블록이 따르는 것 | 해야 할 일 |
+   |---|---|
+   | 변수에 대한 할당 — `lines = ...` | 떠나기 — `continue`, `break`, `return`, `FAIL` — 또는 `lines` 설정 |
+   | 멤버나 요소에 대한 할당 — `config.port = ...`, `rows.$i = ...` | 떠나기 |
+   | `return` (fallback `return` 포함) | 떠나기 |
+   | 식 문장 | 없음; 그냥 끝나도 됨 |
+
+   그렇게 하지 않고 `end`에 닿으면 `end` 위치에서 런타임 에러입니다:
+   `The 'otherwise' block must set 'lines' or leave with continue, break, return or FAIL`, 또는
+   `The 'otherwise' block must leave with continue, break, return or FAIL`. 값을 설정할 수 있는
+   것은 실패가 값을 정하는 경우가 있기 때문이고, 변수에만 허용하는 것은 블록이 실행되는 동안 멤버의
+   자리가 바뀔 수 있기 때문입니다: `rows.$i = f() otherwise err do i = i + 1; rows.$i = 0 end`에서
+   블록은 다른 요소를 설정합니다. 블록은 변수에 대한 할당을 직접 실행해서 설정합니다 — 블록이 부른
+   함수 안의 할당은 해당하지 않습니다. top level에서 `lines`와 `::lines`는 같은 변수입니다. 블록
+   안의 `multi` setup은 자기 지역 변수를 가진 블록 자신의 코드이므로, top level에서는 `::lines`로
+   설정합니다. 블록이 설정하면 할당은 더 할 일이 없습니다. 값 fallback은 어떤 대상과도 쓸 수 있습니다
+   (`rows.$i = f() otherwise 0`): fallback을 포함한 우변이 대상 자리보다 먼저 계산되며, 모든 할당이
+   그렇습니다([값 의미론](#값-의미론)).
+6. 블록이 이름 붙인 **실패**는 객체입니다:
+
+   | 필드 | 값 |
+   |---|---|
+   | `message` | 항상 문자열 — `UNWRAP`이 보고할 텍스트 (`TO_STRING(value)`) |
+   | `value` | 실패한 Result의 값 그대로 — HTTP라면 `{status, body, headers}` |
+
+   필드는 나중에 추가될 수 있지만 제거되지 않습니다. 이름은 루프 변수 규칙을 따릅니다: top level에서는
+   전역, 함수 안에서는 지역이며, 같은 이름의 변수를 대체합니다.
+7. **흐름.** fallback `continue`, `break`, `return`은 그 자리에서 그 문장이 하는 일을 합니다.
+   `continue`와 `break`는 같은 함수 본문에서 자신을 둘러싼 가장 안쪽 루프에 작용합니다
+   ([Break와 Continue](#break와-continue)). `return`은 함수에서 돌아가고, monitor iteration을
+   끝내며, top level에서는 실행을 성공으로 끝냅니다 — 핸들러 없이. `multi` 설정 단계에서도 같은
+   규칙이 적용됩니다. 그중 하나가 설정 단계 자체를 벗어나면 — `return`, 또는 루프가 블록 바깥에 있는
+   `break`나 `continue` — 그때까지 모은 스레드는 시작하지 않습니다. 설정 단계 안 루프의 `break`나
+   `continue`는 설정 단계를 계속 진행시킵니다.
+8. **어디서나.** `otherwise`는 함수, `multi` 워커, monitor 본문, 핸들러에서 동작합니다. 워커의
+   항목은 Result이므로 `n = r.count otherwise 0`은 워커의 값이나 0을 읽습니다. monitor에서는 캡쳐된
+   항목을 `UNWRAP`처럼 읽습니다: 끝난 항목은 thread information 객체(v0.21.0)를, `"running"`
+   항목은 fallback을 줍니다.
+
+`otherwise`는 스크립트 코드를 되감지 않습니다. 호출자가 복구하기를 바라는 스크립트 함수는
+`ERR(...)`을 반환합니다; 그 안의 에러는 실행을 멈춥니다. 함수 전체의 모든 에러를 잡는 일은 여전히
+`multi` 워커의 몫입니다. 스레드 순수성은 실패한 워커가 반쯤 쓴 전역을 남기지 않게 하지만, 워커가 한
+파일 쓰기, 요청, 명령을 되돌리지는 않습니다.
+
+`otherwise` 뒤의 `return`은 같은 줄에서 값을 가져옵니다: `otherwise return` 다음 줄에 문장이 오면
+로드 시점에 거부됩니다([반환 값](#반환-값)) — `otherwise return {}`로 쓰거나 블록을 거기서 끝내세요.
+
+### `on error`
+
+```
+on error do
+    PRINT("Job failed:", _ERROR.message)
+    return {"failed": true}
+end
+```
+
+**문법과 위치.**
+
+- `on error do ... end`. `on`은 예약어이고 `error`는 아닙니다 — `on` 뒤에서만 의미가 있으므로
+  `error`라는 변수는 그대로 동작합니다.
+- 핸들러는 최대 하나이며, top level에서 import 바로 뒤에 둡니다. 문법은 이를 문장으로 받아들이고,
+  다른 곳에 있으면 로드 시점 검사가 거부하므로 사용자는 파서 메시지가 아닌 분명한 메시지를 봅니다:
+  - `'on error' must come right after the imports`
+  - `A script can have only one 'on error'`
+  - `Expected 'error' after 'on'`
+- import mode에서 핸들러는 모든 top-level 코드처럼 건너뜁니다. 직접 실행한 모듈은 자기 핸들러를
+  씁니다.
+
+**실행되는 때.**
+
+| 상황 | 핸들러 |
+|---|---|
+| 스크립트 실행 중 런타임 에러 — 내장 함수, 연산자, 정의되지 않은 이름, 루프 한도, `FAIL`, `UNWRAP` | 실행 |
+| `otherwise` 블록 안의 에러 | 실행 |
+| `otherwise`가 받은 실패 | 실행 안 함 — 에러가 되지 않았음 |
+| import한 함수 안의 에러 | 실행; `_ERROR.source`가 모듈을 가리킴 |
+| `multi` 설정 단계나 블록 뒤의 에러 | 실행 |
+| 워커의 에러, monitor iteration의 에러 | 실행 안 함 — 전처럼 수집·보고됨 |
+| 정상 종료, top-level `return` 포함 (top level의 `otherwise return`도) | 실행 안 함 |
+| 시작 전에 거부된 스크립트 — 문법 에러, 차단 구문, import 해석, 로드 시점 검사 | 실행 안 함 |
+| 에러 전에 요청된 중지 — 호스트의 시간 제한, 사용자의 Stop, 디버거의 Quit — 중지가 일으킨 실패 포함 (종료된 `SHELL` 명령 등) | 실행 안 함 — 실행은 실패가 아니라 중지됨 |
+| 핸들러 실행 중 요청된 중지 | 핸들러를 끝냄; 실행은 실패로 남음 |
+| 자원 고갈 (메모리, 스택) | 보장되지 않음 |
+
+핸들러는 실행마다 최대 한 번 실행됩니다.
+
+**`_ERROR`.**
+
+| 필드 | 값 |
+|---|---|
+| `message` | `Runtime Error at line L:C:` 앞부분을 뺀 에러 메시지 |
+| `line`, `column` | 에러가 난 곳, 에러 보고와 같게 — 둘 다 1부터 셈; 내장 함수의 에러는 호출 위치 |
+| `source` | source id — entry 스크립트나 모듈의 것 |
+
+- `_ERROR`는 핸들러 실행 직전에 전역으로 설정되며, 같은 이름의 전역을 대체합니다. 핸들러 밖에서는
+  평범한 이름입니다. 전역이므로 조회 순서상 같은 이름의 호스트 프로퍼티보다 앞서고, 호출자가 에러를
+  가릴 수 없습니다.
+- 핸들러가 부른 함수 안에서는 `_ARGS`처럼 `::_ERROR`입니다. 넘겨주는 편이 더 읽기 좋습니다:
+  `notify(_ERROR)`.
+- 필드는 이후 버전에서 추가될 수 있지만 제거되거나 이름이 바뀌지 않습니다.
+
+**규칙.**
+
+1. **순서.** 런타임은 원래 에러를 보고하고, 핸들러를 실행하고, 실행을 실패로 끝냅니다. 에러는
+   핸들러가 시작하기 전에 보고되므로, 멈추거나 실패하는 핸들러도 에러를 가릴 수 없습니다.
+2. **스코프.** 핸들러는 top-level 코드입니다: 전역을 그냥 이름으로 읽고 씁니다. 에러가 난 순간의
+   상태를 봅니다 — 실패한 함수의 지역 변수는 사라졌고, 아직 할당되지 않은 전역은 존재하지 않으므로,
+   핸들러가 보고할 전역은 핸들러 바로 뒤에서 할당해 두세요(`done = 0`). 함수는 그 정의가 실행된 뒤에
+   존재합니다([함수](#함수)). 핸들러가 시작하기 전에 런타임은 스크립트가 아직 닿지 않은 root 바로 아래의
+   정의들을, import mode가 등록하듯 순서대로 실행합니다. 그래서 핸들러는 실패한 줄 아래에 정의된
+   함수를 부를 수 있고, 같은 이름의 뒤쪽 정의는 실행이 거기까지 갔을 때처럼 앞쪽 정의를 대체합니다.
+   실패하는 정의 — 대문자 이름 (v0.12.0) — 는 핸들러 안의 에러입니다 (규칙 5).
+3. **호스트에 줄 값.** 핸들러 안의 `return value`는 그 값을 실패와 함께 호스트에 넘깁니다;
+   `return`이 없으면 `{}`입니다. 실행은 여전히 실패합니다.
+4. **재개 없음.** 핸들러 안의 어떤 것도 스크립트를 이어 가거나 실패를 성공으로 바꿀 수 없습니다.
+5. **핸들러 안의 에러**는 핸들러를 멈추고 `[HANDLER ERROR] ...`로 보고됩니다; 핸들러에 다시
+   들어가지 않습니다. 실행은 원래 에러로 실패하고, 호스트는 반환 값으로 `{}`를 받습니다.
+6. **한도와 중지.** 핸들러는 실행의 한도 — 루프 한도와 호스트의 시간 제한 — 아래에서 실행됩니다.
+   실행 중 요청된 중지 — 시간 제한, 사용자의 Stop, 디버거의 Quit — 는 핸들러를 끝내고, 실행은 원래
+   에러로 실패한 채 남습니다.
+7. **디버깅.** 핸들러 안의 `debug` 문과 중단점은 다른 메인 스레드 코드에서처럼 동작합니다.
+8. **`otherwise`는 핸들러에서도** 어디서나처럼 동작하므로, 한 단계를 best-effort로 할 수 있습니다:
+   `APPEND_FILE(log, line) otherwise err do PRINT("log not written:", err.message) end`.
+9. **혼자.** 핸들러가 시작할 때 워커나 monitor는 실행 중이지 않습니다. 메인 스레드는 `multi`
+   블록에서 모든 스레드가 끝날 때까지 기다리고([Multi 블록, 의미론](#의미론)), 워커와 monitor의
+   에러는 핸들러에 닿지 않으며, `multi` 블록은 첫 워커가 시작하기 전에 `limit`처럼 monitor 간격을
+   검사합니다.
+
+**호스트가 받는 것.**
+
+- 실행은 세 가지 중 하나로 끝납니다. 반환한 값과 함께 **완료**되거나, 원래 에러 — `_ERROR`처럼
+  `message`, `line`, `column`, `source` — 와 핸들러가 어떻게 끝났는지(반환한 값, `return`이 없으면
+  `{}`, 핸들러의 에러, 또는 핸들러를 끝낸 중지)와 함께 **실패**하거나, 호스트가 **중지**합니다.
+- **실패냐 중지냐는 에러가 나는 순간 한 번 정해집니다.** 아직 중지 요청이 없으면 실행은 실패한
+  것입니다; 나중에 요청된 중지는 핸들러와 실행 중인 것을 끝내지만 실행은 원래 에러로 실패한 채
+  남습니다. 이미 중지가 요청되어 있으면 에러가 무엇이든 실행은 중지되고 핸들러는 실행되지 않습니다 —
+  중지 자체가 호출을 실패시킬 수 있기 때문입니다 (`SHELL` 명령을 종료함).
+- 반환된 값을 호스트가 어떻게 보여 주는지는 호스트가 정합니다; 실행이 어떻게 끝났는지는 그렇지
+  않습니다.
+
+### 곁에 남는 `UNWRAP`
+
+`otherwise`는 `UNWRAP`을 대신하지 않습니다:
+
+- **식 안.** `otherwise`는 거기 오지 못하지만 `UNWRAP`은 옵니다:
+  `loop entry in UNWRAP(LIST_DIR_NAMES(dir)) do`, `PRINT(UNWRAP(result.job).key)`. 없으면 값을 따로
+  한 줄과 블록으로 받아야 합니다:
+  `entries = LIST_DIR_NAMES(dir) otherwise err do FAIL(err.message) end`.
+- 내장 함수가 Result로 보고하는 실패는 그 자체로 실행을 멈추지 않습니다. `UNWRAP`은 그것을 멈추게
+  하는, 그래서 핸들러에 닿게 하는 짧은 방법입니다.
+- **두 번째 인자 `message`**는 에러와 `_ERROR.message`에 단계 이름을 남깁니다:
+  `UNWRAP(JSON_PARSE(text), "config parse")`는 `config parse: <parse error>`를 보고합니다.
+- `otherwise`는 Result를 `UNWRAP`처럼 읽습니다: fallback Result, `err.message`, monitor 항목 모두
+  `UNWRAP`의 읽기를 따릅니다.
+
+`UNWRAP`은 내장 함수로 남습니다: 인터프리터가 직접 처리하므로 스크립트가 정의할 수 없고 호스트가
+대체할 수 없습니다([이름 해석](#이름-해석)). 의미론은
+[Genuine Result와 `FAIL`, `UNWRAP`](#genuine-result와-fail-unwrap)에 있습니다.
 
 ## 주석
 
@@ -1919,7 +2187,7 @@ x = SHELL("echo hello")   // 'SHELL' is not available in this environment — �
 
 ## 세미콜론
 
-세미콜론은 선택 사항이며 공백으로 처리됩니다. 아래 두 코드는 동일합니다:
+세미콜론은 선택 사항이며 줄바꿈처럼 공백으로 처리됩니다. 아래 두 코드는 동일합니다:
 
 ```
 x = 1; y = 2; z = 3
@@ -1930,6 +2198,8 @@ x = 1
 y = 2
 z = 3
 ```
+
+줄바꿈이 의미를 갖는 유일한 곳: `return`의 값은 `return` 줄에서 시작합니다 (스펙 v0.37.0) — [반환 값](#반환-값)을 보세요.
 
 ## 출력 형식
 
@@ -1971,11 +2241,13 @@ z = 3
 
 ## 런타임 에러
 
-ProperTee는 줄과 열 정보와 함께 에러를 보고합니다:
+ProperTee는 모든 런타임 에러를 난 곳과 함께 보고합니다 — 줄과 열, 둘 다 1부터 셉니다 (스펙 v0.37.0; 전에는 열을 0부터 출력했음). 내장 함수의 에러는 호출 위치를 가집니다 (스펙 v0.37.0 전에는 위치가 없었음):
 
 ```
 Runtime Error at line 5:3: Variable 'x' is not defined
 ```
+
+[`on error` 핸들러](#on-error) 안의 에러는 워커의 에러가 `[THREAD ERROR] ...`로 보고되듯 `[HANDLER ERROR] ...`로 보고됩니다.
 
 주요 에러 조건:
 
@@ -2033,12 +2305,61 @@ Runtime Error at line 5:3: Variable 'x' is not defined
 | 호스트 상한을 넘는 파일의 `FILE_LINES` 배열을 통째로 사용 | FILE_LINES() 'x' is too large to use as a whole (494 MB, the limit is 64 MB) — go through it with a loop: loop line in ... do |
 | 호출 뒤 바뀐 파일의 `FILE_LINES` 배열 읽기 | FILE_LINES() cannot read 'x': it was modified after FILE_LINES() was called — call FILE_LINES() again |
 | 차단 구문 존재 (숨김 키워드 / 무시된 함수, 위치 무관) | 'X' is not available in this environment |
+| genuine Result가 아닌 값에 `otherwise` | 'otherwise' needs a Result, but TO_NUMBER() gave a number |
+| 떠나지도 변수를 설정하지도 않고 `end`에 닿은 `otherwise` 블록 | The 'otherwise' block must set 'x' or leave with continue, break, return or FAIL |
+| `return`이나 멤버 대상 뒤에서 `end`에 닿은 `otherwise` 블록 | The 'otherwise' block must leave with continue, break, return or FAIL |
+| import 바로 뒤가 아니거나, 두 번째이거나, `error`가 없는 `on error` (로드 시점) | 'on error' must come right after the imports / A script can have only one 'on error' / Expected 'error' after 'on' |
+| 다음 줄에서 시작하는 `return` 값 (로드 시점) | The value of 'return' must start on the same line |
+| 같은 함수 본문에 루프가 없는 `break`나 `continue` (로드 시점) | 'break' must be inside a loop |
 
 ### 자원 한계
 
 루프 반복 상한은 언어의 일부입니다(기본 1000, 호스트 설정 가능, `infinite`로 해제 — [무한 루프](#무한-루프) 참고). 그 밖의 자원 한계 — 재귀 깊이, 메모리 — 는 **호스트/런타임 재량**입니다: 소진하면 런이 실패하지만 정확한 에러 표면은 구현 정의입니다. 스크립트는 특정 재귀 깊이에 의존하면 안 됩니다. `FILE_LINES`의 통째 사용 상한(64 MB)과 줄 길이 상한(16 MB)도 마찬가지로 호스트가 설정할 수 있는 기본값입니다([파일을 한 줄씩 처리하기](#파일을-한-줄씩-처리하기)). JSON 글은 모든 런타임에서 고정된 1000단계 깊이까지 읽습니다([JSON 글](#json-글)).
 
 ## 변경 이력
+
+### v0.37.0 — `on error`, `otherwise`, 그리고 함께 오는 규칙
+
+문법 차원에서 약간 breaking. 실패는 두 가지 방식으로 스크립트에 닿으며, 이제 각각 자기 도구가
+있습니다([실패 다루기](#실패-다루기)). import 바로 뒤의 `on error do ... end`는 멈추는 실행에
+기록하고 알리고 보고할 한 곳을 줍니다; try/catch가 아니며 다시 이어지는 것은 없습니다. 문장 끝의
+`otherwise`는 왼쪽 Result가 실패했을 때 대신 쓸 값이나 할 일을 말합니다: 값, `continue`, `break`,
+`return`, 또는 실패에 이름을 붙이는 블록. `UNWRAP`은 반드시 있어야 하는 값을 위해 그 곁에 남습니다.
+
+- **예약어.** `on`과 `otherwise`가 예약어가 됩니다. `elseif`(v0.9.0), `limit`(v0.19.0),
+  `import`/`as`(v0.23.0)와 같은 부류입니다: 그 이름의 변수나 `config.on`은 파싱을 멈추고,
+  `config."on"`은 여전히 키를 읽습니다. `error`는 이름으로 남습니다.
+- **로드 시점 거부**, 첫 문장 전에, 문서 순서상 첫 위반:
+  - 값이 다음 줄에서 시작하는 `return` — 줄바꿈은 문장을 끝내지 않으므로 단독 `return`이 다음 줄을
+    값으로 가져갔습니다. `otherwise return`이 호출 바로 뒤에 `return`을 두면 함정이 됩니다;
+  - 같은 함수 본문에 루프가 없는 `break`나 `continue` — 함수의 `break`가 호출자의 루프를 끝냈는데,
+    스펙은 이를 허용한 적이 없습니다;
+  - import 바로 뒤가 아닌 `on error`, 두 번째 `on error`, `error` 없는 `on`.
+- **에러 위치.** 모든 런타임 에러가 위치를 가집니다: 내장 함수의 에러는 호출 위치를 가지며 (전에는
+  없었음), 열은 `_ERROR.column`처럼 1부터 셉니다 (전에는 0부터 출력). 문법 에러와 호스트의 검증
+  목록도 열을 1부터 셉니다.
+- **Monitor.** monitor 본문의 `return`은 그 iteration을 끝내고 감시 쓰레드는 계속됩니다; Java 25
+  런타임은 남은 중간 iteration을 조용히 건너뛰었고, JavaScript 런타임은 `[MONITOR ERROR] return`을
+  보고했습니다. monitor 간격은 `limit`처럼 `multi` 진입 시, 설정 단계 전에 검사하므로 간격이 범위를
+  벗어난 블록은 워커를 시작하지 않습니다; Java 25 런타임은 워커를 먼저 시작했습니다.
+- **외부 함수.** 런타임은 호스트가 반환한 것이 무엇이든 — Result도 — 외부 호출의 Result를 만듭니다.
+  레퍼런스 런타임은 늘 그랬고, JavaScript 런타임은 호스트 값을 그대로 넘겼습니다. 그 stub과
+  playground의 호스트 함수도 이에 맞게 바뀌었습니다.
+- **명시, 동작은 그대로:** 할당은 대상 자리보다 우변을 먼저 계산합니다; 함수는 그 정의가 실행된 뒤에
+  존재하고, 같은 이름의 뒤쪽 정의가 앞쪽을 대체합니다; `multi` 설정 단계에서 `return`, 또는 블록
+  바깥 루프에 대한 `break`나 `continue`는 설정 단계를 벗어나며, 모은 스레드는 시작하지 않습니다.
+
+마이그레이션: `on`이나 `otherwise`라는 변수는 이름을 바꾸세요; `return`의 값은 같은 줄에 두거나,
+단독 `return` 뒤에서 블록을 끝내세요; 호출자의 루프를 끝내던 `break`나 `continue`는 호출자가
+확인하는 값으로 바꾸세요; 에러 텍스트는 1부터 센 열로, 내장 함수의 에러는 위치를 포함해 비교하세요.
+호스트: 실패한 실행은 에러와 함께 핸들러가 어떻게 끝났는지를 넘깁니다([`on error`](#on-error),
+호스트가 받는 것). 두 CLI 모두 실행이 완료되면 0, 실패하거나 거부되면 1로 끝나며, 에러는 늘 출력하던
+곳에 출력합니다; Java 25 CLI는 런타임 에러 뒤에도 0으로 끝났습니다.
+
+이 버전에는 JavaScript 런타임 수정도 있습니다: 정의되지 않은 `::name`을 읽으면
+`Global variable 'name' is not defined`였는데, 이제 스펙의 `Variable 'name' is not defined`입니다.
+
+Java 25 런타임과 JavaScript 런타임이 이를 구현합니다; 동결된 Java 7/8 런타임은 구현하지 않습니다.
 
 ### v0.36.0 — 수는 유한함, `SUM`·`MAX`·`MIN`은 배열을 받음
 
